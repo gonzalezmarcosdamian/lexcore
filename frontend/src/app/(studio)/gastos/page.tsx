@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Moneda } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
+import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -116,6 +117,30 @@ export default function ContablePage() {
   const [error, setError] = useState("");
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Sort
+  type GastoSortKey = "fecha" | "monto" | "descripcion" | "categoria";
+  const [sortKey, setSortKey] = useState<GastoSortKey>("fecha");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const GASTO_SORT_OPTIONS: SortOption<GastoSortKey>[] = [
+    { key: "fecha", label: "Fecha", icon: "📅" },
+    { key: "monto", label: "Monto", icon: "💰" },
+    { key: "descripcion", label: "Descripción", icon: "📝" },
+    { key: "categoria", label: "Categoría", icon: "🏷️" },
+  ];
+
+  function sortGastos(list: Gasto[]) {
+    return [...list].sort((a, b) => {
+      const mul = sortDir === "asc" ? 1 : -1;
+      if (sortKey === "fecha") return mul * a.fecha.localeCompare(b.fecha);
+      if (sortKey === "monto") return mul * (Number(a.monto) - Number(b.monto));
+      if (sortKey === "descripcion") return mul * a.descripcion.localeCompare(b.descripcion, "es");
+      if (sortKey === "categoria") return mul * a.categoria.localeCompare(b.categoria, "es");
+      return 0;
+    });
+  }
 
   // Confirmar modal state
   const [confirmModal, setConfirmModal] = useState<{
@@ -385,15 +410,29 @@ export default function ContablePage() {
               )}
             </div>
 
-            <button
-              onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
-              className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Nuevo gasto
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
+                {sortOpen && (
+                  <SortModal
+                    options={GASTO_SORT_OPTIONS}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
+                    onClose={() => setSortOpen(false)}
+                  />
+                )}
+              </div>
+              <button
+                onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
+                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Nuevo gasto
+              </button>
+            </div>
           </div>
 
           {/* Totales del período */}
@@ -481,7 +520,7 @@ export default function ContablePage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-ink-50">
-                    {recurrentes.map((g) => {
+                    {sortGastos(recurrentes).map((g) => {
                       const cfg = ESTADO_CONFIG[g.estado];
                       return (
                         <div key={g.id} className="flex items-center gap-3 px-5 py-3.5">
@@ -558,7 +597,7 @@ export default function ContablePage() {
                 </div>
               ) : (
                 <div className="divide-y divide-ink-50">
-                  {puntuales.map((g) => (
+                  {sortGastos(puntuales).map((g) => (
                     <div key={g.id} className="flex items-center gap-3 px-5 py-3.5">
                       <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>
                         {catLabel(g.categoria)}
