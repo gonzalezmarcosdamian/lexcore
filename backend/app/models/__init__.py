@@ -5,7 +5,7 @@ from app.models.expediente import Expediente, ExpedienteAbogado, Movimiento, Ven
 from app.models.invitacion import Invitacion
 from app.models.honorario import Honorario, PagoHonorario
 from app.models.documento import Documento
-from app.models.gasto import Gasto, GastoCategoria, GastoEstado, GastoPlantilla
+from app.models.gasto import Gasto, GastoCategoria, GastoEstado, GastoPlantilla, Ingreso, IngresoCategoria
 
 __all__ = [
     "Studio", "User", "Cliente",
@@ -14,4 +14,5 @@ __all__ = [
     "Honorario", "PagoHonorario",
     "Documento",
     "Gasto", "GastoCategoria", "GastoEstado", "GastoPlantilla",
+    "Ingreso", "IngresoCategoria",
 ]

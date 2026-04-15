@@ -8,6 +8,33 @@ from app.models.base import TenantModel
 from app.models.honorario import Moneda  # reuse enum
 
 
+class IngresoCategoria(str, enum.Enum):
+    honorarios_cobrados = "honorarios_cobrados"
+    reintegros = "reintegros"
+    consultas = "consultas"
+    otros = "otros"
+
+
+class Ingreso(TenantModel):
+    """
+    Ingreso concreto del estudio.
+    Puede estar asociado a un expediente o ser general.
+    """
+    __tablename__ = "ingresos"
+
+    descripcion: Mapped[str] = mapped_column(String(500), nullable=False)
+    categoria: Mapped[IngresoCategoria] = mapped_column(Enum(IngresoCategoria), nullable=False)
+    monto: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    moneda: Mapped[Moneda] = mapped_column(Enum(Moneda), nullable=False, default=Moneda.ARS)
+    fecha: Mapped[str] = mapped_column(String(10), nullable=False)  # ISO YYYY-MM-DD
+    mes: Mapped[int] = mapped_column(Integer, nullable=False)
+    anio: Mapped[int] = mapped_column(Integer, nullable=False)
+    expediente_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("expedientes.id"), nullable=True, index=True
+    )
+    notas: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class GastoCategoria(str, enum.Enum):
     alquiler = "alquiler"
     sueldos = "sueldos"

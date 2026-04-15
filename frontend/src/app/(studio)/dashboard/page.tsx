@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { api, Vencimiento, HonorarioResumen, GastoResumen, Expediente, Cliente } from "@/lib/api";
+import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
 
@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [marking, setMarking] = useState<string | null>(null);
   const [honorarios, setHonorarios] = useState<HonorarioResumen | null>(null);
   const [gastoResumen, setGastoResumen] = useState<GastoResumen | null>(null);
+  const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
   const [totalExpedientes, setTotalExpedientes] = useState<number | null>(null);
   const [totalClientes, setTotalClientes] = useState<number | null>(null);
 
@@ -103,6 +104,10 @@ export default function DashboardPage() {
     api
       .get<GastoResumen>("/gastos/resumen", token)
       .then(setGastoResumen)
+      .catch(() => {});
+    api
+      .get<IngresoResumen>("/ingresos/resumen", token)
+      .then(setIngresoResumen)
       .catch(() => {});
     api
       .get<Expediente[]>("/expedientes", token, { estado: "activo" })
@@ -176,7 +181,7 @@ export default function DashboardPage() {
         </span>
       </div>
 
-      {/* Stats grid */}
+      {/* Stats grid — operativos */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Expedientes activos" value={totalExpedientes ?? "—"} loading={totalExpedientes === null} />
         <StatCard label="Clientes activos" value={totalClientes ?? "—"} loading={totalClientes === null} />
@@ -189,6 +194,48 @@ export default function DashboardPage() {
           loading={loading}
         />
       </div>
+
+      {/* KPIs contables del mes */}
+      {(() => {
+        const hoy = new Date();
+        const mesLabel = hoy.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+        const ingARS = ingresoResumen?.total_ars ?? 0;
+        const egARS = gastoResumen?.total_ars ?? 0;
+        const resultadoARS = ingARS - egARS;
+        const loadingContable = ingresoResumen === null || gastoResumen === null;
+        return (
+          <div>
+            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-2 capitalize">Contable — {mesLabel}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+                <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-2">Ingresos ARS</p>
+                <p className="text-2xl font-bold text-green-700">
+                  {loadingContable ? <span className="inline-block w-24 h-7 bg-ink-100 rounded animate-pulse" /> : `$ ${Number(ingARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+                <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-2">Egresos ARS</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {loadingContable ? <span className="inline-block w-24 h-7 bg-ink-100 rounded animate-pulse" /> : `$ ${Number(egARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+                </p>
+              </div>
+              <div className={`bg-white rounded-2xl border shadow-sm p-5 ${!loadingContable && resultadoARS >= 0 ? "border-green-100" : "border-red-100"}`}>
+                <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-2">Resultado ARS</p>
+                <p className={`text-2xl font-bold ${loadingContable ? "text-ink-900" : resultadoARS >= 0 ? "text-green-700" : "text-red-600"}`}>
+                  {loadingContable ? <span className="inline-block w-24 h-7 bg-ink-100 rounded animate-pulse" /> : `${resultadoARS >= 0 ? "+" : ""}$ ${Number(resultadoARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+                <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-2">Hon. pendiente</p>
+                <p className="text-2xl font-bold text-ink-900">
+                  {honorarios === null ? <span className="inline-block w-24 h-7 bg-ink-100 rounded animate-pulse" /> : `$ ${Number(honorarios.saldo_pendiente_ars).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+                </p>
+                {honorarios && <p className="text-xs text-ink-400 mt-1">{honorarios.expedientes_con_deuda} exp. con deuda</p>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Main two-column layout */}
       <div className="flex flex-col lg:flex-row gap-6">

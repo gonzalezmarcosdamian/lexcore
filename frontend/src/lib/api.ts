@@ -215,6 +215,30 @@ export interface GastoResumen {
   cantidad: number;
 }
 
+export type IngresoCategoria = "honorarios_cobrados" | "reintegros" | "consultas" | "otros";
+
+export interface Ingreso {
+  id: string;
+  tenant_id: string;
+  descripcion: string;
+  categoria: IngresoCategoria;
+  monto: number;
+  moneda: Moneda;
+  fecha: string;
+  mes: number;
+  anio: number;
+  expediente_id?: string;
+  notas?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IngresoResumen {
+  total_ars: number;
+  total_usd: number;
+  cantidad: number;
+}
+
 export interface Invitacion {
   id: string;
   tenant_id: string;

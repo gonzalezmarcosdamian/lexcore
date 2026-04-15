@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos
+from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
 
 app = FastAPI(
@@ -30,6 +30,7 @@ app.include_router(ical.router)
 app.include_router(documentos.router)
 app.include_router(users.router)
 app.include_router(gastos.router)
+app.include_router(ingresos.router)
 app.include_router(google_calendar_router)
 app.include_router(calendar_sync_router)
 

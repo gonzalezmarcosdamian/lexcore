@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Moneda } from "@/lib/api";
+import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
 
@@ -102,11 +102,34 @@ export default function ContablePage() {
   // Data
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [plantillas, setPlantillas] = useState<GastoPlantilla[]>([]);
+  const [ingresos, setIngresos] = useState<Ingreso[]>([]);
+  const [loadingIngresos, setLoadingIngresos] = useState(false);
+  const [ingresosFetched, setIngresosFetched] = useState(false);
   const [loadingGastos, setLoadingGastos] = useState(true);
   const [loadingPlantillas, setLoadingPlantillas] = useState(true);
 
+  // Ingresos form
+  const EMPTY_INGRESO_FORM = { descripcion: "", categoria: "otros" as IngresoCategoria, monto: "", moneda: "ARS" as Moneda, fecha: today, notas: "" };
+  const [ingresoForm, setIngresoForm] = useState(EMPTY_INGRESO_FORM);
+  const [showIngresoForm, setShowIngresoForm] = useState(false);
+  const [editingIngresoId, setEditingIngresoId] = useState<string | null>(null);
+
+  const CATEGORIAS_INGRESO: { value: IngresoCategoria; label: string }[] = [
+    { value: "honorarios_cobrados", label: "Honorarios cobrados" },
+    { value: "reintegros", label: "Reintegros" },
+    { value: "consultas", label: "Consultas" },
+    { value: "otros", label: "Otros" },
+  ];
+
+  const INGRESO_COLORS: Record<IngresoCategoria, string> = {
+    honorarios_cobrados: "bg-green-100 text-green-700",
+    reintegros: "bg-teal-100 text-teal-700",
+    consultas: "bg-blue-100 text-blue-700",
+    otros: "bg-ink-100 text-ink-600",
+  };
+
   // UI state
-  const [tab, setTab] = useState<"periodo" | "plantillas">("periodo");
+  const [tab, setTab] = useState<"periodo" | "ingresos" | "plantillas">("periodo");
   const [showGastoForm, setShowGastoForm] = useState(false);
   const [showPlantillaForm, setShowPlantillaForm] = useState(false);
   const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
@@ -173,6 +196,19 @@ export default function ContablePage() {
   useEffect(() => { fetchGastos(); }, [fetchGastos]);
   useEffect(() => { fetchPlantillas(); }, [fetchPlantillas]);
 
+  const fetchIngresos = useCallback(() => {
+    if (!token) return;
+    setLoadingIngresos(true);
+    api.get<Ingreso[]>("/ingresos", token, { mes, anio })
+      .then(setIngresos)
+      .catch(() => {})
+      .finally(() => { setLoadingIngresos(false); setIngresosFetched(true); });
+  }, [token, mes, anio]);
+
+  useEffect(() => {
+    if (tab === "ingresos") fetchIngresos();
+  }, [tab, fetchIngresos]);
+
   // Derived
   const recurrentes = gastos.filter((g) => g.plantilla_id);
   const puntuales = gastos.filter((g) => !g.plantilla_id);
@@ -180,6 +216,43 @@ export default function ContablePage() {
 
   const confirmadosARS = gastos.filter((g) => g.estado === "confirmado" && g.moneda === "ARS").reduce((s, g) => s + Number(g.monto), 0);
   const confirmadosUSD = gastos.filter((g) => g.estado === "confirmado" && g.moneda === "USD").reduce((s, g) => s + Number(g.monto), 0);
+
+  // ── Totales ingresos ──
+  const ingresosARS = ingresos.filter((i) => i.moneda === "ARS").reduce((s, i) => s + Number(i.monto), 0);
+  const ingresosUSD = ingresos.filter((i) => i.moneda === "USD").reduce((s, i) => s + Number(i.monto), 0);
+
+  const handleIngresoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSaving(true);
+    setError("");
+    try {
+      const payload = { ...ingresoForm, monto: ingresoForm.monto, notas: ingresoForm.notas || undefined };
+      if (editingIngresoId) {
+        const updated = await api.patch<Ingreso>(`/ingresos/${editingIngresoId}`, payload, token);
+        setIngresos((prev) => prev.map((i) => (i.id === editingIngresoId ? updated : i)));
+      } else {
+        const created = await api.post<Ingreso>("/ingresos", payload, token);
+        setIngresos((prev) => [created, ...prev]);
+      }
+      setShowIngresoForm(false);
+      setEditingIngresoId(null);
+      setIngresoForm(EMPTY_INGRESO_FORM);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteIngreso = async (id: string) => {
+    if (!token) return;
+    setDeletingId(id);
+    try {
+      await api.delete(`/ingresos/${id}`, token);
+      setIngresos((prev) => prev.filter((i) => i.id !== id));
+    } catch { } finally { setDeletingId(null); }
+  };
 
   // ── Gastos puntual form ──
 
@@ -367,7 +440,7 @@ export default function ContablePage() {
           onClick={() => setTab("periodo")}
           className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "periodo" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
         >
-          Período
+          Egresos
           {pendientesCount > 0 && (
             <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-red-500 text-white rounded-full">
               {pendientesCount}
@@ -375,10 +448,16 @@ export default function ContablePage() {
           )}
         </button>
         <button
+          onClick={() => setTab("ingresos")}
+          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "ingresos" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+        >
+          Ingresos
+        </button>
+        <button
           onClick={() => setTab("plantillas")}
           className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "plantillas" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
         >
-          Plantillas recurrentes
+          Recurrentes
           <span className="ml-1.5 text-xs text-ink-400">({plantillas.length})</span>
         </button>
       </div>
@@ -633,6 +712,131 @@ export default function ContablePage() {
               )}
             </div>
           </section>
+        </div>
+      )}
+
+      {/* ══ TAB: INGRESOS ══ */}
+      {tab === "ingresos" && (
+        <div className="space-y-5">
+
+          {/* Nav de mes (reutiliza el mismo mes/anio que egresos) */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button onClick={goPrev} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <span className="text-base font-semibold text-ink-900 capitalize min-w-[160px] text-center">{periodoLabel(mes, anio)}</span>
+              <button onClick={goNext} disabled={isCurrentMonth} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition disabled:opacity-30">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              </button>
+              {!isCurrentMonth && <button onClick={() => { setMes(hoy.getMonth() + 1); setAnio(hoy.getFullYear()); }} className="text-xs text-brand-600 hover:text-brand-700 font-medium">Hoy</button>}
+            </div>
+            <button
+              onClick={() => { setShowIngresoForm(true); setEditingIngresoId(null); setIngresoForm({ ...EMPTY_INGRESO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              Registrar ingreso
+            </button>
+          </div>
+
+          {/* Totales */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
+              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total ARS</p>
+              <p className="text-xl font-bold text-green-700">{loadingIngresos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `$ ${ingresosARS.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
+              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total USD</p>
+              <p className="text-xl font-bold text-green-700">{loadingIngresos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `U$D ${ingresosUSD.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
+              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Registros</p>
+              <p className="text-xl font-bold text-ink-900">{loadingIngresos ? <span className="inline-block w-10 h-6 bg-ink-100 rounded animate-pulse" /> : ingresos.length}</p>
+            </div>
+          </div>
+
+          {/* Formulario */}
+          {showIngresoForm && (
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-6 max-w-2xl">
+              <h2 className="text-base font-semibold text-ink-900 mb-4">{editingIngresoId ? "Editar ingreso" : "Registrar ingreso"}</h2>
+              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
+              <form onSubmit={handleIngresoSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
+                    <input required value={ingresoForm.descripcion} onChange={(e) => setIngresoForm({ ...ingresoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Pago honorarios García" />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
+                    <select required value={ingresoForm.categoria} onChange={(e) => setIngresoForm({ ...ingresoForm, categoria: e.target.value as IngresoCategoria })} className={inputClass}>
+                      {CATEGORIAS_INGRESO.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
+                    <input required type="date" value={ingresoForm.fecha} onChange={(e) => setIngresoForm({ ...ingresoForm, fecha: e.target.value })} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
+                    <input required type="number" step="0.01" min="0" value={ingresoForm.monto} onChange={(e) => setIngresoForm({ ...ingresoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Moneda</label>
+                    <select value={ingresoForm.moneda} onChange={(e) => setIngresoForm({ ...ingresoForm, moneda: e.target.value as Moneda })} className={inputClass}>
+                      <option value="ARS">ARS — Peso</option>
+                      <option value="USD">USD — Dólar</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Notas</label>
+                    <input value={ingresoForm.notas} onChange={(e) => setIngresoForm({ ...ingresoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                  <button type="submit" disabled={saving} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingIngresoId ? "Guardar" : "Registrar"}</button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Lista */}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+            {loadingIngresos ? (
+              <div className="divide-y divide-ink-50">{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
+            ) : ingresos.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-sm text-ink-400">Sin ingresos registrados en este período</p>
+                <button onClick={() => { setShowIngresoForm(true); setError(""); }} className="mt-2 text-sm text-green-600 hover:text-green-700 font-medium">Registrar el primero →</button>
+              </div>
+            ) : (
+              <div className="divide-y divide-ink-50">
+                {sortGastos(ingresos as unknown as Gasto[]).map((raw) => {
+                  const i = raw as unknown as Ingreso;
+                  const catLabel = CATEGORIAS_INGRESO.find((c) => c.value === i.categoria)?.label ?? i.categoria;
+                  return (
+                    <div key={i.id} className="flex items-center gap-3 px-5 py-3.5">
+                      <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{catLabel}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-ink-900 font-medium truncate">{i.descripcion}</p>
+                        <p className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</p>
+                      </div>
+                      <span className="text-sm font-semibold text-green-700 flex-shrink-0">{formatMoney(Number(i.monto), i.moneda)}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+                          {deletingId === i.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
