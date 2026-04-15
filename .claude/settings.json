@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = data.get('tool_input', {}).get('file_path') or data.get('tool_response', {}).get('filePath', '')\nif any(x in fp for x in ['backend/app', 'frontend/src']):\n    print(json.dumps({'systemMessage': 'RECORDATORIO LexCore: Actualizaste docs/producto/PRODUCTO.md? Si implementaste o modificaste una feature, es OBLIGATORIO.'}))\n\"",
+            "statusMessage": "Verificando trazabilidad de producto..."
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\ncmd = data.get('tool_input', {}).get('command', '')\nif 'git commit' not in cmd:\n    sys.exit(0)\ntry:\n    with open('docs/producto/PRODUCTO.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    m = re.search(r'\\*\\*Versi.n:\\*\\*\\s*(\\S+)', content)\n    version = m.group(1) if m else 'desconocida'\n    print(json.dumps({'systemMessage': f'VERSION ACTUAL: v{version} — Si este commit sube la version, recordá hacer: git tag v{version} && git push --tags'}))\nexcept:\n    pass\n\"",
+            "statusMessage": "Revisando versión..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"\nimport json, re, subprocess, os\nmsg_lines = ['--- CIERRE DE SESION LexCore ---', 'Antes de terminar, confirma:', '[ ] PRODUCTO.md actualizado con features completadas', '[ ] Daily creado en docs/sprints/sprint-XX/daily/YYYY-MM-DD.md', '[ ] Historias completadas -> estado done en BACKLOG.md']\ntry:\n    with open('docs/producto/PRODUCTO.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    m = re.search(r'\\*\\*Versi.n:\\*\\*\\s*(\\S+)', content)\n    version = m.group(1) if m else '?'\n    try:\n        tags = subprocess.check_output(['git', 'tag'], text=True).strip().split()\n        tag = f'v{version}'\n        if tag not in tags:\n            msg_lines.append(f'[ ] git tag {tag} && git push --tags  (version {version} sin tag)')\n        else:\n            msg_lines.append(f'[x] Tag {tag} ya existe')\n    except:\n        msg_lines.append(f'[ ] Crear tag v{version} cuando commitees')\nexcept:\n    pass\nprint(json.dumps({'systemMessage': chr(10).join(msg_lines)}))\n\"",
+            "statusMessage": "Checklist de cierre..."
+          }
+        ]
+      }
+    ]
+  }
+}
