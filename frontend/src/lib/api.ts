@@ -75,6 +75,7 @@ export interface AbogadoEnExpediente {
   id: string;
   user_id: string;
   rol: RolEnExpediente;
+  full_name?: string;
 }
 
 export interface Expediente {

@@ -9,6 +9,7 @@ class AbogadoEnExpedienteOut(BaseModel):
     id: str
     user_id: str
     rol: RolEnExpediente
+    full_name: Optional[str] = None   # enriquecido en el router
 
     model_config = {"from_attributes": True}
 

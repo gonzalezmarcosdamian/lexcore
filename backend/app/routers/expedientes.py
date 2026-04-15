@@ -5,14 +5,30 @@ from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import (
     Expediente, ExpedienteAbogado, Movimiento, RolEnExpediente
 )
+from app.models.user import User
 from app.models.base import utcnow
 from app.schemas.expediente import (
+    AbogadoEnExpedienteOut,
     AsignarAbogadoRequest,
     ExpedienteCreate, ExpedienteOut, ExpedienteUpdate,
     MovimientoCreate, MovimientoOut,
 )
 
 router = APIRouter(prefix="/expedientes", tags=["expedientes"])
+
+
+def _enriquecer_abogados(db, exp: Expediente) -> ExpedienteOut:
+    """Construye ExpedienteOut enriqueciendo cada abogado con full_name."""
+    out = ExpedienteOut.model_validate(exp)
+    for i, a in enumerate(exp.abogados):
+        user = db.query(User).filter(User.id == a.user_id).first()
+        out.abogados[i] = AbogadoEnExpedienteOut(
+            id=a.id,
+            user_id=a.user_id,
+            rol=a.rol,
+            full_name=user.full_name if user else None,
+        )
+    return out
 
 
 def _get_expediente(db, expediente_id: str, tenant_id: str) -> Expediente:
@@ -47,7 +63,8 @@ def listar_expedientes(
         query = query.filter(Expediente.estado == estado)
     if cliente_id:
         query = query.filter(Expediente.cliente_id == cliente_id)
-    return query.order_by(Expediente.created_at.desc()).all()
+    exps = query.order_by(Expediente.created_at.desc()).all()
+    return [_enriquecer_abogados(db, e) for e in exps]
 
 
 @router.post("", response_model=ExpedienteOut, status_code=status.HTTP_201_CREATED)
@@ -81,7 +98,7 @@ def crear_expediente(
 
     db.commit()
     db.refresh(expediente)
-    return expediente
+    return _enriquecer_abogados(db, expediente)
 
 
 @router.get("/{expediente_id}", response_model=ExpedienteOut)
@@ -90,7 +107,8 @@ def obtener_expediente(
     db: DbSession,
     current_user: CurrentUser,
 ):
-    return _get_expediente(db, expediente_id, current_user["studio_id"])
+    exp = _get_expediente(db, expediente_id, current_user["studio_id"])
+    return _enriquecer_abogados(db, exp)
 
 
 @router.patch("/{expediente_id}", response_model=ExpedienteOut)
@@ -106,7 +124,7 @@ def actualizar_expediente(
     exp.updated_at = utcnow()
     db.commit()
     db.refresh(exp)
-    return exp
+    return _enriquecer_abogados(db, exp)
 
 
 # ── Movimientos ──────────────────────────────────────────────────────────────
