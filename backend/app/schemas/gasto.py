@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models.gasto import GastoCategoria
+from app.models.gasto import GastoCategoria, GastoEstado
 from app.models.honorario import Moneda
 
 
@@ -12,9 +12,8 @@ class GastoCreate(BaseModel):
     categoria: GastoCategoria
     monto: Decimal
     moneda: Moneda = Moneda.ARS
-    fecha: str  # ISO date
+    fecha: str  # ISO date YYYY-MM-DD
     expediente_id: Optional[str] = None
-    recurrente: bool = False
     notas: Optional[str] = None
 
 
@@ -25,7 +24,6 @@ class GastoUpdate(BaseModel):
     moneda: Optional[Moneda] = None
     fecha: Optional[str] = None
     expediente_id: Optional[str] = None
-    recurrente: Optional[bool] = None
     notas: Optional[str] = None
 
 
@@ -36,8 +34,11 @@ class GastoOut(BaseModel):
     monto: Decimal
     moneda: Moneda
     fecha: str
+    mes: int
+    anio: int
+    estado: GastoEstado
     expediente_id: Optional[str] = None
-    recurrente: bool
+    plantilla_id: Optional[str] = None
     notas: Optional[str] = None
     tenant_id: str
 

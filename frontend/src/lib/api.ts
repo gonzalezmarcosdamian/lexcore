@@ -177,6 +177,7 @@ export interface Documento {
 }
 
 export type GastoCategoria = "alquiler" | "sueldos" | "servicios" | "costos_judiciales" | "honorarios_terceros" | "otros";
+export type GastoEstado = "pendiente" | "confirmado";
 
 export interface Gasto {
   id: string;
@@ -186,11 +187,25 @@ export interface Gasto {
   monto: number;
   moneda: Moneda;
   fecha: string;
+  mes: number;
+  anio: number;
+  estado: GastoEstado;
   expediente_id?: string;
-  recurrente: boolean;
+  plantilla_id?: string;
   notas?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface GastoPlantilla {
+  id: string;
+  descripcion: string;
+  categoria: GastoCategoria;
+  monto_esperado: number;
+  moneda: Moneda;
+  dia_del_mes: number;
+  activa: boolean;
+  notas?: string;
 }
 
 export interface GastoResumen {
