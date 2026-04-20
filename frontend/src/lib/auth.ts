@@ -121,7 +121,8 @@ export const authOptions: NextAuthOptions = {
 
   logger: {
     error(code, metadata) {
-      console.error("[NextAuth Error]", code, JSON.stringify(metadata));
+      const msg = metadata instanceof Error ? metadata.message : String(metadata);
+      console.error("[NextAuth Error]", code, msg);
     },
     warn(code) {
       console.warn("[NextAuth Warn]", code);
