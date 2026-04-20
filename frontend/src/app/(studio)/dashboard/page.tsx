@@ -2,7 +2,8 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente } from "@/lib/api";
+import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea } from "@/lib/api";
+import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
@@ -73,6 +74,8 @@ export default function DashboardPage() {
   const [totalExpedientes, setTotalExpedientes] = useState<number | null>(null);
   const [totalClientes, setTotalClientes] = useState<number | null>(null);
   const [expStats, setExpStats] = useState<{ activo: number; archivado: number; cerrado: number } | null>(null);
+  const [tareasHoy, setTareasHoy] = useState<Tarea[]>([]);
+  const [markingTarea, setMarkingTarea] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -115,6 +118,28 @@ export default function DashboardPage() {
       .catch(() => setTotalClientes(0));
   }, [token]);
 
+  useEffect(() => {
+    if (!token) return;
+    const todayStr = new Date().toISOString().split("T")[0];
+    api.get<Tarea[]>("/tareas", token)
+      .then((t) => setTareasHoy(t.filter((x) => x.estado !== "hecha" && x.fecha_limite && x.fecha_limite <= todayStr)))
+      .catch(() => {});
+  }, [token]);
+
+  const vencimientosHoy = proximos.filter((v) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    return v.fecha === todayStr;
+  });
+
+  async function handleTareaHecha(id: string) {
+    if (!token) return;
+    setMarkingTarea(id);
+    try {
+      await api.patch<Tarea>(`/tareas/${id}`, { estado: "hecha" }, token);
+      setTareasHoy((prev) => prev.filter((t) => t.id !== id));
+    } catch {} finally { setMarkingTarea(null); }
+  }
+
   const urgentes = proximos.filter((v) => isUrgente(v.fecha));
 
   async function handleCumplido(id: string) {
@@ -156,6 +181,48 @@ export default function DashboardPage() {
           tip="El dashboard se actualiza cada vez que ingresás. Para ver el historial completo, navegá a Vencimientos o Expedientes."
         />
       </div>
+
+      {/* ── Bloque "Hoy" — siempre visible si hay items ── */}
+      {(vencimientosHoy.length > 0 || tareasHoy.length > 0) && (
+        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-ink-50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+              <span className="text-sm font-semibold text-ink-900">Para hoy</span>
+              <span className="text-xs text-ink-400 bg-ink-100 rounded-full px-2 py-0.5">
+                {vencimientosHoy.length + tareasHoy.length}
+              </span>
+            </div>
+            <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+          </div>
+          <div className="divide-y divide-ink-50">
+            {vencimientosHoy.map((v) => (
+              <div key={v.id} className="flex items-center gap-3 px-5 py-3">
+                <button
+                  onClick={() => handleCumplido(v.id)}
+                  disabled={marking === v.id}
+                  className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-50 transition disabled:opacity-50"
+                />
+                <span className="flex-shrink-0 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">Vencimiento</span>
+                <p className="flex-1 text-sm text-ink-800 font-medium truncate">{v.descripcion}</p>
+                {isUrgente(v.fecha) && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">⚡ Urgente</span>}
+              </div>
+            ))}
+            {tareasHoy.map((t) => (
+              <div key={t.id} className="flex items-center gap-3 px-5 py-3">
+                <button
+                  onClick={() => handleTareaHecha(t.id)}
+                  disabled={markingTarea === t.id}
+                  className="flex-shrink-0 w-5 h-5 rounded border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50 transition disabled:opacity-50"
+                />
+                <span className="flex-shrink-0 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 uppercase tracking-wide">Tarea</span>
+                <p className="flex-1 text-sm text-ink-800 font-medium truncate">{t.titulo}</p>
+                {t.estado === "en_curso" && <span className="text-[10px] font-semibold text-blue-500">En curso</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Empty state — sin expedientes todavía */}
       {totalExpedientes === 0 ? (
