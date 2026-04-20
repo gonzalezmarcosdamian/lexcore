@@ -89,15 +89,15 @@ export default function DashboardPage() {
     api
       .get<HonorarioResumen>("/honorarios/resumen", token)
       .then(setHonorarios)
-      .catch(() => {});
+      .catch(() => setHonorarios({ saldo_pendiente_ars: 0, saldo_pendiente_usd: 0, expedientes_con_deuda: 0, total_cobrado_ars: 0, total_cobrado_usd: 0 } as any));
     api
       .get<GastoResumen>("/gastos/resumen", token)
       .then(setGastoResumen)
-      .catch(() => {});
+      .catch(() => setGastoResumen({ total_ars: 0, total_usd: 0 } as any));
     api
       .get<IngresoResumen>("/ingresos/resumen", token)
       .then(setIngresoResumen)
-      .catch(() => {});
+      .catch(() => setIngresoResumen({ total_ars: 0, total_usd: 0 } as any));
     Promise.all([
       api.get<Expediente[]>("/expedientes", token, { estado: "activo" }),
       api.get<Expediente[]>("/expedientes", token, { estado: "archivado" }),
@@ -105,11 +105,14 @@ export default function DashboardPage() {
     ]).then(([activos, archivados, cerrados]) => {
       setTotalExpedientes(activos.length);
       setExpStats({ activo: activos.length, archivado: archivados.length, cerrado: cerrados.length });
-    }).catch(() => {});
+    }).catch(() => {
+      setTotalExpedientes(0);
+      setExpStats({ activo: 0, archivado: 0, cerrado: 0 });
+    });
     api
       .get<Cliente[]>("/clientes", token)
       .then((cls) => setTotalClientes(cls.filter((c) => !c.archivado).length))
-      .catch(() => {});
+      .catch(() => setTotalClientes(0));
   }, [token]);
 
   const urgentes = proximos.filter((v) => isUrgente(v.fecha));
