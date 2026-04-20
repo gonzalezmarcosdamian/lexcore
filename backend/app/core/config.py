@@ -28,10 +28,21 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 
-    # Google Calendar OAuth2 (separado del login)
+    # Google OAuth — login y Calendar usan el mismo app (las mismas credenciales)
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    # Alias para compatibilidad — si no están seteados, caen al GOOGLE_CLIENT_ID/SECRET
     GOOGLE_CALENDAR_CLIENT_ID: str = ""
     GOOGLE_CALENDAR_CLIENT_SECRET: str = ""
-    GOOGLE_CALENDAR_REDIRECT_URI: str = "http://localhost:3001/api/auth/google-calendar/callback"
+    GOOGLE_CALENDAR_REDIRECT_URI: str = "http://localhost:8000/auth/google-calendar/callback"
+
+    @property
+    def google_cal_client_id(self) -> str:
+        return self.GOOGLE_CALENDAR_CLIENT_ID or self.GOOGLE_CLIENT_ID
+
+    @property
+    def google_cal_client_secret(self) -> str:
+        return self.GOOGLE_CALENDAR_CLIENT_SECRET or self.GOOGLE_CLIENT_SECRET
 
     model_config = {"env_file": ".env"}
 

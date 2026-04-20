@@ -35,8 +35,8 @@ SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 def _build_flow(state: Optional[str] = None) -> Flow:
     client_config = {
         "web": {
-            "client_id": settings.GOOGLE_CALENDAR_CLIENT_ID,
-            "client_secret": settings.GOOGLE_CALENDAR_CLIENT_SECRET,
+            "client_id": settings.google_cal_client_id,
+            "client_secret": settings.google_cal_client_secret,
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
             "token_uri": "https://oauth2.googleapis.com/token",
             "redirect_uris": [settings.GOOGLE_CALENDAR_REDIRECT_URI],
@@ -54,13 +54,13 @@ def _build_flow(state: Optional[str] = None) -> Flow:
 
 def _get_credentials(user: User) -> Credentials:
     if not user.google_refresh_token:
-        raise HTTPException(status_code=400, detail="No hay Calendar conectado")
+        raise HTTPException(status_code=400, detail="No hay Calendar conectado. Cerrá sesión y volvé a entrar con Google para autorizar.")
     return Credentials(
         token=None,
         refresh_token=user.google_refresh_token,
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=settings.GOOGLE_CALENDAR_CLIENT_ID,
-        client_secret=settings.GOOGLE_CALENDAR_CLIENT_SECRET,
+        client_id=settings.google_cal_client_id,
+        client_secret=settings.google_cal_client_secret,
         scopes=SCOPES,
     )
 
@@ -68,7 +68,7 @@ def _get_credentials(user: User) -> Credentials:
 @router.get("/connect")
 def connect_google_calendar(current_user: CurrentUser):
     """Genera la URL de autorización OAuth2 para conectar Google Calendar."""
-    if not settings.GOOGLE_CALENDAR_CLIENT_ID:
+    if not settings.google_cal_client_id:
         raise HTTPException(status_code=501, detail="Google Calendar no configurado en este entorno")
 
     flow = _build_flow()
