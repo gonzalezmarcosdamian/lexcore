@@ -28,6 +28,19 @@ const ESTADO_DOT: Record<EstadoExpediente, string> = {
 type SortKey = "numero" | "caratula" | "fuero" | "estado" | "created_at";
 type SortDir = "asc" | "desc";
 
+type ColKey = "numero" | "caratula" | "fuero" | "estado" | "created_at" | "cliente" | "equipo";
+const ALL_COLS: { key: ColKey; label: string }[] = [
+  { key: "numero", label: "Número" },
+  { key: "caratula", label: "Carátula" },
+  { key: "fuero", label: "Fuero" },
+  { key: "estado", label: "Estado" },
+  { key: "created_at", label: "Alta" },
+  { key: "cliente", label: "Cliente" },
+  { key: "equipo", label: "Equipo" },
+];
+const DEFAULT_COLS: ColKey[] = ["numero", "caratula", "fuero", "estado", "created_at", "equipo"];
+const COLS_STORAGE_KEY = "lexcore_exp_cols";
+
 export default function ExpedientesPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -42,6 +55,9 @@ export default function ExpedientesPage() {
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [sortOpen, setSortOpen] = useState(false);
+  const [colsOpen, setColsOpen] = useState(false);
+  const [visibleCols, setVisibleCols] = useState<ColKey[]>(DEFAULT_COLS);
+  const colsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
@@ -70,6 +86,29 @@ export default function ExpedientesPage() {
     debounceRef.current = setTimeout(() => load(q), 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [q, load]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(COLS_STORAGE_KEY);
+    if (saved) { try { setVisibleCols(JSON.parse(saved)); } catch {} }
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (colsRef.current && !colsRef.current.contains(e.target as Node)) setColsOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const toggleCol = (key: ColKey) => {
+    setVisibleCols((prev) => {
+      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
+      // Siempre mantener al menos numero y caratula
+      const safe = next.length === 0 ? ["numero", "caratula"] as ColKey[] : next;
+      localStorage.setItem(COLS_STORAGE_KEY, JSON.stringify(safe));
+      return safe;
+    });
+  };
 
   const fueros = Array.from(new Set(expedientes.map((e) => e.fuero).filter(Boolean))) as string[];
 
@@ -234,6 +273,39 @@ export default function ExpedientesPage() {
                 />
               )}
             </div>
+            <div ref={colsRef} className="relative">
+              <button
+                onClick={() => setColsOpen((o) => !o)}
+                title="Columnas"
+                className={`flex items-center gap-1.5 border rounded-xl px-3 py-2.5 text-sm font-medium transition ${colsOpen ? "bg-brand-50 border-brand-300 text-brand-700" : "bg-white border-ink-200 text-ink-600 hover:border-ink-300"}`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                </svg>
+                <span className="hidden sm:inline">Columnas</span>
+              </button>
+              {colsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-ink-200 rounded-2xl shadow-xl z-50 p-2">
+                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider px-2 py-1.5">Mostrar columnas</p>
+                  {ALL_COLS.map((col) => (
+                    <button
+                      key={col.key}
+                      onClick={() => toggleCol(col.key)}
+                      className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-ink-50 transition text-sm text-ink-700"
+                    >
+                      <span className={`w-4 h-4 rounded flex items-center justify-center border transition ${visibleCols.includes(col.key) ? "bg-brand-600 border-brand-600" : "border-ink-300"}`}>
+                        {visibleCols.includes(col.key) && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      {col.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <Link
               href="/expedientes/nuevo"
               className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm whitespace-nowrap"
@@ -255,42 +327,36 @@ export default function ExpedientesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/60">
-                {([
-                  ["numero", "Número", "w-32"],
-                  ["caratula", "Carátula", ""],
-                  ["fuero", "Fuero", "w-32"],
-                  ["estado", "Estado", "w-28"],
-                  ["created_at", "Alta", "w-28"],
-                ] as [SortKey, string, string][]).map(([key, label, cls]) => (
-                  <th
-                    key={key}
-                    onClick={() => handleSort(key)}
-                    className={`text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wider cursor-pointer hover:text-ink-800 transition select-none ${cls}`}
-                  >
-                    <span className="inline-flex items-center">
-                      {label}
-                      <SortIcon col={key} />
-                    </span>
-                  </th>
-                ))}
-                <th className="w-24 px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wider text-right">Equipo</th>
+                {ALL_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => {
+                  const isSortable = ["numero","caratula","fuero","estado","created_at"].includes(col.key);
+                  const cls = col.key === "numero" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
+                  return (
+                    <th
+                      key={col.key}
+                      onClick={isSortable ? () => handleSort(col.key as SortKey) : undefined}
+                      className={`text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wider transition select-none ${cls} ${isSortable ? "cursor-pointer hover:text-ink-800" : ""}`}
+                    >
+                      <span className="inline-flex items-center">
+                        {col.label}
+                        {isSortable && <SortIcon col={col.key as SortKey} />}
+                      </span>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-50">
               {loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-3.5"><div className="h-4 bg-ink-100 rounded w-24" /></td>
-                    <td className="px-4 py-3.5"><div className="h-4 bg-ink-100 rounded w-4/5" /></td>
-                    <td className="px-4 py-3.5"><div className="h-4 bg-ink-100 rounded w-20" /></td>
-                    <td className="px-4 py-3.5"><div className="h-5 bg-ink-100 rounded-full w-20" /></td>
-                    <td className="px-4 py-3.5"><div className="h-4 bg-ink-100 rounded w-20" /></td>
-                    <td className="px-4 py-3.5 text-right"><div className="h-5 bg-ink-100 rounded-full w-10 ml-auto" /></td>
+                    {visibleCols.map((c) => (
+                      <td key={c} className="px-4 py-3.5"><div className="h-4 bg-ink-100 rounded w-20" /></td>
+                    ))}
                   </tr>
                 ))
               ) : sorted.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-16 text-center">
+                  <td colSpan={visibleCols.length} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-ink-50 flex items-center justify-center">
                         <svg className="w-6 h-6 text-ink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -315,40 +381,53 @@ export default function ExpedientesPage() {
                     onClick={() => router.push(`/expedientes/${e.id}`)}
                     className="hover:bg-brand-50/40 cursor-pointer transition-colors group"
                   >
-                    <td className="px-4 py-3.5">
-                      <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">
-                        {e.numero}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 max-w-0">
-                      <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
-                      {e.juzgado && (
-                        <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-sm text-ink-600">{e.fuero ?? <span className="text-ink-300">—</span>}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTADO_BADGE[e.estado]}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[e.estado]}`} />
-                        {ESTADO_LABELS[e.estado]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className="text-xs text-ink-400">
-                        {new Date(e.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "2-digit" })}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      {e.abogados.length > 0 ? (
-                        <span className="text-xs bg-ink-100 text-ink-500 px-2 py-0.5 rounded-full font-medium">
-                          {e.abogados.length}
+                    {visibleCols.includes("numero") && (
+                      <td className="px-4 py-3.5">
+                        <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>
+                      </td>
+                    )}
+                    {visibleCols.includes("caratula") && (
+                      <td className="px-4 py-3.5 max-w-0">
+                        <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
+                        {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
+                      </td>
+                    )}
+                    {visibleCols.includes("fuero") && (
+                      <td className="px-4 py-3.5">
+                        <span className="text-sm text-ink-600">{e.fuero ?? <span className="text-ink-300">—</span>}</span>
+                      </td>
+                    )}
+                    {visibleCols.includes("estado") && (
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTADO_BADGE[e.estado]}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[e.estado]}`} />
+                          {ESTADO_LABELS[e.estado]}
                         </span>
-                      ) : (
-                        <span className="text-ink-300 text-xs">—</span>
-                      )}
-                    </td>
+                      </td>
+                    )}
+                    {visibleCols.includes("created_at") && (
+                      <td className="px-4 py-3.5">
+                        <span className="text-xs text-ink-400">
+                          {new Date(e.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "2-digit" })}
+                        </span>
+                      </td>
+                    )}
+                    {visibleCols.includes("cliente") && (
+                      <td className="px-4 py-3.5">
+                        <span className="text-xs text-ink-500 truncate">
+                          {(e as Expediente & { cliente_nombre?: string }).cliente_nombre ?? <span className="text-ink-300">—</span>}
+                        </span>
+                      </td>
+                    )}
+                    {visibleCols.includes("equipo") && (
+                      <td className="px-4 py-3.5 text-right">
+                        {e.abogados.length > 0 ? (
+                          <span className="text-xs bg-ink-100 text-ink-500 px-2 py-0.5 rounded-full font-medium">{e.abogados.length}</span>
+                        ) : (
+                          <span className="text-ink-300 text-xs">—</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
