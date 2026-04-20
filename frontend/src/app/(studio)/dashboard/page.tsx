@@ -7,30 +7,9 @@ import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
+import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 
 const today = new Date().toISOString().split("T")[0];
-
-type Periodo = "hoy" | "semana" | "mes" | "anio" | "custom";
-const PERIODO_LABELS: Record<Periodo, string> = { hoy: "Hoy", semana: "Esta semana", mes: "Este mes", anio: "Este año", custom: "Personalizado" };
-
-function getDates(periodo: Periodo, customDesde?: string, customHasta?: string): { desde: string; hasta: string } {
-  if (periodo === "custom") return { desde: customDesde ?? "", hasta: customHasta ?? "" };
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const t = fmt(now);
-  if (periodo === "hoy") return { desde: t, hasta: t };
-  if (periodo === "semana") {
-    const day = now.getDay() || 7;
-    const lunes = new Date(now); lunes.setDate(now.getDate() - day + 1);
-    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
-    return { desde: fmt(lunes), hasta: fmt(domingo) };
-  }
-  if (periodo === "mes") {
-    return { desde: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), hasta: fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0)) };
-  }
-  return { desde: `${now.getFullYear()}-01-01`, hasta: `${now.getFullYear()}-12-31` };
-}
 
 function isUrgente(fecha: string) {
   const diff = new Date(fecha).getTime() - Date.now();
@@ -67,9 +46,12 @@ export default function DashboardPage() {
   const [loadingTareas, setLoadingTareas] = useState(true);
   const [marking, setMarking] = useState<string | null>(null);
   const [markingTarea, setMarkingTarea] = useState<string | null>(null);
-  const [periodo, setPeriodo] = useState<Periodo>("anio");
-  const [customDesde, setCustomDesde] = useState("");
-  const [customHasta, setCustomHasta] = useState("");
+  const now = new Date();
+  const [periodoValue, setPeriodoValue] = useState<PeriodoValue>({
+    periodo: "anio",
+    desde: `${now.getFullYear()}-01-01`,
+    hasta: `${now.getFullYear()}-12-31`,
+  });
   const [honorarios, setHonorarios] = useState<HonorarioResumen | null>(null);
   const [gastoResumen, setGastoResumen] = useState<GastoResumen | null>(null);
   const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
@@ -128,7 +110,7 @@ export default function DashboardPage() {
     } catch {} finally { setMarkingTarea(null); }
   }
 
-  const { desde: pDesde, hasta: pHasta } = getDates(periodo, customDesde, customHasta);
+  const { desde: pDesde, hasta: pHasta } = getDatesFromValue(periodoValue);
   const inRange = (f: string) => !pDesde || !pHasta ? true : f >= pDesde && f <= pHasta;
 
   const tareasFiltradas = tareas.filter((t) => !t.fecha_limite || inRange(t.fecha_limite));
@@ -169,39 +151,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Selector de período */}
-      <div className="space-y-2">
-        <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-full sm:w-fit">
-          {(["hoy", "semana", "mes", "anio", "custom"] as Periodo[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriodo(p)}
-              className={`flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg font-medium transition ${
-                periodo === p ? "bg-white shadow-sm text-ink-900" : "text-ink-500 hover:text-ink-700"
-              }`}
-            >
-              {PERIODO_LABELS[p]}
-            </button>
-          ))}
-        </div>
-        {periodo === "custom" && (
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={customDesde}
-              onChange={(e) => setCustomDesde(e.target.value)}
-              className="border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
-            />
-            <span className="text-xs text-ink-400 font-medium">hasta</span>
-            <input
-              type="date"
-              value={customHasta}
-              onChange={(e) => setCustomHasta(e.target.value)}
-              min={customDesde}
-              className="border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
-            />
-          </div>
-        )}
-      </div>
+      <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
 
       {/* Empty state */}
       {totalExpedientes === 0 ? (
