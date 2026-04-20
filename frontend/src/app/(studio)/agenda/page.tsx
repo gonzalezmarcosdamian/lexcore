@@ -253,13 +253,12 @@ export default function AgendaPage() {
   const handleCrearTarea = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    if (!tareaForm.expediente_id) { setTareaError("Seleccioná un expediente para asociar la tarea"); return; }
     setSavingTarea(true);
     setTareaError("");
     try {
       const created = await api.post<Tarea>("/tareas", {
         titulo: tareaForm.titulo,
-        expediente_id: tareaForm.expediente_id,
+        expediente_id: tareaForm.expediente_id || undefined,
         fecha_limite: tareaForm.fecha_limite || undefined,
         descripcion: tareaForm.descripcion || undefined,
       }, token);
@@ -496,14 +495,13 @@ export default function AgendaPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
                   <select
-                    required
                     value={tareaForm.expediente_id}
-                    onChange={(e) => { setTareaForm({ ...tareaForm, expediente_id: e.target.value }); setTareaError(""); }}
-                    className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition ${!tareaForm.expediente_id && tareaError ? "border-red-300" : "border-ink-200"}`}
+                    onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })}
+                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
                   >
-                    <option value="">— Seleccioná un expediente —</option>
+                    <option value="">Sin expediente</option>
                     {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
                   </select>
                 </div>

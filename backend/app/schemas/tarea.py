@@ -1,0 +1,46 @@
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, field_validator
+
+from app.models.tarea import TareaEstado
+
+
+class TareaCreate(BaseModel):
+    expediente_id: Optional[str] = None
+    titulo: str
+    descripcion: Optional[str] = None
+    responsable_id: Optional[str] = None
+    fecha_limite: Optional[str] = None  # YYYY-MM-DD
+    estado: TareaEstado = TareaEstado.pendiente
+
+    @field_validator("titulo")
+    @classmethod
+    def titulo_no_vacio(cls, v):
+        if not v.strip():
+            raise ValueError("El título no puede estar vacío")
+        return v.strip()
+
+
+class TareaUpdate(BaseModel):
+    titulo: Optional[str] = None
+    descripcion: Optional[str] = None
+    responsable_id: Optional[str] = None
+    fecha_limite: Optional[str] = None
+    estado: Optional[TareaEstado] = None
+
+
+class TareaOut(BaseModel):
+    id: str
+    tenant_id: str
+    expediente_id: Optional[str] = None
+    titulo: str
+    descripcion: Optional[str] = None
+    responsable_id: Optional[str] = None
+    responsable_nombre: Optional[str] = None  # enriquecido en router
+    fecha_limite: Optional[str] = None
+    estado: TareaEstado
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
