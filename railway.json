@@ -6,5 +6,10 @@
   },
   "deploy": {
     "startCommand": "/app/entrypoint.sh"
-  }
+  },
+  "ignoredPaths": [
+    "frontend/**",
+    "docs/**",
+    "*.md"
+  ]
 }
