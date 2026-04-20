@@ -157,58 +157,116 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Filtros de temporalidad */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {PERIODOS.map((p) => (
-          <button
-            key={p.value}
-            onClick={() => { setPeriodo(p.value); localStorage.setItem("lexcore_dash_periodo", String(p.value)); }}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
-              periodo === p.value
-                ? "bg-brand-600 text-white shadow-sm"
-                : "bg-white border border-ink-200 text-ink-500 hover:border-ink-300 hover:text-ink-700"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-        <span className="text-xs text-ink-400 ml-1">
-          {PERIODOS.find((p) => p.value === periodo)?.sublabel}
-        </span>
-      </div>
-
-      {/* Primeros pasos — solo cuando el estudio está vacío y ya cargó */}
-      {totalExpedientes === 0 && totalClientes === 0 && (
-        <div className="bg-brand-50 border border-brand-100 rounded-2xl p-6">
-          <p className="text-sm font-semibold text-brand-700 mb-1">¡Bienvenido a tu estudio!</p>
-          <p className="text-sm text-brand-600 mb-4">Empezá cargando tus primeros datos para ver el dashboard en acción.</p>
-          <div className="flex flex-wrap gap-3">
-            <a href="/clientes/nuevo" className="inline-flex items-center gap-2 bg-white border border-brand-200 text-brand-700 text-sm font-medium px-4 py-2 rounded-xl hover:bg-brand-50 transition">
-              <span>👤</span> Agregar cliente
-            </a>
-            <a href="/expedientes/nuevo" className="inline-flex items-center gap-2 bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-brand-700 transition">
-              <span>📁</span> Crear expediente
-            </a>
-            <a href="/vencimientos/nuevo" className="inline-flex items-center gap-2 bg-white border border-brand-200 text-brand-700 text-sm font-medium px-4 py-2 rounded-xl hover:bg-brand-50 transition">
-              <span>📅</span> Cargar vencimiento
-            </a>
+      {/* Empty state — estudio nuevo sin datos */}
+      {totalExpedientes === 0 && totalClientes === 0 ? (
+        <div className="py-8">
+          <div className="max-w-xl mx-auto text-center mb-10">
+            <div className="w-16 h-16 bg-brand-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-ink-900 mb-2">Tu estudio está listo</h2>
+            <p className="text-sm text-ink-400 leading-relaxed">
+              Para ver el dashboard en acción necesitás cargar tus primeros datos.<br />
+              Seguí estos 3 pasos en orden.
+            </p>
           </div>
+
+          {/* Journey steps */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
+            {[
+              {
+                step: "1",
+                icon: "👤",
+                title: "Agregá un cliente",
+                desc: "Todo expediente necesita un cliente. Registrá su nombre, CUIT y datos de contacto.",
+                href: "/clientes/nuevo",
+                cta: "Nuevo cliente",
+                color: "brand",
+              },
+              {
+                step: "2",
+                icon: "📁",
+                title: "Creá un expediente",
+                desc: "Asociá al cliente, asigná un responsable y definí el tipo de causa.",
+                href: "/expedientes/nuevo",
+                cta: "Nuevo expediente",
+                color: "brand",
+              },
+              {
+                step: "3",
+                icon: "📅",
+                title: "Cargá un vencimiento",
+                desc: "Plazo de presentación, audiencia, pericia — lo que venza primero. LexCore te avisa.",
+                href: "/vencimientos/nuevo",
+                cta: "Nuevo vencimiento",
+                color: "brand",
+              },
+            ].map((item, i) => (
+              <div key={i} className="bg-white border border-ink-100 rounded-2xl p-5 shadow-sm flex flex-col">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                    {item.step}
+                  </span>
+                  <span className="text-xl">{item.icon}</span>
+                </div>
+                <p className="text-sm font-semibold text-ink-900 mb-1">{item.title}</p>
+                <p className="text-xs text-ink-400 leading-relaxed mb-4 flex-1">{item.desc}</p>
+                <a
+                  href={item.href}
+                  className="w-full text-center bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-all"
+                >
+                  {item.cta}
+                </a>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-xs text-ink-300">
+            También podés configurar tu equipo y perfil del estudio desde el menú lateral
+          </p>
         </div>
+      ) : (
+        <>
+          {/* Filtros de temporalidad */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {PERIODOS.map((p) => (
+              <button
+                key={p.value}
+                onClick={() => { setPeriodo(p.value); localStorage.setItem("lexcore_dash_periodo", String(p.value)); }}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  periodo === p.value
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "bg-white border border-ink-200 text-ink-500 hover:border-ink-300 hover:text-ink-700"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+            <span className="text-xs text-ink-400 ml-1">
+              {PERIODOS.find((p) => p.value === periodo)?.sublabel}
+            </span>
+          </div>
+
+          {/* Stats grid — operativos */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Expedientes activos" value={totalExpedientes ?? "—"} loading={totalExpedientes === null} />
+            <StatCard label="Clientes activos" value={totalClientes ?? "—"} loading={totalClientes === null} />
+            <StatCard label="Vencimientos pendientes" value={proximos.length} trend={PERIODOS.find((p) => p.value === periodo)?.sublabel} trendColor="text-yellow-600" loading={loading} />
+            <StatCard
+              label="Urgentes (<48hs)"
+              value={urgentes.length}
+              trend={urgentes.length > 0 ? "requieren atención" : "todo en orden"}
+              trendColor={urgentes.length > 0 ? "text-red-600" : "text-green-600"}
+              loading={loading}
+            />
+          </div>
+        </>
       )}
 
-      {/* Stats grid — operativos */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Expedientes activos" value={totalExpedientes ?? "—"} loading={totalExpedientes === null} />
-        <StatCard label="Clientes activos" value={totalClientes ?? "—"} loading={totalClientes === null} />
-        <StatCard label="Vencimientos pendientes" value={proximos.length} trend={PERIODOS.find((p) => p.value === periodo)?.sublabel} trendColor="text-yellow-600" loading={loading} />
-        <StatCard
-          label="Urgentes (<48hs)"
-          value={urgentes.length}
-          trend={urgentes.length > 0 ? "requieren atención" : "todo en orden"}
-          trendColor={urgentes.length > 0 ? "text-red-600" : "text-green-600"}
-          loading={loading}
-        />
-      </div>
+      {/* KPIs contables y resto — ocultos cuando el estudio está vacío */}
+      {(totalExpedientes === null || totalExpedientes > 0) && <>
 
       {/* KPIs contables del mes */}
       {(() => {
@@ -466,6 +524,8 @@ export default function DashboardPage() {
 
         </div>
       </div>
+
+      </>}
     </div>
   );
 }
