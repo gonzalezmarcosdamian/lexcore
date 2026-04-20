@@ -37,7 +37,7 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
     notas: "",
   });
 
-  const [pagoForm, setPagoForm] = useState<Record<string, { importe: string; moneda: Moneda; fecha: string; comprobante: string }>>({});
+  const [pagoForm, setPagoForm] = useState<Record<string, { importe: string; moneda: Moneda; fecha: string; comprobante: string; tipo: "capital" | "interes" }>>({});
 
   const load = () =>
     api.get<Honorario[]>(`/honorarios/expediente/${expedienteId}`, token)
@@ -74,13 +74,29 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
     if (!pf?.importe) return;
     setSaving(true);
     try {
+      const moneda = pf.moneda ?? "ARS";
+      const fecha = pf.fecha ?? today;
+      const importe = parseFloat(pf.importe);
+      const honorario = honorarios.find(h => h.id === honorarioId);
       await api.post(`/honorarios/${honorarioId}/pagos`, {
-        importe: parseFloat(pf.importe),
-        moneda: pf.moneda ?? "ARS",
-        fecha: pf.fecha ?? today,
+        importe,
+        moneda,
+        fecha,
         comprobante: pf.comprobante || undefined,
+        tipo: pf.tipo ?? "capital",
       }, token);
-      setPagoForm(prev => ({ ...prev, [honorarioId]: { importe: "", moneda: "ARS", fecha: today, comprobante: "" } }));
+      // Auto-crear ingreso contable (solo para pagos de capital)
+      if (honorario && (pf.tipo ?? "capital") === "capital") {
+        await api.post("/ingresos", {
+          descripcion: `Pago honorarios: ${honorario.concepto}`,
+          categoria: "honorarios_cobrados",
+          monto: importe,
+          moneda,
+          fecha,
+          expediente_id: honorario.expediente_id,
+        }, token).catch(() => {});
+      }
+      setPagoForm(prev => ({ ...prev, [honorarioId]: { importe: "", moneda: "ARS" as Moneda, fecha: today, comprobante: "", tipo: "capital" as const } }));
       load();
     } catch {}
     setSaving(false);
@@ -100,24 +116,56 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
     </div>
   );
 
-  const totalARS = honorarios.filter(h => h.moneda === "ARS").reduce((a, h) => a + h.saldo_pendiente, 0);
-  const totalUSD = honorarios.filter(h => h.moneda === "USD").reduce((a, h) => a + h.saldo_pendiente, 0);
+  // Hero aggregates
+  const acordadoARS = honorarios.filter(h => h.moneda === "ARS").reduce((a, h) => a + h.monto_acordado, 0);
+  const cobradoARS = honorarios.filter(h => h.moneda === "ARS").reduce((a, h) => a + h.total_capital, 0);
+  const interesesARS = honorarios.filter(h => h.moneda === "ARS").reduce((a, h) => a + h.total_intereses, 0);
+  const saldoARS = honorarios.filter(h => h.moneda === "ARS").reduce((a, h) => a + h.saldo_pendiente, 0);
+  const acordadoUSD = honorarios.filter(h => h.moneda === "USD").reduce((a, h) => a + h.monto_acordado, 0);
+  const cobradoUSD = honorarios.filter(h => h.moneda === "USD").reduce((a, h) => a + h.total_capital, 0);
+  const saldoUSD = honorarios.filter(h => h.moneda === "USD").reduce((a, h) => a + h.saldo_pendiente, 0);
 
   return (
     <div className="space-y-4">
-      {/* Resumen */}
+      {/* Hero summary */}
       {honorarios.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
-          {totalARS > 0 && (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-              <p className="text-xs text-amber-600 font-medium mb-1">Saldo pendiente ARS</p>
-              <p className="text-xl font-bold text-amber-800">{fmt(totalARS, "ARS")}</p>
+        <div className="bg-gradient-to-br from-ink-900 to-ink-800 rounded-2xl p-5 text-white">
+          <p className="text-xs font-semibold text-ink-300 uppercase tracking-wider mb-3">
+            Resumen de honorarios · {honorarios.length} acuerdo{honorarios.length !== 1 ? "s" : ""}
+          </p>
+          {acordadoARS > 0 && (
+            <div className="mb-3">
+              <div className="flex items-end justify-between mb-1">
+                <span className="text-xs text-ink-400">ARS acordado</span>
+                <span className="text-lg font-bold">{fmt(acordadoARS, "ARS")}</span>
+              </div>
+              {/* barra */}
+              <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
+                <div className="h-full bg-brand-400 rounded-full" style={{ width: `${acordadoARS > 0 ? Math.min(100, (cobradoARS / acordadoARS) * 100) : 0}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-ink-400 mt-1">
+                <span>Cobrado: {fmt(cobradoARS, "ARS")}{interesesARS > 0 ? ` + ${fmt(interesesARS, "ARS")} int.` : ""}</span>
+                <span className={saldoARS > 0 ? "text-amber-400 font-semibold" : "text-green-400 font-semibold"}>
+                  {saldoARS > 0 ? `Pendiente: ${fmt(saldoARS, "ARS")}` : "Saldado ✓"}
+                </span>
+              </div>
             </div>
           )}
-          {totalUSD > 0 && (
-            <div className="bg-green-50 border border-green-100 rounded-xl p-4">
-              <p className="text-xs text-green-600 font-medium mb-1">Saldo pendiente USD</p>
-              <p className="text-xl font-bold text-green-800">{fmt(totalUSD, "USD")}</p>
+          {acordadoUSD > 0 && (
+            <div>
+              <div className="flex items-end justify-between mb-1">
+                <span className="text-xs text-ink-400">USD acordado</span>
+                <span className="text-lg font-bold">{fmt(acordadoUSD, "USD")}</span>
+              </div>
+              <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
+                <div className="h-full bg-green-400 rounded-full" style={{ width: `${acordadoUSD > 0 ? Math.min(100, (cobradoUSD / acordadoUSD) * 100) : 0}%` }} />
+              </div>
+              <div className="flex justify-between text-[10px] text-ink-400 mt-1">
+                <span>Cobrado: {fmt(cobradoUSD, "USD")}</span>
+                <span className={saldoUSD > 0 ? "text-amber-400 font-semibold" : "text-green-400 font-semibold"}>
+                  {saldoUSD > 0 ? `Pendiente: ${fmt(saldoUSD, "USD")}` : "Saldado ✓"}
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -185,11 +233,10 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
       ) : (
         <div className="space-y-3">
           {honorarios.map(h => {
-            const pagado = h.total_pagado;
             const saldo = h.saldo_pendiente;
-            const pct = h.monto_acordado > 0 ? Math.min(100, (pagado / h.monto_acordado) * 100) : 0;
+            const pct = h.monto_acordado > 0 ? Math.min(100, (h.total_capital / h.monto_acordado) * 100) : 0;
             const isExpanded = expandedId === h.id;
-            const pf = pagoForm[h.id] ?? { importe: "", moneda: h.moneda, fecha: today, comprobante: "" };
+            const pf = pagoForm[h.id] ?? { importe: "", moneda: h.moneda, fecha: today, comprobante: "", tipo: "capital" as const };
 
             return (
               <div key={h.id} className="bg-white border border-ink-100 rounded-xl overflow-hidden">
@@ -208,16 +255,21 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
                       {saldo > 0 && pct > 0 && <Badge color="bg-amber-50 text-amber-700">Parcial</Badge>}
                     </div>
                     <p className="text-xs text-ink-400 mt-0.5">Acordado: {fmt(h.monto_acordado, h.moneda)} — {h.fecha_acuerdo}</p>
-                    {/* Barra de progreso */}
+                    {/* Barra de progreso capital */}
                     <div className="mt-2 h-1.5 bg-ink-100 rounded-full overflow-hidden">
                       <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
-                    <div className="flex justify-between text-[10px] text-ink-400 mt-0.5">
-                      <span>Cobrado: {fmt(pagado, h.moneda)}</span>
+                    <div className="flex justify-between text-[10px] mt-0.5">
+                      <span className="text-ink-400">Capital cobrado: {fmt(h.total_capital, h.moneda)}</span>
                       <span className={saldo > 0 ? "text-amber-600 font-semibold" : "text-green-600 font-semibold"}>
-                        Saldo: {fmt(saldo, h.moneda)}
+                        Saldo capital: {fmt(saldo, h.moneda)}
                       </span>
                     </div>
+                    {h.total_intereses > 0 && (
+                      <div className="text-[10px] text-blue-600 mt-0.5">
+                        Intereses cobrados: {fmt(h.total_intereses, h.moneda)}
+                      </div>
+                    )}
                   </div>
                   <svg className={`w-4 h-4 text-ink-300 flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -237,6 +289,9 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
                           <div key={p.id} className="flex items-center justify-between bg-ink-50 rounded-lg px-3 py-2">
                             <div>
                               <span className="text-sm font-semibold text-ink-900">{fmt(p.importe, p.moneda)}</span>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ml-2 ${p.tipo === "interes" ? "bg-blue-50 text-blue-600" : "bg-brand-50 text-brand-600"}`}>
+                                {p.tipo === "interes" ? "Interés" : "Capital"}
+                              </span>
                               <span className="text-xs text-ink-400 ml-2">{p.fecha}</span>
                               {p.comprobante && <span className="text-xs text-ink-400 ml-2">— {p.comprobante}</span>}
                             </div>
@@ -252,7 +307,35 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
 
                     {/* Form nuevo pago */}
                     <div className="space-y-2">
-                      <p className="text-xs font-semibold text-ink-600">Registrar pago</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold text-ink-600">Registrar pago</p>
+                        {saldo > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, importe: String(saldo) } }))}
+                            className="text-[10px] text-brand-600 hover:underline"
+                          >
+                            Completar saldo ({fmt(saldo, h.moneda)})
+                          </button>
+                        )}
+                      </div>
+                      {/* Tipo de pago */}
+                      <div className="flex gap-2">
+                        {(["capital", "interes"] as const).map(t => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, tipo: t } }))}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                              pf.tipo === t
+                                ? t === "capital" ? "bg-brand-50 border-brand-300 text-brand-700" : "bg-blue-50 border-blue-300 text-blue-700"
+                                : "bg-white border-ink-200 text-ink-500 hover:border-ink-300"
+                            }`}
+                          >
+                            {t === "capital" ? "Capital" : "Intereses"}
+                          </button>
+                        ))}
+                      </div>
                       <div className="flex gap-2">
                         <input
                           type="number" min="0.01" step="0.01"

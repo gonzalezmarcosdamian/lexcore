@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente } from "@/lib/api";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
 
@@ -84,6 +85,7 @@ export default function DashboardPage() {
   const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
   const [totalExpedientes, setTotalExpedientes] = useState<number | null>(null);
   const [totalClientes, setTotalClientes] = useState<number | null>(null);
+  const [expStats, setExpStats] = useState<{ activo: number; archivado: number; cerrado: number } | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -109,10 +111,14 @@ export default function DashboardPage() {
       .get<IngresoResumen>("/ingresos/resumen", token)
       .then(setIngresoResumen)
       .catch(() => {});
-    api
-      .get<Expediente[]>("/expedientes", token, { estado: "activo" })
-      .then((exps) => setTotalExpedientes(exps.length))
-      .catch(() => {});
+    Promise.all([
+      api.get<Expediente[]>("/expedientes", token, { estado: "activo" }),
+      api.get<Expediente[]>("/expedientes", token, { estado: "archivado" }),
+      api.get<Expediente[]>("/expedientes", token, { estado: "cerrado" }),
+    ]).then(([activos, archivados, cerrados]) => {
+      setTotalExpedientes(activos.length);
+      setExpStats({ activo: activos.length, archivado: archivados.length, cerrado: cerrados.length });
+    }).catch(() => {});
     api
       .get<Cliente[]>("/clientes", token)
       .then((cls) => setTotalClientes(cls.filter((c) => !c.archivado).length))
@@ -236,6 +242,62 @@ export default function DashboardPage() {
           </div>
         );
       })()}
+
+      {/* Gráfico expedientes por estado */}
+      {expStats && (
+        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">Expedientes</p>
+              <p className="text-sm font-semibold text-ink-900 mt-0.5">
+                {expStats.activo + expStats.archivado + expStats.cerrado} en total
+              </p>
+            </div>
+            <a href="/expedientes" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver todos →</a>
+          </div>
+          <div className="flex gap-6 items-end">
+            {/* Barchart */}
+            <div className="flex-1 h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  { name: "Activos", value: expStats.activo, color: "#22c55e" },
+                  { name: "Archivados", value: expStats.archivado, color: "#94a3b8" },
+                  { name: "Cerrados", value: expStats.cerrado, color: "#f87171" },
+                ]} barCategoryGap="30%">
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                  <YAxis hide allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb", boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}
+                    cursor={{ fill: "#f8fafc" }}
+                    formatter={(v: unknown) => [v as number, "expedientes"]}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {[
+                      { color: "#22c55e" },
+                      { color: "#94a3b8" },
+                      { color: "#f87171" },
+                    ].map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Leyenda lateral */}
+            <div className="flex-shrink-0 space-y-3 pb-1">
+              {[
+                { label: "Activos", value: expStats.activo, color: "bg-green-500", text: "text-green-700" },
+                { label: "Archivados", value: expStats.archivado, color: "bg-slate-400", text: "text-slate-600" },
+                { label: "Cerrados", value: expStats.cerrado, color: "bg-red-400", text: "text-red-600" },
+              ].map(({ label, value, color, text }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${color}`} />
+                  <span className="text-xs text-ink-500 w-20">{label}</span>
+                  <span className={`text-sm font-bold ${text}`}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main two-column layout */}
       <div className="flex flex-col lg:flex-row gap-6">
