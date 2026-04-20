@@ -10,3 +10,8 @@ frontend/node_modules/
 
 *.log
 .DS_Store
+
+# Build artifacts - never commit
+frontend/tsconfig.tsbuildinfo
+frontend/.env*.local
+frontend/.vercel/
