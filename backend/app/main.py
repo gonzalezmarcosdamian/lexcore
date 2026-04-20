@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos
+from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
 
 app = FastAPI(
@@ -13,7 +13,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3001",
+        "http://localhost:3000",
+        "https://lexcore-kappa.vercel.app",
+        "https://*.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,8 +36,15 @@ app.include_router(documentos.router)
 app.include_router(users.router)
 app.include_router(gastos.router)
 app.include_router(ingresos.router)
+app.include_router(tareas.router)
+if settings.ALLOW_DEV_ENDPOINTS or settings.ENVIRONMENT == "development":
+    app.include_router(dev_seed.router)
+app.include_router(resumenes.router)
+app.include_router(studios.router)
 app.include_router(google_calendar_router)
 app.include_router(calendar_sync_router)
+app.include_router(whatsapp.router)
+app.include_router(soporte.router)
 
 
 @app.get("/health")

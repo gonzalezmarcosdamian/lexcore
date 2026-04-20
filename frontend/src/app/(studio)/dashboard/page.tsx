@@ -46,19 +46,6 @@ function StatCard({
   );
 }
 
-const AVISOS = [
-  { color: "bg-red-500", label: "Audiencia mañana: García c/ HSBC", tag: "urgente" },
-  { color: "bg-yellow-400", label: "3 expedientes sin movimiento hace +30 días", tag: "atención" },
-  { color: "bg-yellow-400", label: "Invitación pendiente para asociado@estudio.com", tag: "pendiente" },
-  { color: "bg-green-500", label: "Migración completada — 28 clientes importados", tag: "ok" },
-];
-
-const ACTIVIDAD = [
-  { text: "Nuevo movimiento en EXP-2026-003", time: "hace 2hs" },
-  { text: "Vencimiento cumplido: Pericia García", time: "hace 5hs" },
-  { text: "Cliente agregado: Martínez Hnos.", time: "ayer" },
-  { text: "Expediente cerrado: EXP-2026-001", time: "hace 2 días" },
-];
 
 type Periodo = 1 | 7 | 30 | 90;
 
@@ -367,20 +354,6 @@ export default function DashboardPage() {
 
         {/* Right col */}
         <div className="lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
-          {/* Avisos */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-ink-100">
-              <h2 className="text-sm font-semibold text-ink-900">Avisos importantes</h2>
-            </div>
-            <div className="divide-y divide-ink-50">
-              {AVISOS.map((a, i) => (
-                <div key={i} className="flex items-start gap-3 px-5 py-3">
-                  <span className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${a.color}`} />
-                  <p className="text-sm text-ink-700 leading-snug">{a.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Honorarios pendientes */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
@@ -469,23 +442,6 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Actividad reciente */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-ink-100">
-              <h2 className="text-sm font-semibold text-ink-900">Actividad reciente</h2>
-            </div>
-            <div className="divide-y divide-ink-50">
-              {ACTIVIDAD.map((a, i) => (
-                <div key={i} className="flex items-start gap-3 px-5 py-3">
-                  <div className="mt-1 w-1.5 h-1.5 rounded-full bg-ink-300 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-ink-800 leading-snug">{a.text}</p>
-                    <p className="text-xs text-ink-400 mt-0.5">{a.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
