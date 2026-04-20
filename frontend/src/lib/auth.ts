@@ -21,6 +21,7 @@ export const authOptions: NextAuthOptions = {
           prompt: "consent",
         },
       },
+      checks: ["state"],
     }),
 
     CredentialsProvider({
@@ -115,6 +116,27 @@ export const authOptions: NextAuthOptions = {
       session.user.needsStudio = token.needsStudio as boolean;
       (session.user as any).authProvider = token.authProvider as string;
       return session;
+    },
+  },
+
+  cookies: {
+    state: {
+      name: "__Secure-next-auth.state",
+      options: {
+        httpOnly: true,
+        sameSite: "none" as const,
+        path: "/",
+        secure: true,
+      },
+    },
+    pkceCodeVerifier: {
+      name: "__Secure-next-auth.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "none" as const,
+        path: "/",
+        secure: true,
+      },
     },
   },
 
