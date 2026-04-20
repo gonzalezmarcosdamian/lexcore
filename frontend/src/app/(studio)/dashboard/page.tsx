@@ -151,9 +151,6 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Selector de período */}
-      <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-
       {/* Empty state */}
       {totalExpedientes === 0 ? (
         <div className="py-8">
@@ -168,11 +165,11 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
             {[
-              { step: "1", icon: "👤", title: "Agregá un cliente", desc: "Todo expediente necesita un cliente.", href: "/clientes/nuevo", cta: "Nuevo cliente" },
-              { step: "2", icon: "📁", title: "Creá un expediente", desc: "Asociá al cliente y definí la causa.", href: "/expedientes/nuevo", cta: "Nuevo expediente" },
-              { step: "3", icon: "📅", title: "Cargá un vencimiento", desc: "Plazo de presentación, audiencia, pericia.", href: "/vencimientos/nuevo", cta: "Nuevo vencimiento" },
+              { step: "1", icon: "🏛️", title: "Configurá tu estudio", desc: "Nombre, logo, email de contacto y dirección.", href: "/perfil", cta: "Ir al perfil" },
+              { step: "2", icon: "👤", title: "Agregá un cliente", desc: "Todo expediente necesita un cliente.", href: "/clientes/nuevo", cta: "Nuevo cliente" },
+              { step: "3", icon: "📁", title: "Creá un expediente", desc: "Asociá al cliente y definí la causa.", href: "/expedientes/nuevo", cta: "Nuevo expediente" },
             ].map((item, i) => {
-              const done = i === 0 && (totalClientes ?? 0) > 0;
+              const done = (i === 1 && (totalClientes ?? 0) > 0);
               return (
                 <div key={i} className={`border rounded-2xl p-5 shadow-sm flex flex-col ${done ? "bg-ink-50 border-ink-100 opacity-60" : "bg-white border-ink-100"}`}>
                   <div className="flex items-center gap-3 mb-3">
@@ -190,6 +187,9 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          {/* Selector de período */}
+          <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
+
           {/* ── Fila de stats compacta ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
