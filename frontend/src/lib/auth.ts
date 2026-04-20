@@ -18,9 +18,9 @@ export const authOptions: NextAuthOptions = {
         params: {
           scope: "openid email profile",
           access_type: "offline",
+          prompt: "consent",
         },
       },
-      checks: ["state"], // deshabilita PKCE — evita que bounce-tracking-mitigations de Chrome borre el cookie
     }),
 
     CredentialsProvider({
