@@ -7,8 +7,19 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { api, SearchResult } from "@/lib/api";
 import { SkeletonText, SkeletonAvatar } from "@/components/ui/skeletons";
 import { SearchModal } from "@/components/ui/search-modal";
+import { ToastProvider } from "@/components/ui/toast";
+import { HelpWidget } from "@/components/ui/help-widget";
 
-const NAV_SIDEBAR = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  badge?: boolean;
+  section?: string;
+  children?: { href: string; label: string }[];
+};
+
+const NAV_SIDEBAR: NavItem[] = [
   {
     href: "/dashboard",
     label: "Inicio",
@@ -18,64 +29,56 @@ const NAV_SIDEBAR = [
       </svg>
     ),
   },
-  {
-    href: "/clientes",
-    label: "Clientes",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
+  // ── Trabajo ──────────────────────────────────────────
   {
     href: "/expedientes",
     label: "Expedientes",
+    section: "Trabajo",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
       </svg>
     ),
+    children: [
+      { href: "/clientes", label: "Clientes" },
+    ],
   },
   {
-    href: "/vencimientos",
-    label: "Vencimientos",
-    badge: true, // se rellena dinámicamente con urgentes
+    href: "/agenda",
+    label: "Agenda",
+    badge: true, // badge urgentes de vencimientos
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
   },
+  // ── Finanzas ──────────────────────────────────────────
   {
     href: "/gastos",
     label: "Contable",
+    section: "Finanzas",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
   },
+  // ── Estudio ───────────────────────────────────────────
   {
     href: "/equipo",
     label: "Equipo",
+    section: "Estudio",
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
     ),
   },
-  {
-    href: "/perfil",
-    label: "Mi perfil",
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
 ];
 
-const NAV_MOBILE = NAV_SIDEBAR.slice(0, 4);
+// Mobile: Inicio, Expedientes, Agenda, Contable
+const NAV_MOBILE = [NAV_SIDEBAR[0], NAV_SIDEBAR[1], NAV_SIDEBAR[2], NAV_SIDEBAR[3]];
 
 // ── Búsqueda global ───────────────────────────────────────────────────────────
 
@@ -201,16 +204,35 @@ function SearchPanel({ token }: { token: string }) {
 // ── Layout ────────────────────────────────────────────────────────────────────
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
+  return <ToastProvider><StudioLayoutInner>{children}</StudioLayoutInner></ToastProvider>;
+}
+
+function StudioLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
   const token = session?.user?.backendToken;
   const [urgentesList, setUrgentesList] = useState<{ id: string; fecha: string; descripcion: string; tipo: string; expediente_id?: string }[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+  const [studioConfigured, setStudioConfigured] = useState<boolean | null>(null);
+
+  // Verificar si el estudio tiene perfil completo (email_contacto requerido)
+  useEffect(() => {
+    if (!token) return;
+    api.get<{ email_contacto?: string | null }>("/studios/me", token)
+      .then((s) => setStudioConfigured(!!s.email_contacto))
+      .catch(() => setStudioConfigured(true)); // en caso de error, no bloquear
+  }, [token]);
   const urgentes = urgentesList.length;
 
-  const initial = session?.user?.name?.charAt(0)?.toUpperCase() ?? "?";
+  const userName = (session?.user?.name ?? "") as string;
+  const initials = userName.split(" ").filter(Boolean).slice(0, 2).map((w: string) => w[0].toUpperCase()).join("") || "?";
+  const avatarColors = ["bg-brand-600", "bg-purple-600", "bg-teal-600", "bg-orange-500", "bg-pink-600", "bg-indigo-600"];
+  let nameHash = 0;
+  for (const c of userName) nameHash = (nameHash * 31 + c.charCodeAt(0)) & 0xffffffff;
+  const avatarColor = avatarColors[Math.abs(nameHash) % avatarColors.length];
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
   const shortcutLabel = isMac ? "⌘K" : "Ctrl+K";
 
@@ -266,36 +288,67 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-2 overflow-y-auto">
           {NAV_SIDEBAR.map((item) => {
             const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const showBadge = item.badge && urgentes > 0;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? "bg-ink-800 border-l-2 border-brand-400 text-white pl-[10px]"
-                    : "text-ink-400 hover:text-ink-100 hover:bg-ink-800/50"
-                }`}
-              >
-                {item.icon}
-                <span className="flex-1">{item.label}</span>
-                {showBadge && (
-                  <span className="flex-shrink-0 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                    {urgentes > 99 ? "99+" : urgentes}
-                  </span>
+              <div key={item.href}>
+                {/* Separador de sección */}
+                {item.section && (
+                  <p className="text-[10px] font-semibold text-ink-600 uppercase tracking-widest px-3 pt-4 pb-1">
+                    {item.section}
+                  </p>
                 )}
-              </Link>
+                <Link
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    active
+                      ? "bg-ink-800 border-l-2 border-brand-400 text-white pl-[10px]"
+                      : "text-ink-400 hover:text-ink-100 hover:bg-ink-800/50"
+                  }`}
+                >
+                  {item.icon}
+                  <span className="flex-1">{item.label}</span>
+                  {showBadge && (
+                    <span className="flex-shrink-0 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                      {urgentes > 99 ? "99+" : urgentes}
+                    </span>
+                  )}
+                </Link>
+                {/* Sub-items */}
+                {item.children && (
+                  <div className="ml-4 pl-3 border-l border-ink-800 mt-0.5 mb-0.5 space-y-0.5">
+                    {item.children.map(child => {
+                      const childActive = pathname === child.href || pathname.startsWith(child.href + "/");
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
+                            childActive
+                              ? "bg-ink-800 text-white"
+                              : "text-white/50 hover:text-white hover:bg-ink-800/50"
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {child.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
 
         {/* User section */}
         <div className="px-3 py-4 border-t border-ink-800 flex-shrink-0">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg">
+          <Link href="/perfil" className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-ink-800/50 transition-all group">
             {!session ? (
               <>
                 <SkeletonAvatar size="sm" />
@@ -303,19 +356,22 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
               </>
             ) : (
               <>
-                <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center flex-shrink-0">
-                  <span className="text-sm font-semibold text-white">{initial}</span>
+                <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
+                  <span className="text-sm font-semibold text-white">{initials}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-ink-100 truncate">{session.user?.name ?? "Usuario"}</p>
-                  <p className="text-xs text-ink-400 truncate capitalize">{session.user?.role ?? ""}</p>
+                  <p className="text-xs text-ink-400 truncate capitalize">{(session.user as { role?: string })?.role ?? ""}</p>
                 </div>
+                <svg className="w-3.5 h-3.5 text-ink-600 group-hover:text-ink-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </>
             )}
-          </div>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="mt-2 w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-ink-400 hover:text-ink-100 hover:bg-ink-800/50 transition-all"
+            className="mt-1 w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-ink-400 hover:text-ink-100 hover:bg-ink-800/50 transition-all"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -343,7 +399,12 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
             {/* Desktop: módulo actual */}
             <div className="hidden lg:block">
               <span className="text-sm text-ink-400">
-                {NAV_SIDEBAR.find((n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href)))?.label ?? "Inicio"}
+                {(() => {
+                  if (pathname.startsWith("/clientes")) return "Clientes";
+                  if (pathname.startsWith("/tareas")) return "Tareas";
+                  if (pathname.startsWith("/vencimientos")) return "Vencimientos";
+                  return NAV_SIDEBAR.find((n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href)))?.label ?? "Inicio";
+                })()}
               </span>
             </div>
 
@@ -363,7 +424,7 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
                 </button>
               )}
               {urgentes > 0 && (
-                <div ref={notifRef} className="hidden lg:block relative">
+                <div ref={notifRef} className="relative">
                   <button
                     onClick={() => setNotifOpen((v) => !v)}
                     className="flex items-center gap-1.5 bg-red-50 text-red-700 border border-red-200 rounded-full px-3 py-1 text-xs font-semibold hover:bg-red-100 transition"
@@ -371,54 +432,104 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    {urgentes} urgente{urgentes !== 1 ? "s" : ""}
+                    <span className="hidden sm:inline">{urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>
+                    <span className="sm:hidden">{urgentes}</span>
                   </button>
+
+                  {/* Desktop dropdown */}
                   {notifOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-ink-100 shadow-xl z-50 overflow-hidden">
-                      <div className="px-4 py-3 border-b border-ink-100 flex items-center justify-between">
-                        <span className="text-sm font-semibold text-ink-900">Vencimientos urgentes</span>
-                        <button onClick={() => { setUrgentesList([]); setNotifOpen(false); }} className="text-xs text-ink-400 hover:text-ink-700 transition">Marcar vistas</button>
-                      </div>
-                      <div className="divide-y divide-ink-50 max-h-72 overflow-y-auto">
-                        {urgentesList.map((v) => (
-                          <Link
-                            key={v.id}
-                            href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/vencimientos`}
-                            onClick={() => setNotifOpen(false)}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-ink-50 transition"
-                          >
-                            <span className="mt-0.5 w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
-                              <p className="text-xs text-ink-400 mt-0.5">
-                                {new Date(v.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })} · {v.tipo}
-                              </p>
-                            </div>
+                    <>
+                      {/* Overlay mobile → bottom sheet */}
+                      <div
+                        className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+                        onClick={() => setNotifOpen(false)}
+                      />
+                      {/* Bottom sheet (mobile) */}
+                      <div className="fixed inset-x-0 bottom-0 z-50 lg:hidden bg-white rounded-t-2xl shadow-2xl overflow-hidden">
+                        <div className="px-4 py-3 border-b border-ink-100 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-ink-900">Vencimientos urgentes</span>
+                          <button onClick={() => { setUrgentesList([]); setNotifOpen(false); }} className="text-xs text-ink-400 hover:text-ink-700 transition">Marcar vistas</button>
+                        </div>
+                        <div className="divide-y divide-ink-50 max-h-64 overflow-y-auto">
+                          {urgentesList.map((v) => (
+                            <Link
+                              key={v.id}
+                              href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/vencimientos`}
+                              onClick={() => setNotifOpen(false)}
+                              className="flex items-start gap-3 px-4 py-3.5 hover:bg-ink-50 transition"
+                            >
+                              <span className="mt-1 w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
+                                <p className="text-xs text-ink-400 mt-0.5">
+                                  {new Date(v.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })} · {v.tipo}
+                                </p>
+                              </div>
+                              <svg className="w-4 h-4 text-ink-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="px-4 py-3 border-t border-ink-100 pb-safe">
+                          <Link href="/vencimientos" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
+                            Ver todos los vencimientos →
                           </Link>
-                        ))}
+                        </div>
                       </div>
-                      <div className="px-4 py-2.5 border-t border-ink-100">
-                        <Link href="/vencimientos" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-                          Ver todos los vencimientos →
-                        </Link>
+                      {/* Desktop dropdown */}
+                      <div className="hidden lg:block absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-ink-100 shadow-xl z-50 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-ink-100 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-ink-900">Vencimientos urgentes</span>
+                          <button onClick={() => { setUrgentesList([]); setNotifOpen(false); }} className="text-xs text-ink-400 hover:text-ink-700 transition">Marcar vistas</button>
+                        </div>
+                        <div className="divide-y divide-ink-50 max-h-72 overflow-y-auto">
+                          {urgentesList.map((v) => (
+                            <Link
+                              key={v.id}
+                              href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/vencimientos`}
+                              onClick={() => setNotifOpen(false)}
+                              className="flex items-start gap-3 px-4 py-3 hover:bg-ink-50 transition"
+                            >
+                              <span className="mt-0.5 w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
+                                <p className="text-xs text-ink-400 mt-0.5">
+                                  {new Date(v.fecha).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })} · {v.tipo}
+                                </p>
+                              </div>
+                              <svg className="w-4 h-4 text-ink-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                              </svg>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="px-4 py-2.5 border-t border-ink-100">
+                          <Link href="/vencimientos" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
+                            Ver todos los vencimientos →
+                          </Link>
+                        </div>
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
-              <div className="hidden lg:flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center">
-                  <span className="text-xs font-semibold text-white">{initial}</span>
-                </div>
-                <span className="text-sm text-ink-600 font-medium max-w-[140px] truncate">{session?.user?.name}</span>
-              </div>
-              {/* Mobile: salir */}
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="lg:hidden text-xs text-ink-400 hover:text-ink-700 border border-ink-200 hover:border-ink-300 px-3 py-1.5 rounded-lg transition-all"
+              <Link
+                href="/perfil"
+                className="hidden lg:flex items-center gap-2 hover:bg-ink-50 rounded-xl px-2 py-1 transition group"
+                title="Mi perfil"
               >
-                Salir
-              </button>
+                <div className={`w-7 h-7 rounded-full ${avatarColor} flex items-center justify-center flex-shrink-0`}>
+                  <span className="text-xs font-semibold text-white">{initials}</span>
+                </div>
+                <span className="text-sm text-ink-600 font-medium max-w-[140px] truncate group-hover:text-ink-900 transition">{session?.user?.name}</span>
+              </Link>
+              {/* Mobile: avatar → perfil */}
+              <Link href="/perfil" className="lg:hidden">
+                <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center`}>
+                  <span className="text-xs font-semibold text-white">{initials}</span>
+                </div>
+              </Link>
             </div>
           </div>
         </header>
@@ -426,6 +537,37 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
         {/* Page content */}
         <main className="flex-1 px-4 lg:px-6 py-6">{children}</main>
       </div>
+
+      {/* Help widget — floating, siempre presente cuando hay sesión */}
+      {session && <HelpWidget token={token ?? ""} />}
+
+      {/* Mandatory studio config modal */}
+      {studioConfigured === false && !pathname.startsWith("/perfil") && (
+        <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full sm:max-w-md mx-0 sm:mx-4 bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-brand-600 px-6 py-5">
+              <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center mb-3">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-bold text-white">Configurá tu estudio</h2>
+              <p className="text-sm text-brand-100 mt-1">Antes de continuar, completá los datos básicos del estudio.</p>
+            </div>
+            <div className="px-6 py-6">
+              <p className="text-sm text-ink-600 leading-relaxed mb-6">
+                Necesitamos al menos el <strong>email de contacto</strong> del estudio para poder enviarte notificaciones y que tus clientes puedan comunicarse con vos.
+              </p>
+              <button
+                onClick={() => router.push("/perfil")}
+                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-2xl transition-all active:scale-95"
+              >
+                Completar perfil del estudio →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile bottom tab bar */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-ink-100 flex z-20">
