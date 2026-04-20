@@ -203,24 +203,29 @@ export default function DashboardPage() {
                 cta: "Nuevo vencimiento",
                 color: "brand",
               },
-            ].map((item, i) => (
-              <div key={i} className="bg-white border border-ink-100 rounded-2xl p-5 shadow-sm flex flex-col">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                    {item.step}
-                  </span>
-                  <span className="text-xl">{item.icon}</span>
+            ].map((item, i) => {
+              const done = (i === 0 && (totalClientes ?? 0) > 0);
+              return (
+                <div key={i} className={`border rounded-2xl p-5 shadow-sm flex flex-col transition-all ${done ? "bg-ink-50 border-ink-100 opacity-60" : "bg-white border-ink-100"}`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    {done ? (
+                      <span className="w-7 h-7 rounded-full bg-green-500 text-white text-xs flex items-center justify-center flex-shrink-0">✓</span>
+                    ) : (
+                      <span className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{item.step}</span>
+                    )}
+                    <span className="text-xl">{item.icon}</span>
+                    {done && <span className="ml-auto text-xs text-green-600 font-medium">Completado</span>}
+                  </div>
+                  <p className={`text-sm font-semibold mb-1 ${done ? "text-ink-400 line-through" : "text-ink-900"}`}>{item.title}</p>
+                  <p className="text-xs text-ink-400 leading-relaxed mb-4 flex-1">{item.desc}</p>
+                  {!done && (
+                    <a href={item.href} className="w-full text-center bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-all">
+                      {item.cta}
+                    </a>
+                  )}
                 </div>
-                <p className="text-sm font-semibold text-ink-900 mb-1">{item.title}</p>
-                <p className="text-xs text-ink-400 leading-relaxed mb-4 flex-1">{item.desc}</p>
-                <a
-                  href={item.href}
-                  className="w-full text-center bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-all"
-                >
-                  {item.cta}
-                </a>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <p className="text-center text-xs text-ink-300">
