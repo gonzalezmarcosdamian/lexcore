@@ -119,6 +119,15 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
+  logger: {
+    error(code, metadata) {
+      console.error("[NextAuth Error]", code, JSON.stringify(metadata));
+    },
+    warn(code) {
+      console.warn("[NextAuth Warn]", code);
+    },
+  },
+
   cookies: {
     state: {
       name: "__Secure-next-auth.state",
