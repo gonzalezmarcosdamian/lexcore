@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, Vencimiento, Expediente } from "@/lib/api";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
+import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 
 function inRange(fecha: string, desde: string, hasta: string): boolean {
   return fecha >= desde && fecha <= hasta;
@@ -288,6 +289,7 @@ export default function AgendaPage() {
           <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition">
             + Vencimiento
           </Link>
+          <CalendarSyncButton variant="compact" />
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
+import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -288,7 +289,10 @@ export default function DashboardPage() {
                     <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{proximosFiltrados.length}</span>
                   )}
                 </div>
-                <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                <div className="flex items-center gap-2">
+                  <CalendarSyncButton variant="compact" />
+                  <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                </div>
               </div>
 
               {loading ? (
