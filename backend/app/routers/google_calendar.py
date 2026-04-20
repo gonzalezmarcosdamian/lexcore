@@ -76,7 +76,7 @@ def connect_google_calendar(current_user: CurrentUser):
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
-        state=current_user["user_id"],  # guardamos user_id como state para recuperarlo en callback
+        state=current_user["sub"],  # guardamos user_id como state para recuperarlo en callback
     )
     return {"url": auth_url, "state": state}
 
@@ -116,7 +116,7 @@ def google_calendar_callback(
 @router.get("/calendars")
 def listar_calendarios(db: DbSession, current_user: CurrentUser):
     """Lista los calendarios disponibles del usuario conectado."""
-    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
     if not user or not user.google_refresh_token:
         raise HTTPException(status_code=400, detail="Google Calendar no conectado")
 
@@ -135,7 +135,7 @@ def listar_calendarios(db: DbSession, current_user: CurrentUser):
 @router.delete("/disconnect", status_code=204)
 def disconnect_google_calendar(db: DbSession, current_user: CurrentUser):
     """Elimina el refresh_token y el calendar_id del usuario."""
-    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     user.google_refresh_token = None
@@ -150,7 +150,7 @@ def select_calendar(
     current_user: CurrentUser,
 ):
     """Guarda el calendario elegido por el usuario."""
-    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     user.google_calendar_id = calendar_id
@@ -167,7 +167,7 @@ sync_router = APIRouter(prefix="/vencimientos", tags=["vencimientos"])
 def sync_calendar(db: DbSession, current_user: CurrentUser):
     """Pushea todos los vencimientos pendientes al Google Calendar del usuario."""
     tenant_id = current_user["studio_id"]
-    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
 
     if not user or not user.google_refresh_token or not user.google_calendar_id:
         raise HTTPException(

@@ -88,9 +88,11 @@ function PerfilPageInner() {
   const [loadingConnect, setLoadingConnect] = useState(false);
   const [calendarSaving, setCalendarSaving] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [calendarMsg, setCalendarMsg] = useState<string | null>(
     searchParams.get("calendar_connected") === "1" ? "¡Google Calendar conectado!" : null
   );
+  const [calendarError, setCalendarError] = useState<string | null>(null);
 
   // Mis datos
   const [userForm, setUserForm] = useState({ full_name: "", password: "", password2: "" });
@@ -191,10 +193,26 @@ function PerfilPageInner() {
   const handleConnectCalendar = async () => {
     if (!token) return;
     setLoadingConnect(true);
+    setCalendarError(null);
     try {
       const data = await api.get<{ url: string }>("/auth/google-calendar/connect", token);
       window.location.href = data.url;
-    } catch { } finally { setLoadingConnect(false); }
+    } catch (err: unknown) {
+      setCalendarError(err instanceof Error ? err.message : "Error al conectar Google Calendar");
+    } finally { setLoadingConnect(false); }
+  };
+
+  const handleSyncCalendar = async () => {
+    if (!token) return;
+    setSyncing(true);
+    setCalendarError(null);
+    setCalendarMsg(null);
+    try {
+      const res = await api.post<{ synced: number; errors: number; total: number }>("/vencimientos/sync-calendar", {}, token);
+      setCalendarMsg(`Sincronizados ${res.synced} vencimiento${res.synced !== 1 ? "s" : ""} correctamente${res.errors > 0 ? ` (${res.errors} con error)` : ""}`);
+    } catch (err: unknown) {
+      setCalendarError(err instanceof Error ? err.message : "Error al sincronizar");
+    } finally { setSyncing(false); }
   };
 
   const handleSaveCalendar = async () => {
@@ -569,6 +587,9 @@ function PerfilPageInner() {
         {calendarMsg && (
           <div className="mb-4 text-xs bg-blue-50 border border-blue-100 text-blue-700 px-3 py-2 rounded-lg">{calendarMsg}</div>
         )}
+        {calendarError && (
+          <div className="mb-4 text-xs bg-red-50 border border-red-100 text-red-700 px-3 py-2 rounded-lg">{calendarError}</div>
+        )}
 
         {!isCalendarConnected ? (
           <div className="flex flex-col gap-3">
@@ -619,6 +640,18 @@ function PerfilPageInner() {
                   </button>
                 </div>
               </div>
+            )}
+            {profile?.google_calendar_id && (
+              <button
+                onClick={handleSyncCalendar}
+                disabled={syncing}
+                className="self-start flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {syncing ? "Sincronizando…" : "Sincronizar vencimientos"}
+              </button>
             )}
             <button
               onClick={handleDisconnectCalendar}
