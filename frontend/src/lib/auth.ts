@@ -119,6 +119,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
 
+  // v2
   logger: {
     error(code, metadata) {
       const msg = metadata instanceof Error ? metadata.message : String(metadata);
