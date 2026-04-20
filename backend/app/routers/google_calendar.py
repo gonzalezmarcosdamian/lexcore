@@ -87,10 +87,9 @@ def google_calendar_callback(
     code: str = Query(...),
     state: str = Query(...),  # user_id pasado en el flow
     db: DbSession = None,
-    current_user: CurrentUser = None,
 ):
     """Recibe el code OAuth2, obtiene refresh_token y lo guarda en el usuario."""
-    if not settings.GOOGLE_CALENDAR_CLIENT_ID:
+    if not settings.google_cal_client_id:
         raise HTTPException(status_code=501, detail="Google Calendar no configurado")
 
     flow = _build_flow(state=state)
