@@ -157,8 +157,8 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Empty state — estudio nuevo sin datos */}
-      {totalExpedientes === 0 && totalClientes === 0 ? (
+      {/* Empty state — sin expedientes todavía */}
+      {totalExpedientes === 0 ? (
         <div className="py-8">
           <div className="max-w-xl mx-auto text-center mb-10">
             <div className="w-16 h-16 bg-brand-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
@@ -265,7 +265,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* KPIs contables y resto — ocultos cuando el estudio está vacío */}
+      {/* KPIs contables y resto — solo cuando hay expedientes */}
       {(totalExpedientes === null || totalExpedientes > 0) && <>
 
       {/* KPIs contables del mes */}
