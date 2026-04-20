@@ -33,15 +33,13 @@ export function SplashScreen() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    // DEV: siempre visible para testear — restaurar con localStorage check antes de prod
-    setVisible(true);
+    if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
   }, []);
 
   const handleStart = () => {
     setLeaving(true);
     setTimeout(() => {
-      // DEV: no guardar en localStorage para que reaparezca siempre
-      // localStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(STORAGE_KEY, "1");
       setVisible(false);
     }, 350);
   };
