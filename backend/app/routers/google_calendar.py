@@ -11,9 +11,14 @@ Endpoints:
 """
 import json
 import logging
+import os
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+
+# google-auth-oauthlib valida que los scopes coincidan exactamente,
+# pero Google devuelve scopes extra (openid, email, profile). Relajamos la check.
+os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 from fastapi.responses import RedirectResponse
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
