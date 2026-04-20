@@ -23,6 +23,7 @@ from googleapiclient.errors import HttpError
 from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import Vencimiento
+from app.models.tarea import Tarea, TareaEstado
 from app.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -158,16 +159,25 @@ def select_calendar(
     return {"calendar_id": calendar_id}
 
 
-# ── Sync endpoint (en /vencimientos) — se registra desde main.py ──────────────
+# ── Sync endpoint ─────────────────────────────────────────────────────────────
 
 sync_router = APIRouter(prefix="/vencimientos", tags=["vencimientos"])
 
 
+def _insert_event(service, calendar_id: str, event: dict) -> bool:
+    try:
+        service.events().insert(calendarId=calendar_id, body=event).execute()
+        return True
+    except HttpError:
+        return False
+
+
 @sync_router.post("/sync-calendar", status_code=200)
 def sync_calendar(db: DbSession, current_user: CurrentUser):
-    """Pushea todos los vencimientos pendientes al Google Calendar del usuario."""
+    """Pushea vencimientos pendientes y tareas pendientes al Google Calendar del usuario."""
     tenant_id = current_user["studio_id"]
-    user = db.query(User).filter(User.id == current_user["sub"]).first()
+    user_id = current_user["sub"]
+    user = db.query(User).filter(User.id == user_id).first()
 
     if not user or not user.google_refresh_token or not user.google_calendar_id:
         raise HTTPException(
@@ -175,40 +185,62 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
             detail="Necesitás conectar Google Calendar y elegir un calendario desde tu perfil"
         )
 
-    vencimientos = (
-        db.query(Vencimiento)
-        .filter(Vencimiento.tenant_id == tenant_id, Vencimiento.cumplido == False)  # noqa: E712
-        .all()
-    )
-
     try:
         creds = _get_credentials(user)
         service = build("calendar", "v3", credentials=creds)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error conectando con Google: {e}")
 
+    cal_id = user.google_calendar_id
     synced = 0
     errors = 0
-    event_map: dict = {}
 
-    try:
-        existing_ids = json.loads(user.google_refresh_token or "{}") if False else {}  # placeholder
-    except Exception:
-        existing_ids = {}
-
+    # Vencimientos pendientes
+    vencimientos = (
+        db.query(Vencimiento)
+        .filter(Vencimiento.tenant_id == tenant_id, Vencimiento.cumplido == False)  # noqa: E712
+        .all()
+    )
     for v in vencimientos:
         event = {
-            "summary": v.descripcion,
+            "summary": f"📅 {v.descripcion}",
             "description": f"Tipo: {v.tipo}\nExpediente: {v.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
             "start": {"date": v.fecha},
             "end": {"date": v.fecha},
-            "reminders": {"useDefault": False, "overrides": [{"method": "email", "minutes": 24 * 60}, {"method": "popup", "minutes": 60}]},
+            "reminders": {"useDefault": False, "overrides": [
+                {"method": "email", "minutes": 24 * 60},
+                {"method": "popup", "minutes": 60},
+            ]},
         }
-        try:
-            result = service.events().insert(calendarId=user.google_calendar_id, body=event).execute()
-            event_map[v.id] = result.get("id")
+        if _insert_event(service, cal_id, event):
             synced += 1
-        except HttpError:
+        else:
             errors += 1
 
-    return {"synced": synced, "errors": errors, "total": len(vencimientos)}
+    # Tareas pendientes con fecha límite (del usuario actual o del estudio)
+    tareas = (
+        db.query(Tarea)
+        .filter(
+            Tarea.tenant_id == tenant_id,
+            Tarea.estado != TareaEstado.hecha,
+            Tarea.fecha_limite.isnot(None),
+        )
+        .all()
+    )
+    for t in tareas:
+        event = {
+            "summary": f"✅ {t.titulo}",
+            "description": f"Tarea\nExpediente: {t.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
+            "start": {"date": t.fecha_limite},
+            "end": {"date": t.fecha_limite},
+            "reminders": {"useDefault": False, "overrides": [
+                {"method": "popup", "minutes": 60},
+            ]},
+        }
+        if _insert_event(service, cal_id, event):
+            synced += 1
+        else:
+            errors += 1
+
+    total = len(vencimientos) + len(tareas)
+    return {"synced": synced, "errors": errors, "total": total}

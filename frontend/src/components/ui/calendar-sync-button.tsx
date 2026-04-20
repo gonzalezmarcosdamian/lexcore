@@ -105,7 +105,7 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
         className="flex items-center gap-1.5 text-xs font-medium text-ink-400 hover:text-blue-600 border border-ink-200 hover:border-blue-300 px-3 py-2 rounded-xl transition disabled:opacity-50"
       >
         <CalIcon />
-        {connecting ? "…" : "Conectar Calendar"}
+        {connecting ? "…" : "Sync Calendar"}
       </button>
     );
   }
@@ -121,7 +121,7 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
           <div>
             <p className="text-xs font-semibold text-ink-800">Google Calendar</p>
             {result ? (
-              <p className="text-xs text-green-600">{result.synced} vencimiento{result.synced !== 1 ? "s" : ""} sincronizado{result.synced !== 1 ? "s" : ""}</p>
+              <p className="text-xs text-green-600">{result.synced} evento{result.synced !== 1 ? "s" : ""} sincronizado{result.synced !== 1 ? "s" : ""}</p>
             ) : error ? (
               <p className="text-xs text-red-500">
                 {error.includes("calendar_id") || error.includes("configurado") || error.includes("elegir")
