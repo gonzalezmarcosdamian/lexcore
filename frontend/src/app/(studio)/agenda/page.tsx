@@ -5,12 +5,13 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, Vencimiento, Expediente } from "@/lib/api";
 
-type Periodo = "hoy" | "semana" | "mes";
+type Periodo = "hoy" | "semana" | "mes" | "anio";
 
 const PERIODO_LABELS: Record<Periodo, string> = {
   hoy:    "Hoy",
   semana: "Esta semana",
   mes:    "Este mes",
+  anio:   "Este año",
 };
 
 function getDates(periodo: Periodo): { desde: string; hasta: string } {
@@ -28,9 +29,14 @@ function getDates(periodo: Periodo): { desde: string; hasta: string } {
     return { desde: fmt(lunes), hasta: fmt(domingo) };
   }
 
-  const inicio = new Date(now.getFullYear(), now.getMonth(), 1);
-  const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return { desde: fmt(inicio), hasta: fmt(fin) };
+  if (periodo === "mes") {
+    const inicio = new Date(now.getFullYear(), now.getMonth(), 1);
+    const fin = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { desde: fmt(inicio), hasta: fmt(fin) };
+  }
+
+  // Este año
+  return { desde: `${now.getFullYear()}-01-01`, hasta: `${now.getFullYear()}-12-31` };
 }
 
 function inRange(fecha: string, desde: string, hasta: string): boolean {
@@ -217,7 +223,7 @@ export default function AgendaPage() {
     if (!token) return;
     setLoading(true);
     Promise.all([
-      api.get<Vencimiento[]>("/vencimientos", token, { proximos: 90 }),
+      api.get<Vencimiento[]>("/vencimientos", token, { proximos: 365 }),
       api.get<Tarea[]>("/tareas", token),
     ]).then(([v, t]) => {
       setVencimientos(v);
@@ -314,7 +320,7 @@ export default function AgendaPage() {
 
       {/* Selector de período */}
       <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-fit">
-        {(["hoy", "semana", "mes"] as Periodo[]).map(p => (
+        {(["hoy", "semana", "mes", "anio"] as Periodo[]).map(p => (
           <button
             key={p}
             onClick={() => setPeriodo(p)}
@@ -349,7 +355,12 @@ export default function AgendaPage() {
       {!loading && empty && (
         <div className="text-center py-12">
           <p className="text-sm font-semibold text-ink-700 mb-1">Sin eventos en este período</p>
-          <p className="text-xs text-ink-400 mb-4">No hay vencimientos ni tareas con fecha en {PERIODO_LABELS[periodo].toLowerCase()}.</p>
+          <p className="text-xs text-ink-400 mb-4">
+            No hay vencimientos ni tareas con fecha en {PERIODO_LABELS[periodo].toLowerCase()}.
+            {periodo !== "anio" && (
+              <> <button onClick={() => setPeriodo("anio")} className="text-brand-600 hover:underline font-medium">Ver este año →</button></>
+            )}
+          </p>
           <div className="flex gap-2 justify-center">
             <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
               + Vencimiento
