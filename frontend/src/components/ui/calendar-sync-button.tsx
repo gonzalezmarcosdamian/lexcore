@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 
@@ -30,6 +31,7 @@ const SyncIcon = ({ spinning }: { spinning: boolean }) => (
 
 export function CalendarSyncButton({ variant = "compact" }: Props) {
   const { data: session } = useSession();
+  const router = useRouter();
   const token = session?.user?.backendToken;
   const isGoogleUser = (session?.user as any)?.authProvider === "google";
 
@@ -50,6 +52,10 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
       setTimeout(() => setResult(null), 5000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al sincronizar";
+      if (msg.includes("calendario") || msg.includes("calendar_id") || msg.includes("elegir") || msg.includes("perfil")) {
+        router.push("/perfil");
+        return;
+      }
       setError(msg);
       setTimeout(() => setError(null), 5000);
     } finally {
