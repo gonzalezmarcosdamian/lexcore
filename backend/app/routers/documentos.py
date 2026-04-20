@@ -1,29 +1,16 @@
-"""
-Router de documentos.
-Los binarios viven en Cloudflare R2; este router gestiona metadatos y URLs firmadas.
-
-Flujo de upload:
-  1. POST /documentos/upload-url  → presigned PUT URL + file_key
-  2. Cliente sube el archivo directamente a R2
-  3. POST /documentos             → guarda metadata en DB
-
-Flujo de descarga:
-  GET /documentos/{id}/download-url → presigned GET URL (expira 15 min)
-"""
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
 from app.core.deps import CurrentUser, DbSession
 from app.models.documento import Documento
 from app.models.expediente import Expediente
-from app.schemas.documento import (
-    DocumentoCreate, DocumentoOut, DownloadUrlResponse,
-    UploadUrlRequest, UploadUrlResponse,
-)
-from app.services.storage import StorageNotConfigured, generate_download_url, generate_upload_url, delete_object
+from app.schemas.documento import DocumentoOut, DownloadUrlResponse
+from app.services.storage import StorageNotConfigured, generate_download_url, delete_object, upload_file
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
+
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 def _get_expediente(expediente_id: str, tenant_id: str, db) -> Expediente:
@@ -36,39 +23,40 @@ def _get_expediente(expediente_id: str, tenant_id: str, db) -> Expediente:
     return exp
 
 
-@router.post("/upload-url", response_model=UploadUrlResponse)
-def get_upload_url(body: UploadUrlRequest, db: DbSession, current_user: CurrentUser):
-    """Genera una presigned URL para subir un archivo directamente a R2."""
+@router.post("/upload", response_model=DocumentoOut, status_code=status.HTTP_201_CREATED)
+async def upload_documento(
+    db: DbSession,
+    current_user: CurrentUser,
+    expediente_id: str = Form(...),
+    descripcion: str = Form(""),
+    file: UploadFile = File(...),
+):
     tenant_id = current_user["studio_id"]
-    _get_expediente(body.expediente_id, tenant_id, db)
+    _get_expediente(expediente_id, tenant_id, db)
+
+    file_bytes = await file.read()
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="El archivo supera el límite de 50 MB")
 
     try:
-        upload_url, file_key = generate_upload_url(
+        _, file_key = upload_file(
+            file_bytes=file_bytes,
             tenant_id=tenant_id,
-            expediente_id=body.expediente_id,
-            filename=body.nombre,
-            content_type=body.content_type,
+            expediente_id=expediente_id,
+            filename=file.filename or "archivo",
+            content_type=file.content_type or "application/octet-stream",
         )
     except StorageNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    return UploadUrlResponse(upload_url=upload_url, file_key=file_key)
-
-
-@router.post("", response_model=DocumentoOut, status_code=status.HTTP_201_CREATED)
-def crear_documento(body: DocumentoCreate, db: DbSession, current_user: CurrentUser):
-    """Guarda los metadatos del documento una vez completado el upload a R2."""
-    tenant_id = current_user["studio_id"]
-    _get_expediente(body.expediente_id, tenant_id, db)
-
     doc = Documento(
         tenant_id=tenant_id,
-        expediente_id=body.expediente_id,
-        nombre=body.nombre,
-        descripcion=body.descripcion,
-        file_key=body.file_key,
-        size_bytes=body.size_bytes,
-        content_type=body.content_type,
+        expediente_id=expediente_id,
+        nombre=file.filename or "archivo",
+        descripcion=descripcion,
+        file_key=file_key,
+        size_bytes=len(file_bytes),
+        content_type=file.content_type or "application/octet-stream",
         uploaded_by=current_user["sub"],
     )
     db.add(doc)
@@ -79,10 +67,8 @@ def crear_documento(body: DocumentoCreate, db: DbSession, current_user: CurrentU
 
 @router.get("", response_model=List[DocumentoOut])
 def listar_documentos(expediente_id: str, db: DbSession, current_user: CurrentUser):
-    """Lista los documentos de un expediente."""
     tenant_id = current_user["studio_id"]
     _get_expediente(expediente_id, tenant_id, db)
-
     return (
         db.query(Documento)
         .filter(
@@ -96,7 +82,6 @@ def listar_documentos(expediente_id: str, db: DbSession, current_user: CurrentUs
 
 @router.get("/{documento_id}/download-url", response_model=DownloadUrlResponse)
 def get_download_url(documento_id: str, db: DbSession, current_user: CurrentUser):
-    """Genera una presigned URL de descarga (expira en 15 minutos)."""
     tenant_id = current_user["studio_id"]
     doc = db.query(Documento).filter(
         Documento.id == documento_id,
@@ -104,18 +89,15 @@ def get_download_url(documento_id: str, db: DbSession, current_user: CurrentUser
     ).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
-
     try:
         url = generate_download_url(file_key=doc.file_key, filename=doc.nombre)
     except StorageNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
-
     return DownloadUrlResponse(download_url=url)
 
 
 @router.delete("/{documento_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_documento(documento_id: str, db: DbSession, current_user: CurrentUser):
-    """Elimina el documento de R2 y su metadata de la DB."""
     tenant_id = current_user["studio_id"]
     doc = db.query(Documento).filter(
         Documento.id == documento_id,
@@ -123,7 +105,6 @@ def eliminar_documento(documento_id: str, db: DbSession, current_user: CurrentUs
     ).first()
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
-
     delete_object(doc.file_key)
     db.delete(doc)
     db.commit()

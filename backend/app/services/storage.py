@@ -1,112 +1,65 @@
 """
-Servicio de object storage via Cloudflare R2 (API compatible con S3).
-Si las credenciales no están configuradas, las operaciones fallan con StorageNotConfigured.
+Servicio de object storage via Cloudinary.
+Archivos almacenados como "authenticated" — requieren URL firmada para acceder.
 """
 import logging
+import time
 import uuid
 
 logger = logging.getLogger(__name__)
-
-PRESIGNED_EXPIRY = 15 * 60      # 15 minutos para upload y download
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+SIGNED_URL_EXPIRY = 15 * 60  # 15 minutos
 
 
 class StorageNotConfigured(Exception):
     pass
 
 
-def _client():
-    """
-    Crea un cliente boto3.
-    - Dev local: apunta a MinIO (S3_ENDPOINT_URL configurado)
-    - Prod: apunta a Cloudflare R2
-    """
+def _configure():
     from app.core.config import settings
-
-    # MinIO local — tiene prioridad si S3_ENDPOINT_URL está definido
-    if settings.S3_ENDPOINT_URL:
-        import boto3
-        return boto3.client(
-            "s3",
-            endpoint_url=settings.S3_ENDPOINT_URL,
-            aws_access_key_id=settings.R2_ACCESS_KEY_ID or "minioadmin",
-            aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY or "minioadmin",
-            region_name="us-east-1",
-        )
-
-    # Cloudflare R2 — requiere credenciales reales
-    if not settings.R2_ACCESS_KEY_ID or not settings.R2_SECRET_ACCESS_KEY or not settings.R2_ACCOUNT_ID:
+    if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
         raise StorageNotConfigured(
-            "Storage no configurado. En dev: definí S3_ENDPOINT_URL=http://minio:9000. "
-            "En prod: definí R2_ACCOUNT_ID, R2_ACCESS_KEY_ID y R2_SECRET_ACCESS_KEY."
+            "Cloudinary no configurado. Definí CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET."
         )
-
-    import boto3
-    return boto3.client(
-        "s3",
-        endpoint_url=f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
-        aws_access_key_id=settings.R2_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.R2_SECRET_ACCESS_KEY,
-        region_name="auto",
+    import cloudinary
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True,
     )
 
 
-def _public_url(url: str) -> str:
-    """
-    Reescribe la URL interna de Docker (minio:9000) por la URL pública accesible
-    desde el browser (localhost:9000 en dev, vacío en prod = ya es pública).
-    """
-    from app.core.config import settings
-    if settings.S3_PUBLIC_URL and settings.S3_ENDPOINT_URL:
-        return url.replace(settings.S3_ENDPOINT_URL, settings.S3_PUBLIC_URL, 1)
-    return url
-
-
-def generate_upload_url(tenant_id: str, expediente_id: str, filename: str, content_type: str) -> tuple[str, str]:
-    """
-    Genera una presigned URL para subir un archivo directamente a R2/MinIO.
-    Retorna (upload_url_publica, file_key).
-    """
-    from app.core.config import settings
-    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "bin"
-    file_key = f"{tenant_id}/{expediente_id}/{uuid.uuid4()}.{ext}"
-
-    client = _client()
-    url = client.generate_presigned_url(
-        "put_object",
-        Params={
-            "Bucket": settings.R2_BUCKET_NAME,
-            "Key": file_key,
-            "ContentType": content_type,
-        },
-        ExpiresIn=PRESIGNED_EXPIRY,
+def upload_file(file_bytes: bytes, tenant_id: str, expediente_id: str, filename: str, content_type: str) -> tuple[str, str]:
+    _configure()
+    import cloudinary.uploader
+    public_id = f"lexcore/{tenant_id}/{expediente_id}/{uuid.uuid4()}"
+    result = cloudinary.uploader.upload(
+        file_bytes,
+        public_id=public_id,
+        resource_type="raw",
+        type="authenticated",
     )
-    return _public_url(url), file_key
+    return result["secure_url"], result["public_id"]
 
 
 def generate_download_url(file_key: str, filename: str) -> str:
-    """
-    Genera una presigned URL de descarga (expira 15 min).
-    """
-    from app.core.config import settings
-    client = _client()
-    url = client.generate_presigned_url(
-        "get_object",
-        Params={
-            "Bucket": settings.R2_BUCKET_NAME,
-            "Key": file_key,
-            "ResponseContentDisposition": f'attachment; filename="{filename}"',
-        },
-        ExpiresIn=PRESIGNED_EXPIRY,
+    _configure()
+    import cloudinary.utils
+    url, _ = cloudinary.utils.cloudinary_url(
+        file_key,
+        resource_type="raw",
+        type="authenticated",
+        sign_url=True,
+        expires_at=int(time.time()) + SIGNED_URL_EXPIRY,
+        attachment=filename,
     )
-    return _public_url(url)
+    return url
 
 
 def delete_object(file_key: str) -> None:
-    """Elimina un archivo de R2. No lanza excepción si el archivo no existe."""
-    from app.core.config import settings
     try:
-        client = _client()
-        client.delete_object(Bucket=settings.R2_BUCKET_NAME, Key=file_key)
+        _configure()
+        import cloudinary.uploader
+        cloudinary.uploader.destroy(file_key, resource_type="raw", type="authenticated")
     except Exception as e:
-        logger.warning(f"Error eliminando {file_key} de R2: {e}")
+        logger.warning(f"Error eliminando {file_key} de Cloudinary: {e}")
