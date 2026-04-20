@@ -98,6 +98,9 @@ export const authOptions: NextAuthOptions = {
         token.backendToken = (user as any).backendToken;
         token.needsStudio = (user as any).needsStudio;
       }
+      if (account?.provider) {
+        token.authProvider = account.provider;
+      }
       if (account?.provider === "google") {
         token.googleRefreshToken = account.refresh_token;
       }
@@ -110,6 +113,7 @@ export const authOptions: NextAuthOptions = {
       session.user.role = token.role as string;
       session.user.backendToken = token.backendToken as string;
       session.user.needsStudio = token.needsStudio as boolean;
+      (session.user as any).authProvider = token.authProvider as string;
       return session;
     },
   },
