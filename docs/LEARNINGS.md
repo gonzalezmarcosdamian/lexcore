@@ -32,6 +32,25 @@
 **Dependencia:** Requiere AUTH-004 (token OAuth de Google guardado en DB).
 **Historia:** VCT-001.
 
+## 2026-04-20 (despliegue)
+
+### Vercel buildea desde el repo de GitHub, no desde el CLI local
+**Decisión:** `vercel.json` en la raíz con `{"rootDirectory": "frontend"}` es obligatorio.
+**Razón:** Sin él, Vercel busca `pages/` o `app/` en la raíz del repo y falla con "Couldn't find any pages or app directory". El CLI local funciona porque lo corrés desde `frontend/`, pero el webhook de GitHub usa la raíz.
+**Fix aplicado:** `vercel.json` commiteado en raíz + `rootDirectory` seteado via API.
+
+### Archivos sin committear rompen el build de Vercel
+**Decisión:** Todo archivo en `frontend/src/` o `backend/app/` que sea importado por otro archivo **debe estar en git**.
+**Razón:** El CLI local tiene acceso al filesystem completo. Vercel buildea solo desde el contenido del repo en GitHub — si un import apunta a un archivo no trackeado, falla con "Module not found".
+**Regla:** Antes de cada push, verificar `git status` — si hay `??` en `frontend/src/` o `backend/app/`, commitear o confirmar que no son importados.
+**Automatización:** Hook `pre-push` instalado en `.git/hooks/pre-push` — avisa si hay untracked en esas carpetas.
+
+### Vercel no auto-deploya sin GitHub integration configurada
+**Decisión:** Los deploys se disparan via API REST de Vercel (no webhook automático ni CLI).
+**Razón:** El repo de GitHub no tenía webhooks configurados. El CLI de Vercel se colgaba en el upload por timeout de red.
+**Workaround actual:** `POST /v13/deployments` con `gitSource.type=github` + token personal.
+**Fix permanente pendiente:** Configurar Git Integration desde vercel.com/settings/git para auto-deploy en push a master.
+
 ## 2026-04-20
 
 ### Multi-tenant con usuarios compartidos entre estudios
