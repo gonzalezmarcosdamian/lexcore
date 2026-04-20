@@ -7,6 +7,41 @@ import Link from "next/link";
 import { api, Expediente, Movimiento, Vencimiento, EstadoExpediente, RolEnExpediente } from "@/lib/api";
 import { HonorariosTab } from "./honorarios-tab";
 import { DocumentosTab } from "./documentos-tab";
+import { TareasSection } from "./tareas-section";
+import { ResumenIASection } from "./resumen-ia-section";
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg className={`w-4 h-4 text-ink-400 transition-transform ${open ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
+
+function SectionCollapsible({ title, count, badge, children, defaultOpen = false, disabled = false }: {
+  title: string; count?: number; badge?: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean; disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen && !disabled);
+  return (
+    <div className={`rounded-2xl border shadow-sm overflow-hidden ${disabled ? "bg-ink-50 border-ink-100 opacity-60" : "bg-white border-ink-100"}`}>
+      <button
+        onClick={() => !disabled && setOpen(o => !o)}
+        className={`w-full flex items-center justify-between px-5 py-3.5 transition ${disabled ? "cursor-not-allowed" : "hover:bg-ink-50"}`}
+      >
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-semibold ${disabled ? "text-ink-400" : "text-ink-700"}`}>{title}</span>
+          {count !== undefined && <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-1.5 py-0.5 font-medium">{count}</span>}
+          {badge}
+        </div>
+        {!disabled && <ChevronIcon open={open} />}
+        {disabled && (
+          <span className="text-[10px] font-medium text-ink-400 bg-ink-100 px-2 py-0.5 rounded-full">Próximamente</span>
+        )}
+      </button>
+      {open && !disabled && <div className="border-t border-ink-50">{children}</div>}
+    </div>
+  );
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -36,7 +71,16 @@ const ROL_BADGE: Record<RolEnExpediente, string> = {
   supervision: "bg-purple-50 text-purple-700 border-purple-100",
 };
 
-type RightTab = "movimientos" | "vencimientos" | "honorarios" | "documentos";
+function tiempoVida(created_at: string): string {
+  const ms = Date.now() - new Date(created_at).getTime();
+  const dias = Math.floor(ms / (1000 * 60 * 60 * 24));
+  if (dias < 30) return `${dias} día${dias !== 1 ? "s" : ""}`;
+  const meses = Math.floor(dias / 30);
+  if (meses < 12) return `${meses} mes${meses !== 1 ? "es" : ""}`;
+  const anios = Math.floor(meses / 12);
+  const mesesRest = meses % 12;
+  return mesesRest > 0 ? `${anios} año${anios !== 1 ? "s" : ""} y ${mesesRest} mes${mesesRest !== 1 ? "es" : ""}` : `${anios} año${anios !== 1 ? "s" : ""}`;
+}
 
 function urgente(fecha: string): boolean {
   const diff = (new Date(fecha + "T00:00:00").getTime() - Date.now()) / (1000 * 60 * 60);
@@ -69,7 +113,6 @@ export default function ExpedienteDetailPage() {
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [rightTab, setRightTab] = useState<RightTab>("movimientos");
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -79,10 +122,6 @@ export default function ExpedienteDetailPage() {
   // Movimientos
   const [nuevoMov, setNuevoMov] = useState("");
   const [savingMov, setSavingMov] = useState(false);
-  const [movLoaded, setMovLoaded] = useState(false);
-
-  // Vencimientos
-  const [vencLoaded, setVencLoaded] = useState(false);
 
   // Equipo colapsable
   const [equipoOpen, setEquipoOpen] = useState(true);
@@ -105,23 +144,21 @@ export default function ExpedienteDetailPage() {
   }, [id, token]);
 
   const loadMovimientos = useCallback(async () => {
-    if (!token || movLoaded) return;
+    if (!token) return;
     const movs = await api.get<Movimiento[]>(`/expedientes/${id}/movimientos`, token);
     setMovimientos(movs);
-    setMovLoaded(true);
-  }, [token, id, movLoaded]);
+  }, [token, id]);
 
   const loadVencimientos = useCallback(async () => {
-    if (!token || vencLoaded) return;
+    if (!token) return;
     const vencs = await api.get<Vencimiento[]>("/vencimientos", token, { expediente_id: id });
     setVencimientos(vencs);
-    setVencLoaded(true);
-  }, [token, id, vencLoaded]);
+  }, [token, id]);
 
   useEffect(() => {
-    if (rightTab === "movimientos") loadMovimientos();
-    if (rightTab === "vencimientos") loadVencimientos();
-  }, [rightTab, loadMovimientos, loadVencimientos]);
+    loadMovimientos();
+    loadVencimientos();
+  }, [loadMovimientos, loadVencimientos]);
 
   const handleSaveInfo = async () => {
     if (!token) return;
@@ -197,13 +234,6 @@ export default function ExpedienteDetailPage() {
 
   const pendientesVenc = vencimientos.filter((v) => !v.cumplido).length;
 
-  const RIGHT_TABS: { key: RightTab; label: string; count?: number }[] = [
-    { key: "movimientos", label: "Movimientos", count: movimientos.length || undefined },
-    { key: "vencimientos", label: "Vencimientos", count: pendientesVenc || undefined },
-    { key: "honorarios", label: "Honorarios" },
-    { key: "documentos", label: "Documentos" },
-  ];
-
   return (
     <div className="space-y-4 pb-10">
 
@@ -221,6 +251,10 @@ export default function ExpedienteDetailPage() {
               <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTADO_BADGE[expediente.estado]}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[expediente.estado]}`} />
                 {ESTADO_LABELS[expediente.estado]}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs text-ink-400 bg-ink-50 border border-ink-100 px-2.5 py-1 rounded-full">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {tiempoVida(expediente.created_at)}
               </span>
             </div>
             <p className="text-base text-ink-600 mt-1">{expediente.caratula}</p>
@@ -380,35 +414,91 @@ export default function ExpedienteDetailPage() {
           </div>
         </div>
 
-        {/* ── Columna derecha: tabs de actividad ── */}
-        <div className="min-w-0">
+        {/* ── Columna derecha: secciones colapsables ── */}
+        <div className="min-w-0 space-y-3">
 
-          {/* Tabs horizontales */}
-          <div className="flex gap-0 border-b border-ink-100 mb-4 overflow-x-auto">
-            {RIGHT_TABS.map(({ key, label, count }) => (
-              <button
-                key={key}
-                onClick={() => setRightTab(key)}
-                className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
-                  rightTab === key
-                    ? "border-brand-600 text-brand-700"
-                    : "border-transparent text-ink-400 hover:text-ink-700"
-                }`}
-              >
-                {label}
-                {count !== undefined && count > 0 && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-semibold ${rightTab === key ? "bg-brand-100 text-brand-700" : "bg-ink-100 text-ink-500"}`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          {/* Resumen IA — deshabilitado hasta configurar OpenAI */}
+          <SectionCollapsible
+            title="Resumen IA"
+            badge={
+              <span className="inline-flex items-center gap-1 text-xs font-medium bg-ink-100 text-ink-400 border border-ink-200 px-1.5 py-0.5 rounded-full">
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                Beta
+              </span>
+            }
+            defaultOpen={false}
+            disabled={true}
+          >
+            {token && <ResumenIASection expedienteId={id} token={token} />}
+          </SectionCollapsible>
 
-          {/* ── Movimientos ── */}
-          {rightTab === "movimientos" && (
-            <div className="space-y-4">
-              <form onSubmit={handleAddMov} className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
+          {/* Honorarios */}
+          <SectionCollapsible title="Honorarios" defaultOpen={true}>
+            {token && (
+              <div className="p-4">
+                <HonorariosTab expedienteId={id} token={token} />
+              </div>
+            )}
+          </SectionCollapsible>
+
+          {/* Vencimientos */}
+          <SectionCollapsible
+            title="Vencimientos"
+            count={vencimientos.length}
+            badge={pendientesVenc > 0 ? <span className="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 font-medium">{pendientesVenc} pendientes</span> : undefined}
+            defaultOpen={true}
+          >
+            <div className="p-4 space-y-3">
+              <div className="flex justify-end">
+                <Link href={`/vencimientos/nuevo?expediente_id=${id}`} className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2 text-sm font-semibold transition shadow-sm">
+                  + Agregar
+                </Link>
+              </div>
+              {vencimientos.length === 0 ? (
+                <p className="text-sm text-ink-400 text-center py-4">Sin vencimientos registrados</p>
+              ) : (
+                <div className="space-y-2">
+                  {vencimientos.map((v) => {
+                    const esUrgente = urgente(v.fecha) && !v.cumplido;
+                    return (
+                      <div key={v.id} className={`bg-ink-50 rounded-xl border px-4 py-3 flex items-center gap-4 ${esUrgente ? "border-red-200 bg-red-50" : "border-ink-100"}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${esUrgente ? "bg-red-100 text-red-600" : v.cumplido ? "bg-green-100 text-green-700" : "bg-ink-100 text-ink-600"}`}>
+                              {new Date(v.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                            </span>
+                            {esUrgente && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-medium border border-red-100">Urgente</span>}
+                            {v.cumplido && <span className="text-xs text-green-600 font-medium">✓ Cumplido</span>}
+                          </div>
+                          <p className="text-sm text-ink-800">{v.descripcion}</p>
+                          <p className="text-xs text-ink-400 mt-0.5">{v.tipo}</p>
+                        </div>
+                        {!v.cumplido && (
+                          <button onClick={() => toggleVencCumplido(v.id, true)} className="border border-ink-200 text-ink-700 hover:bg-white rounded-xl px-3 py-1.5 text-xs font-medium transition flex-shrink-0">
+                            Cumplido
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </SectionCollapsible>
+
+          {/* Tareas */}
+          <SectionCollapsible title="Tareas" defaultOpen={true}>
+            {token && (
+              <div className="p-4">
+                <TareasSection expedienteId={id} token={token} />
+              </div>
+            )}
+          </SectionCollapsible>
+
+          {/* Movimientos */}
+          <SectionCollapsible title="Movimientos" count={movimientos.length} defaultOpen={false}>
+            <div className="p-4 space-y-4">
+              <form onSubmit={handleAddMov}>
                 <textarea
                   value={nuevoMov}
                   onChange={(e) => setNuevoMov(e.target.value)}
@@ -424,15 +514,13 @@ export default function ExpedienteDetailPage() {
               </form>
 
               {movimientos.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-ink-100 shadow-sm py-12 text-center">
-                  <p className="text-sm text-ink-400">Sin movimientos registrados</p>
-                </div>
+                <p className="text-sm text-ink-400 text-center py-4">Sin movimientos registrados</p>
               ) : (
                 <div className="relative pl-5">
                   <div className="absolute left-7 top-2 bottom-2 w-px bg-ink-100" />
                   <div className="space-y-3">
                     {movimientos.map((m) => (
-                      <div key={m.id} className="relative bg-white rounded-2xl border border-ink-100 shadow-sm px-5 py-4 ml-4">
+                      <div key={m.id} className="relative bg-ink-50 rounded-2xl border border-ink-100 px-5 py-4 ml-4">
                         <div className="absolute -left-6 top-4 w-2.5 h-2.5 rounded-full bg-brand-400 border-2 border-white" />
                         <p className="text-sm text-ink-800 whitespace-pre-wrap">{m.texto}</p>
                         <p className="text-xs text-ink-400 mt-2">
@@ -444,67 +532,16 @@ export default function ExpedienteDetailPage() {
                 </div>
               )}
             </div>
-          )}
+          </SectionCollapsible>
 
-          {/* ── Vencimientos ── */}
-          {rightTab === "vencimientos" && (
-            <div className="space-y-3">
-              <div className="flex justify-end">
-                <Link href={`/vencimientos/nuevo?expediente_id=${id}`} className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2 text-sm font-semibold transition shadow-sm">
-                  + Agregar vencimiento
-                </Link>
+          {/* Documentos */}
+          <SectionCollapsible title="Documentos" defaultOpen={false}>
+            {token && (
+              <div className="p-4">
+                <DocumentosTab expedienteId={id} token={token} />
               </div>
-
-              {vencimientos.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-ink-100 shadow-sm py-12 text-center">
-                  <p className="text-sm text-ink-400">Sin vencimientos registrados</p>
-                  <Link href={`/vencimientos/nuevo?expediente_id=${id}`} className="text-sm text-brand-600 hover:underline font-medium mt-2 inline-block">
-                    Agregar el primero
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {vencimientos.map((v) => {
-                    const esUrgente = urgente(v.fecha) && !v.cumplido;
-                    return (
-                      <div key={v.id} className={`bg-white rounded-2xl border shadow-sm px-4 py-3.5 flex items-center gap-4 ${esUrgente ? "border-red-200" : "border-ink-100"}`}>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${esUrgente ? "bg-red-50 text-red-600" : v.cumplido ? "bg-green-50 text-green-700" : "bg-ink-50 text-ink-600"}`}>
-                              {new Date(v.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
-                            </span>
-                            {esUrgente && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-medium">Urgente</span>}
-                            {v.cumplido && <span className="text-xs text-green-600 font-medium">✓ Cumplido</span>}
-                          </div>
-                          <p className="text-sm text-ink-800">{v.descripcion}</p>
-                          <p className="text-xs text-ink-400 mt-0.5">{v.tipo}</p>
-                        </div>
-                        {!v.cumplido && (
-                          <button onClick={() => toggleVencCumplido(v.id, true)} className="border border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl px-3 py-1.5 text-xs font-medium transition flex-shrink-0">
-                            Marcar cumplido
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Honorarios ── */}
-          {rightTab === "honorarios" && token && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
-              <HonorariosTab expedienteId={id} token={token} />
-            </div>
-          )}
-
-          {/* ── Documentos ── */}
-          {rightTab === "documentos" && token && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
-              <DocumentosTab expedienteId={id} token={token} />
-            </div>
-          )}
+            )}
+          </SectionCollapsible>
         </div>
       </div>
     </div>

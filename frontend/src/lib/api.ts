@@ -122,6 +122,7 @@ export interface PagoHonorario {
   moneda: Moneda;
   fecha: string;
   comprobante?: string;
+  tipo: "capital" | "interes";
   created_at: string;
 }
 
@@ -136,6 +137,8 @@ export interface Honorario {
   notas?: string;
   pagos: PagoHonorario[];
   total_pagado: number;
+  total_capital: number;
+  total_intereses: number;
   saldo_pendiente: number;
   created_at: string;
   updated_at: string;
@@ -237,6 +240,22 @@ export interface IngresoResumen {
   total_ars: number;
   total_usd: number;
   cantidad: number;
+}
+
+export type TareaEstado = "pendiente" | "en_curso" | "hecha";
+
+export interface Tarea {
+  id: string;
+  tenant_id: string;
+  expediente_id: string;
+  titulo: string;
+  descripcion?: string | null;
+  responsable_id?: string | null;
+  responsable_nombre?: string | null;
+  fecha_limite?: string | null;
+  estado: TareaEstado;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Invitacion {
