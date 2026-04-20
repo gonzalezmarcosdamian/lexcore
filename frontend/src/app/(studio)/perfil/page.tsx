@@ -690,16 +690,6 @@ function PerfilPageInner() {
               {disconnecting ? "Desconectando…" : "Desconectar Google Calendar"}
             </button>
           </div>
-        ) : isGoogleUser ? (
-          /* ── Usuario Google sin token de calendar → re-login ── */
-          <div className="space-y-3">
-            <p className="text-sm text-ink-600">
-              Necesitamos permiso para acceder a tu calendario. Cerrá sesión y volvé a entrar con Google para autorizar.
-            </p>
-            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 text-xs text-amber-700">
-              Esto pasa una sola vez. Después podrás sincronizar sin pasos extra.
-            </div>
-          </div>
         ) : (
           /* ── Usuario email/password → flujo OAuth separado ── */
           <div className="space-y-3">
