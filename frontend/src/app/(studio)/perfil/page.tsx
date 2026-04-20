@@ -104,6 +104,7 @@ function PerfilPageInner() {
 
   // Mis datos
   const [fullName, setFullName] = useState("");
+  const [editingUser, setEditingUser] = useState(false);
   const [userMsg, setUserMsg] = useState<{ text: string; type: "ok" | "err" } | null>(null);
   const [userSaving, setUserSaving] = useState(false);
 
@@ -114,6 +115,7 @@ function PerfilPageInner() {
   const [pwSaving, setPwSaving] = useState(false);
 
   // Mi estudio
+  const [editingStudio, setEditingStudio] = useState(false);
   const [studioForm, setStudioForm] = useState({ name: "", direccion: "", telefono: "", email_contacto: "" });
   const [studioMsg, setStudioMsg] = useState<{ text: string; type: "ok" | "err" } | null>(null);
   const [studioSaving, setStudioSaving] = useState(false);
@@ -215,6 +217,7 @@ function PerfilPageInner() {
     try {
       const updated = await api.patch<ProfileData>("/users/me", { full_name: fullName }, token);
       setProfile(updated);
+      setEditingUser(false);
       setUserMsg({ text: "Nombre actualizado", type: "ok" });
       await updateSession();
     } catch (err: unknown) {
@@ -254,6 +257,7 @@ function PerfilPageInner() {
         email_contacto: studioForm.email_contacto || null,
       }, token);
       setStudio(updated);
+      setEditingStudio(false);
       setStudioMsg({ text: "Estudio actualizado", type: "ok" });
     } catch (err: unknown) {
       setStudioMsg({ text: err instanceof Error ? err.message : "Error al guardar", type: "err" });
@@ -418,29 +422,44 @@ function PerfilPageInner() {
         title="Mis datos"
         icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
       >
-        <form onSubmit={handleSaveName} className="space-y-3">
-          <div>
-            <label className={labelCls}>Nombre completo</label>
-            <input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className={inputCls}
-              placeholder="Tu nombre"
-              required
-            />
+        {!editingUser ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-ink-400">Nombre</p>
+                <p className="text-sm font-medium text-ink-900">{fullName || <span className="text-ink-300">—</span>}</p>
+              </div>
+              <button type="button" onClick={() => { setEditingUser(true); setUserMsg(null); }}
+                className="text-sm border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-xl transition">
+                Editar
+              </button>
+            </div>
+            <div>
+              <p className="text-xs text-ink-400">Email</p>
+              <p className="text-sm text-ink-600">{email}</p>
+              <p className="text-xs text-ink-300 mt-0.5">{isGoogleUser ? "Cuenta vinculada con Google · no se puede cambiar" : "No se puede cambiar"}</p>
+            </div>
+            {userMsg && <Toast msg={userMsg.text} type={userMsg.type} />}
           </div>
-          <div>
-            <label className={labelCls}>Email</label>
-            <input value={email} disabled className={`${inputCls} bg-ink-50 text-ink-400 cursor-not-allowed`} />
-            <p className="text-xs text-ink-400 mt-1">El email no se puede cambiar{isGoogleUser ? " · cuenta vinculada con Google" : ""}.</p>
-          </div>
-          {userMsg && <Toast msg={userMsg.text} type={userMsg.type} />}
-          <div className="flex justify-end">
-            <button type="submit" disabled={userSaving} className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
-              {userSaving ? "Guardando…" : "Guardar nombre"}
-            </button>
-          </div>
-        </form>
+        ) : (
+          <form onSubmit={handleSaveName} className="space-y-3">
+            <div>
+              <label className={labelCls}>Nombre completo</label>
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} className={inputCls} placeholder="Tu nombre" required autoFocus />
+            </div>
+            <div>
+              <label className={labelCls}>Email</label>
+              <input value={email} disabled className={`${inputCls} bg-ink-50 text-ink-400 cursor-not-allowed`} />
+            </div>
+            {userMsg && <Toast msg={userMsg.text} type={userMsg.type} />}
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => setEditingUser(false)} className="border border-ink-200 text-ink-600 text-sm px-4 py-2 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+              <button type="submit" disabled={userSaving} className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
+                {userSaving ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </form>
+        )}
       </SectionCard>
 
       {/* ── Cambiar contraseña — solo para usuarios con email/password ── */}
@@ -507,84 +526,75 @@ function PerfilPageInner() {
         </div>
 
         {/* Datos del estudio */}
-        <form onSubmit={handleSaveStudio} className="space-y-3">
-          <div>
-            <label className={labelCls}>Nombre del estudio <span className="text-red-400">*</span></label>
-            <input
-              value={studioForm.name}
-              onChange={(e) => setStudioForm({ ...studioForm, name: e.target.value })}
-              className={inputCls}
-              placeholder="Estudio Jurídico García & Asociados"
-              required
-            />
-          </div>
-
-          {/* Dirección con preview de Maps */}
-          <div>
-            <label className={labelCls}>Dirección</label>
-            <div className="relative">
-              <input
-                value={studioForm.direccion}
-                onChange={(e) => setStudioForm({ ...studioForm, direccion: e.target.value })}
-                className={`${inputCls} pr-10`}
-                placeholder="Av. Corrientes 1234, CABA"
-              />
-              {mapsUrl && (
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-brand-500 transition"
-                  title="Ver en Google Maps"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </a>
-              )}
+        {!editingStudio ? (
+          <div className="space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-2 flex-1">
+                <div>
+                  <p className="text-xs text-ink-400">Nombre</p>
+                  <p className="text-sm font-medium text-ink-900">{studioForm.name || <span className="text-ink-300">—</span>}</p>
+                </div>
+                {studioForm.direccion && (
+                  <div>
+                    <p className="text-xs text-ink-400">Dirección</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-ink-700">{studioForm.direccion}</p>
+                      {mapsUrl && (
+                        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:text-brand-700 transition" title="Ver en Maps">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-6">
+                  {studioForm.telefono && <div><p className="text-xs text-ink-400">Teléfono</p><p className="text-sm text-ink-700">{studioForm.telefono}</p></div>}
+                  {studioForm.email_contacto && <div><p className="text-xs text-ink-400">Email</p><p className="text-sm text-ink-700">{studioForm.email_contacto}</p></div>}
+                </div>
+              </div>
+              <button type="button" onClick={() => { setEditingStudio(true); setStudioMsg(null); }}
+                className="ml-4 flex-shrink-0 text-sm border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-xl transition">
+                Editar
+              </button>
             </div>
-            {mapsUrl && (
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 mt-1 transition"
-              >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Ver en Google Maps
-              </a>
-            )}
+            {studioMsg && <Toast msg={studioMsg.text} type={studioMsg.type} />}
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        ) : (
+          <form onSubmit={handleSaveStudio} className="space-y-3">
             <div>
-              <label className={labelCls}>Teléfono</label>
-              <input
-                type="tel"
-                value={studioForm.telefono}
-                onChange={(e) => setStudioForm({ ...studioForm, telefono: e.target.value })}
-                className={inputCls}
-                placeholder="+54 11 4000-0000"
-                pattern="^[+\d\s\-()]{6,20}$"
-                title="Ingresá un teléfono válido"
-              />
+              <label className={labelCls}>Nombre del estudio <span className="text-red-400">*</span></label>
+              <input value={studioForm.name} onChange={(e) => setStudioForm({ ...studioForm, name: e.target.value })} className={inputCls} placeholder="Estudio Jurídico García & Asociados" required autoFocus />
             </div>
             <div>
-              <label className={labelCls}>Email de contacto</label>
-              <input
-                type="email"
-                value={studioForm.email_contacto}
-                onChange={(e) => setStudioForm({ ...studioForm, email_contacto: e.target.value })}
-                className={inputCls}
-                placeholder="contacto@estudio.com"
-              />
+              <label className={labelCls}>Dirección</label>
+              <div className="relative">
+                <input value={studioForm.direccion} onChange={(e) => setStudioForm({ ...studioForm, direccion: e.target.value })} className={`${inputCls} pr-10`} placeholder="Av. Corrientes 1234, CABA" />
+                {mapsUrl && (
+                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-brand-500 transition">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-
-          {studioMsg && <Toast msg={studioMsg.text} type={studioMsg.type} />}
-          <div className="flex justify-end pt-1">
-            <button type="submit" disabled={studioSaving} className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
-              {studioSaving ? "Guardando…" : "Guardar estudio"}
-            </button>
-          </div>
-        </form>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Teléfono</label>
+                <input type="tel" value={studioForm.telefono} onChange={(e) => setStudioForm({ ...studioForm, telefono: e.target.value })} className={inputCls} placeholder="+54 11 4000-0000" pattern="^[+\d\s\-()]{6,20}$" title="Ingresá un teléfono válido" />
+              </div>
+              <div>
+                <label className={labelCls}>Email de contacto</label>
+                <input type="email" value={studioForm.email_contacto} onChange={(e) => setStudioForm({ ...studioForm, email_contacto: e.target.value })} className={inputCls} placeholder="contacto@estudio.com" />
+              </div>
+            </div>
+            {studioMsg && <Toast msg={studioMsg.text} type={studioMsg.type} />}
+            <div className="flex gap-2 justify-end pt-1">
+              <button type="button" onClick={() => setEditingStudio(false)} className="border border-ink-200 text-ink-600 text-sm px-4 py-2 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+              <button type="submit" disabled={studioSaving} className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
+                {studioSaving ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </form>
+        )}
       </SectionCard>
 
       {/* ── Mi plan ── */}
@@ -691,65 +701,16 @@ function PerfilPageInner() {
         )}
       </SectionCard>
 
-      {/* ── WhatsApp Business ── */}
-      <SectionCard
-        title="WhatsApp Business"
-        defaultOpen={false}
-        icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>}
-      >
-        {waMsg && <div className="mb-4"><Toast msg={waMsg.text} type={waMsg.type} /></div>}
-
-        {waActive ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-green-700 font-medium">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              Bot de WhatsApp activo
-            </div>
-            <div>
-              <label className={labelCls}>URL del webhook</label>
-              <div className="flex gap-2">
-                <input value={webhookUrl} readOnly className={`${inputCls} bg-ink-50 text-ink-500 font-mono text-xs`} />
-                <button type="button" onClick={() => navigator.clipboard.writeText(webhookUrl)}
-                  className="flex-shrink-0 border border-ink-200 hover:border-ink-300 text-ink-500 hover:text-ink-700 px-3 py-2 rounded-xl text-xs transition">
-                  Copiar
-                </button>
-              </div>
-            </div>
-            <button onClick={handleDisconnectWhatsApp} disabled={waDisconnecting}
-              className="text-sm text-red-500 hover:text-red-700 font-medium transition disabled:opacity-50">
-              {waDisconnecting ? "Desconectando…" : "Desconectar WhatsApp"}
-            </button>
+      {/* ── WhatsApp Business — próximamente ── */}
+      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden opacity-60">
+        <div className="px-5 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <svg className="w-4 h-4 text-ink-300" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            <h2 className="text-sm font-semibold text-ink-400">WhatsApp Business</h2>
           </div>
-        ) : (
-          <form onSubmit={handleSaveWhatsApp} className="space-y-3">
-            <p className="text-sm text-ink-600">
-              Conectá tu número de WhatsApp Business para consultas automáticas de expedientes.{" "}
-              <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
-                Cómo obtener credenciales →
-              </a>
-            </p>
-            <div>
-              <label className={labelCls}>Phone Number ID <span className="text-red-400">*</span></label>
-              <input required value={waForm.phone_id} onChange={(e) => setWaForm({ ...waForm, phone_id: e.target.value })} className={inputCls} placeholder="123456789012345" />
-            </div>
-            <div>
-              <label className={labelCls}>Token de acceso permanente <span className="text-red-400">*</span></label>
-              <input required type="password" value={waForm.token} onChange={(e) => setWaForm({ ...waForm, token: e.target.value })} className={inputCls} placeholder="EAA…" />
-            </div>
-            <div>
-              <label className={labelCls}>Token de verificación del webhook <span className="text-red-400">*</span></label>
-              <input required value={waForm.verify_token} onChange={(e) => setWaForm({ ...waForm, verify_token: e.target.value })} className={inputCls} placeholder="mi-token-secreto" />
-            </div>
-            <div className="flex justify-end pt-1">
-              <button type="submit" disabled={waSaving} className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2 rounded-xl transition disabled:opacity-50">
-                {waSaving ? "Activando…" : "Activar WhatsApp"}
-              </button>
-            </div>
-          </form>
-        )}
-      </SectionCard>
+          <span className="text-[10px] font-medium text-ink-400 bg-ink-100 px-2 py-0.5 rounded-full">Próximamente</span>
+        </div>
+      </div>
     </div>
   );
 }
