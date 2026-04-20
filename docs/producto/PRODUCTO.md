@@ -4,16 +4,22 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-15
-**Sprint activo:** Sprint 06 — cerrado ✓
-**Versión:** 0.6.0
+**Última actualización:** 2026-04-16
+**Sprint activo:** Sprint 10 — en curso
+**Versión:** 0.9.4
+
+### Modelo de monetización (decisión 2026-04-15)
+- **Trial 30 días sin tarjeta** → acceso completo
+- Día 25: email de aviso con propuesta de precio
+- Día 31: modo lectura (pueden ver todo, no crear) → incentivo a pagar sin perder datos
+- Campo `trial_ends_at` en modelo `Studio`, middleware que evalúa el estado
 
 ---
 
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
-Estado actual: **producto funcional completo — clientes, expedientes, vencimientos, honorarios, documentos, equipo, gastos e invitaciones operativos. UX pulida con notificaciones con navegación, módulo contable con widget financiero y conector Google Calendar.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable con widget financiero, conector Google Calendar, y módulo de tareas con vista global y en expediente.**
 
 ---
 
@@ -146,6 +152,28 @@ Estado actual: **producto funcional completo — clientes, expedientes, vencimie
 
 ---
 
+### Sprint 07 — UX Expedientes + Honorarios + Ingresos + Dashboard ✓ (2026-04-15)
+- [x] EXP-UX-001: Detalle de expediente — layout 2 columnas (sidebar datos/equipo + secciones colapsables)
+- [x] EXP-UX-002: Secciones colapsables en orden de importancia: Honorarios > Vencimientos > Movimientos > Documentos
+- [x] EXP-UX-003: Tiempo de vida del expediente en el header (ej: "8 meses")
+- [x] EXP-UX-004: Equipo colapsable con nombre completo, rol badge y eliminar al hover
+- [x] HON-002: Pagos parciales con tipo Capital / Intereses — campo `tipo` en `pagos_honorarios`
+- [x] HON-003: Hero summary de honorarios (acordado total, cobrado, saldo, barra de progreso) — por moneda
+- [x] HON-004: Botón "Completar saldo" en form de pago para completar automáticamente el importe
+- [x] HON-005: Auto-creación de Ingreso contable al registrar pago de capital en honorarios
+- [x] CONT-003: Módulo Ingresos — modelo, migración, router CRUD (`/ingresos`)
+- [x] CONT-004: Ingresos vinculados a expediente — selector en ABM, badge de expediente en listado
+- [x] CONT-005: KPIs contables en dashboard (Ingresos ARS, Egresos ARS, Resultado, Honorarios pendientes)
+- [x] DASH-001: Gráfico de barras de expedientes por estado (Activos / Archivados / Cerrados) con recharts
+- [x] EXP-LIST-001: Listado de expedientes rediseñado — sidebar stats + tabla con ordenamiento
+- [x] EXP-LIST-002: SortModal reutilizable (popover desktop / fullscreen mobile)
+- [x] UX-007: Nuevo vencimiento pre-cargado con contexto de expediente (banner + botones tipo visual)
+- [x] HOOK-001: Hook PostToolUse auto-restart Docker al editar frontend/backend
+
+**Migraciones:** `544abacdc514` (ingresos), `cc1fd28b83fc` (pagos_honorarios.tipo)
+**Nuevos endpoints:** `GET/POST /ingresos`, `PATCH/DELETE /ingresos/{id}`, `GET /ingresos/resumen`
+**Nuevas páginas:** `recharts` instalado, gráfico en `/dashboard`
+
 ### Sprint 06 — UX + Notificaciones + Contabilidad + Google Calendar ✓ (2026-04-15)
 - [x] UX-006: Pre-selección de expediente en formularios vía `?expediente_id=xxx` — banner + campo bloqueado
 - [x] UX-003: Centrado de formularios ABM con `max-w-2xl mx-auto`
@@ -161,11 +189,128 @@ Estado actual: **producto funcional completo — clientes, expedientes, vencimie
 **Páginas nuevas:** `/gastos`, `/perfil`
 **Migraciones:** `743b87a56c88` (gastos), `255ad9d19349` (google_calendar_id)
 
+### Sprint 09 — COMPLETADO (2026-04-16)
+
+#### US-AI-01 · Resumen IA del expediente ✓ (2026-04-16)
+- [x] Modelo `ExpedienteResumen` con `UNIQUE(tenant_id, expediente_id)`, `version_contexto`, `version_resumen`
+- [x] Tabla `expediente_resumenes` — migración `7be62acadaaf`
+- [x] `openai==1.51.0` en requirements, `OPENAI_API_KEY` + `OPENAI_MODEL` en config y .env
+- [x] Router `GET /expedientes/{id}/resumen`, `GET /expedientes/{id}/resumen/status`, `POST /expedientes/{id}/resumen/generar`
+- [x] Límite 5 regeneraciones manuales/día — 429 si excede
+- [x] Fallo silencioso: si OpenAI falla y hay resumen previo, lo conserva
+- [x] Badge "Desactualizado" cuando `version_contexto > version_resumen`
+- [x] Invalidación automática al crear: movimiento, vencimiento, tarea, pago de honorario
+- [x] Sección "Resumen IA" en detalle de expediente — badge Beta, botón Generar/Actualizar/Regenerar
+- [x] Componente `ResumenIASection` en `expedientes/[id]/resumen-ia-section.tsx`
+
+**Endpoints:** `GET/POST /expedientes/{id}/resumen`, `GET /expedientes/{id}/resumen/status`, `POST /expedientes/{id}/resumen/generar`
+**Migración:** `7be62acadaaf`
+**Nota:** Requiere `OPENAI_API_KEY` en `.env`. Sin key → placeholder "Próximamente" en UI (503 silencioso).
+
+#### US-10 · Creación de expediente en 2 pasos mobile-first ✓ (2026-04-16)
+- [x] Wizard de 2 pasos en `/expedientes/nuevo`
+- [x] Paso 1: Carátula + selector visual de fuero (chips clickeables) + opción "Otro" con input libre
+- [x] Paso 2: Juzgado + Cliente — con resumen del paso anterior visible
+- [x] Stepper visual con check al completar paso 1, estado activo/inactivo por paso
+- [x] Validación en paso 1 antes de avanzar (carátula obligatoria)
+- [x] Diseñado en 375px, botones full-width, tipado grande
+
+#### US-15 · Full-text search PostgreSQL ✓ (2026-04-16)
+- [x] Índices GIN en `expedientes` (numero + caratula) y `clientes` (nombre + cuit_dni)
+- [x] Router `/search` actualizado para usar `to_tsquery('spanish', ...)` con prefix search (`:*`)
+- [x] Fallback automático a `ilike` para queries con solo números o caracteres especiales
+- [x] Migración `cb965ddbf355` — reversible con downgrade
+
+**Migración:** `cb965ddbf355`
+
+#### TECH-001 · Fix setup-studio inseguro ✓ (2026-04-16)
+- [x] Campo `ALLOW_DEV_ENDPOINTS: bool = False` en `Settings`
+- [x] Router `dev_seed` solo se monta si `ALLOW_DEV_ENDPOINTS=true` o `ENVIRONMENT=development`
+- [x] `.env` local: `ALLOW_DEV_ENDPOINTS=true` (dev). En prod: omitir o `false`
+- [x] En producción (Railway): la variable no existe → endpoints `/dev/*` no existen
+
+#### US-11 · Observabilidad Sentry — `blocked`
+- **🚫 BLOQUEADO:** Activar al incorporar el primer cliente real en producción.
+
 ## Features pendientes
 
-### Sprint 07 — Planificado
-- CONT-003: Costos por expediente (rentabilidad del caso)
-- CONT-004: Facturación y comprobantes en PDF
+### Sprint 08 — COMPLETADO
+
+#### US-01 · Módulo de Tareas ✓ (2026-04-15)
+- [x] Modelo `Tarea` con `expediente_id`, `responsable_id`, `fecha_limite`, `estado` (pendiente/en_curso/hecha)
+- [x] CRUD completo: `GET/POST /tareas`, `PATCH/DELETE /tareas/{id}` con filtros por expediente, estado, responsable
+- [x] `_enriquecer()` inyecta `responsable_nombre` (User.full_name) en respuesta
+- [x] Orden: fecha_limite ASC nulls last, created_at DESC
+- [x] Sección "Tareas" colapsable en detalle de expediente (entre Vencimientos y Movimientos, open por defecto)
+- [x] Página global `/tareas` — listado con filtros por estado y responsable, link a cada expediente
+- [x] Sidebar: ítem "Tareas" agregado (entre Expedientes y Vencimientos)
+- [x] Tareas vencidas resaltadas en rojo, indicador de días restantes
+- [x] Toggle de estado circular (pendiente → en_curso → hecha) con un clic
+- [x] Hechas colapsadas en `<details>` con strikethrough y check verde
+- [x] Migración: `ab7c536d2464`
+
+#### US-02 · Vista Agenda Diaria/Semanal ✓ (2026-04-15)
+- [x] Página `/agenda` con selector Hoy / Esta semana / Este mes
+- [x] Vencimientos + Tareas unificados ordenados por fecha, agrupados por día
+- [x] Toggle de estado directamente desde la agenda (cumplir vencimiento, cambiar estado tarea)
+- [x] Ítem "Agenda" en sidebar y nav mobile
+- [x] Vencimientos urgentes (<48hs) resaltados en ámbar, vencidos en rojo
+
+#### US-03 · Notificaciones email vencimientos urgentes ✓ (2026-04-15)
+- [x] `send_vencimiento_urgente_email()` en `services/email.py` — template HTML rojo
+- [x] Endpoint `POST /vencimientos/notificar-urgentes` — filtra vencimientos <48hs del tenant y envía a todos los miembros
+- [x] Falla silenciosa si `RESEND_API_KEY` no está configurada
+
+#### US-04 · Tests aislamiento tenant ✓ (2026-04-15)
+- [x] `test_tareas.py` — 16 tests: CRUD completo + 5 tests de aislamiento entre tenants
+- [x] Tests de expedientes actualizados al nuevo schema (sin `numero`/`estado` en POST)
+- [x] 117/117 tests pasan en suite completo
+- [x] Cobertura: clientes, expedientes, vencimientos, honorarios, gastos, tareas, documentos, búsqueda
+
+#### US-09 · StatusBadge reutilizable ✓ (2026-04-15)
+- [x] Componente `StatusBadge` en `components/ui/status-badge.tsx`
+- [x] Variantes: urgente, pendiente, en_curso, hecha, activo, archivado, cerrado, cumplido, confirmado
+- [x] Paleta unificada: urgente=rojo, pendiente=amarillo, ok=verde, archivado=gris, en_curso=azul
+
+#### US-18 · Toasts globales ✓ (2026-04-15)
+- [x] `ToastProvider` + `useToast()` hook en `components/ui/toast.tsx`
+- [x] Tipos: success (verde), error (rojo), info (oscuro)
+- [x] Auto-dismiss 3.5s, máximo 4 toasts simultáneos
+- [x] Integrado en `StudioLayout` — disponible en toda la app
+
+#### US-08 · Empty states con onboarding ✓ (2026-04-15)
+- [x] Componente `EmptyState` + íconos SVG en `components/ui/empty-state.tsx`
+- [x] Aplicado en `/tareas` con CTA contextual (con/sin filtros)
+- [x] Expedientes y Clientes ya tenían CTAs, ahora con componente unificado
+
+#### US-17 · Rate limiting login ✓ (2026-04-15)
+- [x] Rate limiting in-memory en `POST /auth/login`: 5 intentos fallidos → bloqueo 15min
+- [x] Respuesta 429 con header `Retry-After` en segundos
+- [x] Los intentos exitosos limpian el contador del IP
+- [x] Sin dependencia de Redis — suficiente para MVP (se pierde al reiniciar el proceso)
+
+#### EXP-AUTO-001 · Número de expediente autogenerado ✓ (2026-04-15)
+- [x] Backend genera `EXP-{año}-{correlativo 4 dígitos por tenant}` al crear expediente
+- [x] `ExpedienteCreate` ya no recibe `numero` ni `estado` — ambos los asigna el sistema
+- [x] `estado` siempre arranca en `activo` al crear
+- [x] Formulario de creación simplificado: solo Carátula, Fuero, Juzgado, Cliente
+- [x] Decisión funcional: vencimientos y tareas son entidades ortogonales (sin FK entre ellas)
+
+**Migraciones:** `ab7c536d2464` (tareas), `3bacddf28e63` (create tareas table — fix __init__.py)
+**Nuevos endpoints:** `GET/POST /tareas`, `PATCH/DELETE /tareas/{id}`, `POST /dev/seed-tareas`, `POST /vencimientos/notificar-urgentes`
+**Nuevas páginas:** `/tareas`, `/agenda`
+
+#### Hotfixes sesión 2026-04-16 ✓
+- [x] **Bug: token undefined en /tareas y /agenda** — ambas páginas usaban `(session as any)?.accessToken` en lugar de `session?.user?.backendToken`. Todas las páginas ahora usan `session?.user?.backendToken` consistentemente.
+- [x] **Bug: agenda no cargaba vencimientos** — parámetro `dias` corregido a `proximos` (nombre real del query param en el backend)
+- [x] **Bug: estado visible al crear tarea** — el botón "+ Nueva tarea" no reseteaba `editingId`. Corregido con reset explícito en el onClick.
+- [x] **Bug: tareas/agenda no refrescaban al volver** — agregado listener `visibilitychange` para re-fetch al volver al tab.
+- [x] **Vista /tareas rediseñada** — stats pills, cards con checkbox visual por estado, empty state prominente, completadas colapsadas, skeleton loader.
+- [x] **Seed de datos demo** — endpoint `POST /dev/seed-tareas` crea 7 tareas dummy sobre el primer expediente del tenant.
+- [x] **Bug: modelo Tarea no en __init__.py** — migración generada vacía. Fix: agregado `from app.models.tarea import Tarea` a `models/__init__.py`. Migración real `3bacddf28e63` aplicada.
+- [x] **Regla rígida nuevo modelo** — CLAUDE.md actualizado con checklist obligatorio de 5 pasos al crear modelos. Hook actualizado para mostrar el checklist completo.
+- [x] **Rate limiter** — reseteado (restart backend) tras acumulación de intentos fallidos durante debug.
+- [x] **Password dev** — actualizada a `lexcore2026` para usuario `ingonzalezdamian@gmail.com`.
 
 ### Post-MVP
 - RPT-001: Reportes de actividad exportables
@@ -196,6 +341,44 @@ Estado actual: **producto funcional completo — clientes, expedientes, vencimie
 ---
 
 ## Changelog
+
+### v0.9.4 — 2026-04-16
+- Sprint 10: US-21 — Perfil del estudio y del usuario
+  - Avatar con iniciales + color derivado del nombre en sidebar y /perfil
+  - Datos del estudio editables (nombre, logo URL, dirección+Maps, teléfono, email)
+  - Datos personales editables (nombre, contraseña)
+  - Sección Mi plan (placeholder Trial)
+  - Router `GET/PATCH /studios/me`, `PATCH /users/me`
+  - Migración `b01ebbc38c50` (studio: logo_url, direccion, telefono, email_contacto)
+
+### v0.9.3 — 2026-04-16
+- Sprint 09 COMPLETO
+- US-15: GIN indexes full-text en expedientes + clientes, to_tsquery con prefix search
+- TECH-001: Endpoints `/dev/*` protegidos con `ALLOW_DEV_ENDPOINTS` — no expuestos en prod
+- US-11: Bloqueado hasta primer cliente real en producción
+
+### v0.9.2 — 2026-04-16
+- Sprint 09: US-AI-01 — Resumen IA de expedientes (OpenAI gpt-4o-mini, límite 5/día, badge desactualizado)
+- Sprint 09: US-10 — Creación de expediente en wizard 2 pasos mobile-first (chips de fuero, stepper)
+- Sprint 09: Invalidación automática del resumen al crear movimientos/vencimientos/tareas/pagos
+- Sprint 08 planning doc actualizado con historias bloqueadas removidas
+
+### v0.9.0 — 2026-04-15
+- Sprint 08 COMPLETO — 117/117 tests pasan
+- US-02: Vista Agenda unificada (vencimientos + tareas) con selector Hoy/Semana/Mes
+- US-03: Email urgente de vencimientos via Resend (`POST /vencimientos/notificar-urgentes`)
+- US-04: test_tareas.py — 16 tests, aislamiento tenant verificado en todas las entidades
+- US-09: StatusBadge reutilizable — paleta unificada en toda la app
+- US-18: ToastProvider global con useToast() hook
+- US-08: EmptyState component con CTAs contextuales
+- US-17: Rate limiting en login (5 intentos → 429 + Retry-After)
+
+### v0.8.0 — 2026-04-15
+- Sprint 08: US-01 — Módulo de Tareas completo (backend + frontend en expediente + página global)
+- Sprint 08: EXP-AUTO-001 — Número de expediente autogenerado (EXP-{año}-{N}), estado siempre activo al crear
+- Sprint 08: Sidebar con ítem Tareas
+- Decisión funcional: vencimientos y tareas son entidades ortogonales (sin FK entre ellas)
+- Decisión funcional: vencimientos = plazos procesales; tareas = trabajo interno del estudio
 
 ### v0.6.0 — 2026-04-15
 - Sprint 06: Módulo de gastos completo (CONT-001) — modelo, CRUD, tests TDD

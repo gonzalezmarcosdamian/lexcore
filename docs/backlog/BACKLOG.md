@@ -148,6 +148,211 @@
 
 ---
 
+## Sprint 08 — Backlog refinado (deepdive 2026-04-15)
+
+> Historias surgidas del análisis multi-perspectiva (abogado, UX, UI, negocio, técnica).
+
+### US-01 · Módulo de Tareas — CRUD completo — `done`
+- **Prioridad:** P0 | **Esfuerzo:** M (5pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **QA Audit (2026-04-15):** ✓ CA1 CA2 CA3 implementados. CA4 deuda técnica confirmada.
+- **Decisión PO (2026-04-15):** Tareas siempre vinculadas a un expediente.
+- **Como** abogado, **quiero** crear y gestionar tareas con responsable y fecha límite **para** hacer seguimiento del trabajo del estudio sin salir de LexCore.
+- **Criterios de aceptación:**
+  - [x] CA1: Crear tarea con título, responsable (miembro del estudio), fecha límite, estado (pendiente/en_curso/hecha), expediente_id requerido
+  - [x] CA2: Lista de tareas con filtro por responsable, estado y expediente — global en `/tareas` + embebida en expediente
+  - [x] CA3: Tareas vencidas se marcan visualmente como urgentes (fondo rojo, texto "Vencida")
+  - [ ] CA4: Test de aislamiento tenant — **DEUDA TÉCNICA**: falta `test_tareas.py`. Confirmado por QA.
+
+### US-AI-01 · Resumen IA de expediente — `refined`
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** 09
+- **Refinado por:** FA Agent (2026-04-15)
+- **Decisión técnica:** generar una vez, guardar en DB, regenerar solo cuando hay cambios relevantes. Costo de tokens mínimo y predecible.
+- **Como** abogado, **quiero** ver un resumen del estado actual del expediente generado por IA **para** entender el contexto del caso en segundos sin leer todos los movimientos.
+- **Criterios de aceptación:**
+  - [ ] CA1: El resumen NO existe al crear el expediente. Se genera la primera vez que el usuario hace clic en "Generar resumen" — no automático en page load.
+  - [ ] CA2: El resumen se guarda en DB (`expediente_resumenes`) con `generado_at`, `input_hash` y `modelo_usado`. Page loads posteriores lo leen desde DB sin llamar al LLM.
+  - [ ] CA3: Badge "Desactualizado" cuando alguno de los triggers lo invalida (nuevo movimiento, vencimiento editado, tarea nueva, pago registrado). El resumen anterior se mantiene visible.
+  - [ ] CA4: Botón "Regenerar" en el detalle del expediente. Máximo 5 regeneraciones manuales por expediente por día (429 si se supera).
+  - [ ] CA5: El resumen incluye: situación actual del caso, próximos vencimientos no cumplidos, tareas pendientes con responsable, estado de honorarios si hay deuda. Máx 300 palabras.
+  - [ ] CA6: Si el LLM falla (timeout, 5xx), retorna 502 y el resumen anterior queda intacto en DB.
+  - [ ] CA7: Aislamiento tenant: `expediente_resumenes` filtra siempre por `tenant_id`.
+- **Input al prompt (mínimo):** cabecera del expediente, nombre+tipo cliente, equipo (nombre+rol), últimos 10 movimientos, vencimientos pendientes, tareas pendientes/en_curso, honorarios con deuda.
+- **Triggers de invalidación:** nuevo movimiento, PATCH expediente (caratula/fuero/juzgado/estado), CRUD vencimientos, CRUD tareas no-hecha, POST pago honorario, cambio de equipo.
+- **Schema DB:** tabla `expediente_resumenes` con `UNIQUE(tenant_id, expediente_id)` + `desactualizado bool`. Historial en tabla separada `expediente_resumenes_historial`.
+- **Otros lugares para resúmenes IA (futuro):**
+  - Ficha de cliente: situación global de todas sus causas antes de una reunión
+  - Briefing semanal del estudio: cron lunes 7am, agregado de toda la cartera
+  - Digest de vencimientos críticos: listado priorizado, base para email diario
+
+### US-02 · Vista Agenda Diaria/Semanal — `done`
+- **Prioridad:** P0 | **Esfuerzo:** M (5pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Como** abogado, **quiero** ver en un solo lugar todos mis vencimientos y tareas del día/semana **para** no necesitar revisar múltiples pantallas.
+- **Criterios de aceptación:**
+  - [ ] CA1: Vista unificada de vencimientos + tareas del período seleccionado, ordenados cronológicamente
+  - [ ] CA2: Accesible desde dashboard con un clic / navegación principal
+  - [ ] CA3: Funciona en mobile 375px sin scroll horizontal
+  - [ ] CA4: Permite marcar cumplidos/hechos sin salir de la vista
+
+### US-03 · Notificaciones por email — vencimientos urgentes — `done`
+- **Prioridad:** P0 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Como** abogado, **quiero** recibir un email cuando un vencimiento pase a estado urgente (<48hs) **para** no perder plazos críticos aunque no esté en la plataforma.
+- **Criterios de aceptación:**
+  - [ ] CA1: Email automático cuando `fecha - now() < 48hs` y `cumplido = false`
+  - [ ] CA2: Email incluye: descripción, fecha, tipo, link directo al vencimiento
+  - [ ] CA3: El estudio puede configurar qué miembros reciben alertas (default: todos)
+  - [ ] CA4: Falla silenciosa si Resend no configurado (igual que emails de invitación)
+
+### US-04 · Tests de aislamiento multi-tenant — cobertura completa — `done`
+- **Prioridad:** P0 | **Esfuerzo:** M (5pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Como** Tech Lead, **quiero** tests automatizados que verifiquen el aislamiento de datos entre tenants **para** garantizar que un estudio nunca vea datos de otro.
+- **Criterios de aceptación:**
+  - [ ] CA1: Test de tenant isolation para cada entidad: expedientes, clientes, documentos, honorarios, pagos_honorarios, gastos, ingresos, tareas, vencimientos
+  - [ ] CA2: Los tests corren en CI (pytest)
+  - [ ] CA3: Un usuario de estudio A que intenta acceder a recursos de estudio B recibe 404 (no 403 — no revelar existencia)
+  - [ ] CA4: Documentado en LEARNINGS.md con qué se verificó
+
+### US-06 · Tareas en detalle de expediente — `done`
+- **Prioridad:** P1 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **QA Audit (2026-04-15):** ✓ CA1 CA2 CA3 todos implementados. `tareas-section.tsx` integrado en `expedientes/[id]/page.tsx`.
+- **Como** abogado, **quiero** ver y gestionar tareas dentro del detalle del expediente **para** tener todo el contexto del caso en un lugar.
+- **Criterios de aceptación:**
+  - [x] CA1: Sección "Tareas" colapsable en el detalle del expediente (misma UI que Movimientos/Vencimientos)
+  - [x] CA2: Crear/completar tarea sin salir del expediente
+  - [x] CA3: Tareas vencidas resaltadas en rojo, pendientes en amarillo, hechas tachadas
+
+### US-07 · Búsqueda global funcional en mobile — `done`
+- **Prioridad:** P1 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **QA Audit (2026-04-15):** ✓ CA1-CA4 implementados. SearchModal con debounce 300ms, deep link, responsive.
+- **Como** abogado en tribunales, **quiero** buscar expedientes y clientes desde mi celular **para** no depender de un teclado físico con Cmd+K.
+- **Criterios de aceptación:**
+  - [x] CA1: Ícono de búsqueda visible en navbar mobile
+  - [x] CA2: Al tocar, abre modal de búsqueda con campo de texto enfocado
+  - [x] CA3: Resultados muestran expedientes y clientes, navegables con tap
+  - [x] CA4: Deep link al resultado seleccionado
+
+### US-08 · Empty states con onboarding guiado — `done`
+- **Prioridad:** P1 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Como** usuario nuevo, **quiero** ver guía clara cuando una sección está vacía **para** entender qué tengo que hacer para empezar a usar el sistema.
+- **Criterios de aceptación:**
+  - [ ] CA1: Expedientes vacíos → CTA "Crear primer expediente" con descripción breve
+  - [ ] CA2: Clientes vacíos → CTA "Agregar primer cliente"
+  - [ ] CA3: Dashboard sin datos → checklist de setup (qué falta completar)
+  - [ ] CA4: Vencimientos vacíos → CTA "Agregar vencimiento" con link a nuevo
+
+### US-09 · Sistema de estados visuales unificado — `in-progress`
+- **QA Audit (2026-04-15):** CA1 colores existen pero no unificados. CA2/CA3 falta componente `StatusBadge` reutilizable — cada vista define sus propios estilos (copy-paste). Deuda técnica.
+
+### US-09 · Sistema de estados visuales unificado — `done`
+- **Prioridad:** P1 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Prioridad:** P1 | **Esfuerzo:** S (2pts) | **Sprint target:** 08
+- **Como** usuario, **quiero** que los estados (urgente, pendiente, cumplido, archivado) tengan el mismo color y badge en toda la app **para** leer el estado de un vistazo sin aprender distintos sistemas.
+- **Criterios de aceptación:**
+  - [ ] CA1: Paleta definida: urgente=rojo, pendiente=amarillo, ok/cumplido=verde, archivado=gris, en proceso=azul
+  - [ ] CA2: Mismos badges aplicados en expedientes, vencimientos, tareas y honorarios
+  - [ ] CA3: Componente `StatusBadge` reutilizable en `components/ui/`
+
+### US-10 · Creación de expediente en 2 pasos (mobile-first) — `refined`
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** 09
+- **Como** abogado en tribunales, **quiero** crear un expediente rápido desde el celular **para** no perder el número de causa mientras estoy en sala.
+- **Criterios de aceptación:**
+  - [ ] CA1: Paso 1 (datos mínimos): carátula, cliente, fuero → guardar en <60s desde mobile
+  - [ ] CA2: Paso 2 (datos secundarios): juzgado, número PJN, equipo, descripción — editable después
+  - [ ] CA3: Flujo completo funciona en 375px sin errores de scroll o campos ocultos
+
+### US-11 · Observabilidad básica — Sentry + logs estructurados — `blocked`
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** indefinido
+- **🚫 BLOQUEADO (2026-04-16):** Activar cuando haya primer cliente real en producción. Free tier de Sentry suficiente para el volumen actual. No tiene urgencia pre-MVP.
+- **Sprint target original:** 08
+- **Como** Tech Lead, **quiero** capturar errores en producción con contexto **para** poder diagnosticar y corregir bugs que los usuarios no reportan.
+- **Criterios de aceptación:**
+  - [ ] CA1: Sentry integrado en Next.js frontend — errores capturados con user, tenant y URL
+  - [ ] CA2: Backend logea en JSON estructurado: `{level, timestamp, tenant_id, user_id, endpoint, status, duration_ms}`
+  - [ ] CA3: Alert configurado en Sentry si error rate > 1% en cualquier endpoint
+
+### US-12 · Generador de cabecera de escrito — `blocked`
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** indefinido
+- **🚫 BLOQUEADO (2026-04-16):** Decisión PO pendiente sobre formato de salida (Word DOCX vs PDF). No planificar hasta resolución.
+- **Como** abogado, **quiero** generar la cabecera de un escrito automáticamente desde el expediente **para** ahorrar 5 minutos en cada presentación.
+- **Criterios de aceptación:**
+  - [ ] CA1: Desde el expediente, botón "Generar escrito" abre modal con cabecera precompletada (carátula, número, juzgado, secretaría, fecha, abogado responsable)
+  - [ ] CA2: Campo textarea para el cuerpo del escrito
+  - [ ] CA3: Descarga en formato decidido por PO
+
+### US-13 · Portal de cliente — vista de solo lectura — `blocked`
+- **Prioridad:** P1 | **Esfuerzo:** L (8pts) | **Sprint target:** indefinido
+- **🚫 BLOQUEADO (2026-04-16):** Reemplazado por canal WhatsApp (WHATSAPP-001/002). El cliente consulta estado por WhatsApp, no por portal web. Revisar post-MVP si hay demanda de portal separado.
+- **Como** cliente de un estudio, **quiero** ver el estado de mi expediente y los próximos vencimientos **para** no tener que llamar al abogado para saber en qué va el caso.
+- **Criterios de aceptación:**
+  - [ ] CA1: Invitación por email al cliente con acceso exclusivo a sus expedientes
+  - [ ] CA2: El cliente ve: estado, vencimientos próximos, documentos marcados como "compartidos" por el abogado
+  - [ ] CA3: Sin acceso a honorarios, gastos, ni expedientes de otros clientes
+  - [ ] CA4: Test de aislamiento: cliente no puede acceder a nada fuera de sus expedientes
+
+### US-14 · Preview de documentos in-app — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** M (5pts) | **Sprint target:** 09
+- **Como** abogado, **quiero** ver un PDF sin descargarlo **para** revisar rápido un documento sin salir de LexCore.
+- **Criterios de aceptación:**
+  - [ ] CA1: PDFs abren en modal usando `<iframe>` o librería de PDF (pdf.js)
+  - [ ] CA2: Imágenes (JPG/PNG) en preview con zoom
+  - [ ] CA3: Botón de descarga disponible desde el preview
+
+### US-15 · Índices full-text PostgreSQL para búsqueda — `ready`
+- **Prioridad:** P2 | **Esfuerzo:** S (2pts) | **Sprint target:** 08
+- **Como** Tech Lead, **quiero** que la búsqueda global use índices full-text en PostgreSQL **para** que sea rápida con miles de expedientes.
+- **Criterios de aceptación:**
+  - [ ] CA1: Columnas de búsqueda (numero, caratula, nombre cliente) indexadas con `tsvector`
+  - [ ] CA2: Búsqueda retorna en <200ms para datasets de 10.000+ registros
+  - [ ] CA3: Migración Alembic limpia y reversible
+
+### US-16 · Registro de tiempo facturable (timesheets) — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** L (8pts) | **Sprint target:** backlog
+- **Como** abogado que factura por hora, **quiero** registrar horas trabajadas por expediente **para** tener base real para la facturación de honorarios.
+- **Criterios de aceptación:**
+  - [ ] CA1: Registrar entrada de tiempo: expediente, abogado, fecha, horas, descripción
+  - [ ] CA2: Resumen de horas por expediente y por abogado en el período
+  - [ ] CA3: Exportable como base para factura
+
+### US-17 · Rate limiting y política de contraseñas — `done`
+- **Prioridad:** P2 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Como** Admin de seguridad, **quiero** que el sistema bloquee ataques de fuerza bruta y exija contraseñas seguras **para** proteger los datos del estudio.
+- **Criterios de aceptación:**
+  - [ ] CA1: Bloqueo de IP después de 5 intentos de login fallidos por 15 minutos
+  - [ ] CA2: Contraseña mínima: 8 caracteres, 1 número, 1 mayúscula
+  - [ ] CA3: Endpoint de login retorna 429 con `retry_after` en segundos
+
+### US-18 · Skeleton loaders y toasts consistentes — `done`
+- **Prioridad:** P2 | **Esfuerzo:** S (2pts) | **Sprint target:** 08 | **Completada:** 2026-04-15
+- **Como** usuario, **quiero** feedback visual inmediato en todas las acciones **para** saber que el sistema está respondiendo.
+- **Criterios de aceptación:**
+  - [ ] CA1: Todas las listas principales muestran skeleton loader mientras cargan (no spinner de página)
+  - [ ] CA2: Todas las acciones CRUD muestran toast de éxito/error con el mismo componente
+  - [ ] CA3: Sin spinners genéricos de página completa en el flujo normal
+
+### US-19 · Consulta de estado en PJN — `descartada`
+- **Decisión PO (2026-04-15):** Sin integración PJN en MVP. El abogado actualiza el estado manualmente. Revisión post-MVP si surge demanda de usuarios.
+- **Como** abogado, **quiero** sincronizar el estado del expediente desde el PJN **para** no tener que actualizarlo manualmente.
+- **Criterios de aceptación:** pendientes de decisión de PO + spike técnico
+
+### US-21 · Perfil del estudio y del usuario — `refined`
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** Sprint 10
+- **Como** admin del estudio, **quiero** configurar los datos del estudio y mi perfil personal **para** que el sistema refleje mi identidad profesional.
+- **Criterios de aceptación:**
+  - [ ] CA1: Avatar generado con las iniciales del nombre del usuario (ej: "MD" para Marcos Damián), con fondo de color derivado del nombre
+  - [ ] CA2: Sección "Mi estudio" — nombre del estudio, logo (upload), dirección con link a Google Maps, teléfono, email de contacto
+  - [ ] CA3: Sección "Mi plan" — muestra el plan activo (Free/Trial/Pro/Estudio), fecha de vencimiento del trial si aplica, CTA "Cambiar plan"
+  - [ ] CA4: Sección "Mis datos" — nombre, apellido, email (read-only), rol en el estudio, cambio de contraseña
+  - [ ] CA5: Logo del estudio visible en el sidebar (reemplaza placeholder)
+  - [ ] CA6: Datos del estudio accesibles en `/perfil` (ya existe la página, expandirla)
+- **Casos borde:** Upload de logo — validar tipo (PNG/JPG) y peso (<2MB). Avatar de iniciales como fallback si no hay logo.
+- **Notas UX:** Avatar con iniciales siempre visible en el header. Menú de usuario abre `/perfil`. Logo en sidebar top-left.
+
+### US-20 · Swap Auth JWT → Supabase con MFA — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** XL (13pts) | **Sprint target:** backlog
+- **Como** usuario, **quiero** MFA y auth gestionado por Supabase **para** tener seguridad enterprise sin gestión propia de tokens.
+- **Nota técnica:** El swap está diseñado para ser transparente (mismo contrato de JWT). No urgente hasta salida a producción real.
+
+---
+
 ## P1 — Importantes para MVP
 
 ### USR-001 · Invitar usuarios al estudio
@@ -381,6 +586,126 @@
   - [ ] CA3: Los recibos generados quedan guardados como documentos del expediente
 - **Notas:** Etapa inicial sin integración AFIP. Integración con factura electrónica es post-MVP.
 
+---
+
+## CX-001 · Centro de ayuda + Reporte de problemas — `idea`
+
+- **Prioridad:** P1 | **Esfuerzo:** L (8pts) | **Sprint target:** Sprint 11
+- **Patrón de industria:** Linear, Intercom, Notion, Vercel — todos tienen help center embebido + widget de reporte accesible desde cualquier pantalla (no solo desde configuración).
+
+### Contexto de diseño (CX industry standard)
+
+El modelo que usan los mejores SaaS B2B:
+
+1. **Widget flotante o entrada en sidebar** — siempre visible, nunca intrusivo. Iconito "?" en esquina inferior derecha o ítem fijo al final del sidebar.
+2. **Dos modos diferenciados:** "Buscar ayuda" (FAQ, docs) y "Reportar un problema" (formulario estructurado).
+3. **Reporte estructurado:** el usuario elige módulo → describe el error → sube captura opcional. El sistema agrega automáticamente contexto del entorno (navegador, página actual, rol, tenant_id) que el usuario no tiene que completar.
+4. **Panel de soporte interno:** vista privada solo para admin de LexCore con todos los tickets ordenados, filtro por urgencia/módulo, opción de pasar a backlog con un clic.
+
+---
+
+### Componente A — Centro de ayuda (in-app)
+- **Como** usuario, **quiero** encontrar respuestas sin salir de LexCore **para** resolver dudas rápido sin abrir un ticket.
+- **Criterios de aceptación:**
+  - [ ] CA1: Botón "?" fijo en esquina inferior derecha de todas las pantallas del studio — abre panel lateral (slide-over) o modal
+  - [ ] CA2: El panel tiene dos tabs: "Ayuda" y "Reportar problema"
+  - [ ] CA3: Tab "Ayuda" muestra acordeón de preguntas frecuentes agrupadas por módulo (Expedientes, Vencimientos, Honorarios, Tareas, Equipo, Contable, General)
+  - [ ] CA4: FAQs son estáticas en v1 (hardcoded en frontend) — sin CMS. Editable por el dev con un array de objetos `{ pregunta, respuesta, modulo }`.
+  - [ ] CA5: Buscador de texto simple dentro del panel (filtra FAQs por término)
+  - [ ] CA6: Al final del panel "Ayuda": link "¿No encontraste lo que buscabas? Reportar un problema" → cambia a tab "Reportar"
+  - [ ] CA7: El widget NO aparece en pantallas de login, registro ni setup-studio
+
+**FAQs iniciales sugeridas:**
+- ¿Cómo agrego un expediente? → link a `/expedientes/nuevo`
+- ¿Cómo invito a otro abogado al estudio? → link a `/equipo`
+- ¿Cómo funciona el resumen IA? → explicación inline
+- ¿Cómo conecto Google Calendar? → link a `/perfil`
+- ¿Qué diferencia hay entre un Vencimiento y una Tarea?
+- ¿Cómo registro un pago de honorarios?
+- ¿Cómo exporto información del sistema? (respuesta: próximamente)
+
+---
+
+### Componente B — Formulario de reporte de problema
+- **Como** usuario, **quiero** reportar un bug o problema de forma rápida y estructurada **para** que el equipo de soporte tenga el contexto necesario para reproducirlo.
+- **Criterios de aceptación:**
+  - [ ] CA1: El formulario tiene tres campos: (1) Módulo — selector con opciones: Expedientes / Vencimientos / Tareas / Honorarios / Contable / Equipo / Búsqueda / Perfil / Otro; (2) Descripción del problema — textarea libre (máx 1000 chars); (3) Captura de pantalla — upload opcional (PNG/JPG, máx 5MB)
+  - [ ] CA2: El sistema agrega automáticamente (sin que el usuario lo vea ni complete): URL actual, navegador + OS, tenant_id, user_id, rol, timestamp
+  - [ ] CA3: Al enviar → feedback inmediato "Reporte enviado. Lo revisaremos pronto." con número de ticket (ej: #047)
+  - [ ] CA4: El reporte se guarda en tabla `soporte_tickets` en DB con todos los campos + estado `abierto`
+  - [ ] CA5: Si hay captura, se guarda en R2 (mismo bucket que documentos, carpeta `/soporte/`)
+  - [ ] CA6: Notificación por email a `soporte@lexcore.app` (o el email configurado) con el resumen del ticket
+  - [ ] CA7: Opción de marcar "urgente" con un checkbox — destaca el ticket en el panel de soporte
+
+---
+
+### Componente C — Panel de soporte interno (admin LexCore)
+- **Como** admin de LexCore, **quiero** ver todos los tickets reportados, gestionar su estado y convertirlos en historias del backlog **para** dar soporte eficiente y convertir bugs en mejoras del producto.
+- **Acceso:** solo para usuarios con un rol interno especial (ej: `superadmin`) — ruta separada `/admin/soporte` o subdominio `admin.lexcore.app`
+- **Criterios de aceptación:**
+  - [ ] CA1: Lista de tickets con: número, estudio, módulo, descripción (preview), fecha, estado (abierto / en revisión / resuelto / descartado), urgente flag
+  - [ ] CA2: Filtros: por estado, por módulo, por estudio, por urgencia
+  - [ ] CA3: Vista de detalle del ticket: todos los campos + captura de pantalla si existe + contexto técnico (URL, browser, rol)
+  - [ ] CA4: Acciones sobre el ticket: cambiar estado, agregar nota interna, marcar como resuelto
+  - [ ] CA5: Botón "Pasar a backlog" → genera un issue pre-formateado en GitHub Issues (o lo agrega a `BACKLOG.md` vía API) con el contexto del ticket
+  - [ ] CA6: Respuesta al usuario — campo de respuesta que envía email al usuario que reportó con la explicación o resolución
+
+---
+
+### Modelo de datos — tabla `soporte_tickets`
+
+```
+soporte_tickets
+├── id (uuid, PK)
+├── numero (int, autoincremental — formato #001)
+├── tenant_id (FK studios)
+├── user_id (FK users)
+├── modulo (enum: expedientes, vencimientos, tareas, honorarios, contable, equipo, busqueda, perfil, otro)
+├── descripcion (text)
+├── captura_url (varchar, nullable — URL en R2)
+├── urgente (bool, default false)
+├── estado (enum: abierto, en_revision, resuelto, descartado)
+├── url_origen (varchar — página donde se originó el reporte)
+├── browser_info (varchar — user agent)
+├── nota_interna (text, nullable — respuesta del equipo LexCore)
+├── created_at (timestamptz)
+└── updated_at (timestamptz)
+```
+
+---
+
+### UX — Posición del widget
+
+```
+┌─────────────────────────────────┐
+│  sidebar │    contenido          │
+│          │                       │
+│  [Inicio]│                       │
+│  [Exped] │                       │
+│  [Venct] │                       │
+│  ...     │                       │
+│          │              [?]  ←── widget flotante, siempre visible
+└─────────────────────────────────┘
+```
+
+El `[?]` es un botón circular fijo `fixed bottom-6 right-6 z-50` con tooltip "Ayuda y soporte". Al hacer click abre un slide-over desde la derecha (ancho 400px desktop, fullscreen mobile).
+
+**Colores:** fondo blanco, borde suave, tab activo con `border-b-2 border-brand-600`. Sin colores llamativos — el widget debe sentirse parte del sistema, no un chat de ventas intrusivo.
+
+---
+
+### Fases de implementación
+
+| Fase | Alcance | Effort |
+|------|---------|--------|
+| **Fase 1 (MVP soporte)** | Widget + FAQs + formulario de reporte → email + tabla DB | 5 pts |
+| **Fase 2** | Panel interno admin LexCore con gestión de tickets | 5 pts |
+| **Fase 3** | Botón "Pasar a backlog" → GitHub Issues API | 3 pts |
+
+> Implementar Fase 1 primero. Fase 2 se puede hacer con la misma DB.
+
+---
+
 ## Backlog (post-MVP)
 
 > **Fuente:** Research sobre dolores de LexDoctor (líder del mercado) — 2026-04-15.
@@ -431,7 +756,8 @@
 - IA detecta patrones en los movimientos y sugiere vencimientos que podrían haberse omitido.
 - Ej: "Detecté una notificación de traslado del 10/04. ¿Registraste el plazo de contestación (10 días hábiles)?"
 
-### PREC-001 · Modelo de precios freemium
+### PREC-001 · Modelo de precios freemium — `blocked`
+- **🚫 BLOQUEADO (2026-04-16):** Decisión PO. No planificar hasta tener primeros usuarios reales y feedback de precio.
 - Plan gratuito: 1 usuario, hasta 10 expedientes activos, sin honorarios.
 - Plan Pro: desde $X USD/mes por usuario — con todas las features.
 - **Dolor LexDoctor:** $463,000 ARS de entrada. Barrera altísima para abogados jóvenes que recién se matriculan.
@@ -457,7 +783,8 @@
 > **Fuente:** Research sobre Veredicta, LITIS, IUSNET, MetaJurídico — 2026-04-15.
 > Estas features están en el mercado pero ningún competidor las tiene TODAS juntas + buena UX.
 
-### PJN-001 · Consulta de expedientes PJN en tiempo real
+### PJN-001 · Consulta de expedientes PJN en tiempo real — `blocked`
+- **🚫 BLOQUEADO (2026-04-16):** Requiere análisis de API PJN + spike técnico. No planificar sin investigación previa.
 - **Quién lo tiene:** Veredicta, LITIS, MetaJurídico, IUSNET, LexDoctor.
 - **Qué hace:** Conectar con el Portal Judicial Nacional y traer el estado actualizado del expediente.
 - **Qué LexCore puede hacer mejor:** Caché automático cuando PJN está caído (Veredicta lo tiene, los demás no).
@@ -467,13 +794,17 @@
   - [ ] CA3: Si PJN está caído, muestra el último estado cacheado con timestamp
   - [ ] CA4: Badge de "Nuevo movimiento PJN" en la lista de expedientes
 
-### PJN-002 · Sincronización automática con PJN (background)
+### PJN-002 · Sincronización automática con PJN (background) — `blocked`
+- **🚫 BLOQUEADO (2026-04-16):** Depende de PJN-001. No planificar hasta que PJN-001 esté done.
 - **Quién lo tiene:** Veredicta (diferenciador).
 - **Qué hace:** Sin que el abogado haga nada, el sistema consulta PJN cada noche y notifica si hay novedades.
 - **Criterios de aceptación:**
   - [ ] CA1: Tarea programada nocturna que consulta PJN para todos los expedientes activos
   - [ ] CA2: Si hay novedad: crea movimiento automático + badge de notificación in-app
   - [ ] CA3: Email diario resumen "Novedades del día" si hay movimientos nuevos
+
+### MON-01 · Trial 30 días + modo lectura — `blocked`
+- **🚫 BLOQUEADO (2026-04-16):** Sin usuarios reales aún. No tiene sentido implementar un límite de trial sin clientes. Revisar cuando haya primeros estudios en producción.
 
 ### WHATSAPP-001 · Bot de WhatsApp para clientes y abogados
 - **Quién lo tiene:** Veredicta (único competidor con esto — diferenciador fuerte en el mercado AR).
@@ -503,7 +834,8 @@
   - **Fase 3:** IA para intenciones complejas y respuestas en lenguaje natural
 - **Prerequisito:** Cuenta Meta Business verificada, número WhatsApp Business dedicado
 
-### COLLAB-001 · Colaboración en tiempo real en expediente
+### COLLAB-001 · Colaboración en tiempo real en expediente — `blocked`
+- **🚫 BLOQUEADO (2026-04-16):** Requiere WebSockets + infraestructura adicional. Complejidad alta para el valor actual. Revisar cuando haya equipos de 3+ usuarios activos simultáneos.
 - **Quién lo tiene:** Veredicta (parcialmente).
 - **Qué hace:** Cuando dos abogados están en el mismo expediente, ven los cambios del otro en tiempo real.
 - **Implementación LexCore:** WebSocket simple en el tab de movimientos.
@@ -549,6 +881,154 @@
 - **Quién lo tiene:** MetaJurídico (único diferenciador).
 - **Qué hace:** Conectar con todos los sistemas judiciales provinciales, no solo PJN federal.
 - **Prioridad:** Post-MVP. Requiere convenios con cada poder judicial provincial.
+
+---
+
+## 🚀 CHECKLIST PRIMER DEPLOY A PRODUCCIÓN
+
+> Todo lo marcado como ❌ debe estar resuelto antes de abrir el producto a usuarios reales.
+> Criterio de "listo para PRD": un estudio puede registrarse, operar y pagar sin intervención manual.
+
+---
+
+### 1. Infraestructura y deploy
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| INF-01 | Railway configurado con backend FastAPI | ❌ pendiente | Variables de entorno en Railway |
+| INF-02 | Vercel configurado con frontend Next.js | ❌ pendiente | `NEXTAUTH_URL` apuntando a dominio real |
+| INF-03 | PostgreSQL en Railway (o Supabase DB) | ❌ pendiente | No usar DB local |
+| INF-04 | Migraciones Alembic aplicadas en prod | ❌ pendiente | `alembic upgrade head` en Railway |
+| INF-05 | Dominio propio configurado (ej: app.lexcore.ar) | ❌ pendiente | DNS + HTTPS automático |
+| INF-06 | CORS actualizado con dominio real | ❌ pendiente | Sacar `localhost:3001` de CORS en prod |
+| INF-07 | Storage para documentos (Cloudflare R2) | ❌ pendiente | MinIO solo es para dev. R2 es gratuito hasta 10GB |
+| INF-08 | Variables de entorno de prod definidas | ❌ pendiente | Ver lista abajo |
+
+**Variables de entorno requeridas en prod:**
+```
+DATABASE_URL=postgresql://...
+SECRET_KEY=<random 64 chars>
+ENVIRONMENT=production
+ALLOW_DEV_ENDPOINTS=false
+NEXTAUTH_SECRET=<random>
+NEXTAUTH_URL=https://app.lexcore.ar
+NEXT_PUBLIC_API_URL=https://api.lexcore.ar
+RESEND_API_KEY=...
+OPENAI_API_KEY=...          # opcional, para resumen IA
+GOOGLE_CLIENT_ID=...        # para Google OAuth
+GOOGLE_CLIENT_SECRET=...
+S3_ENDPOINT_URL=https://...r2.cloudflarestorage.com
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...
+S3_BUCKET_NAME=lexcore-docs
+```
+
+---
+
+### 2. Auth y seguridad
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| SEC-01 | `SECRET_KEY` robusta (no la de dev) | ❌ pendiente | Mínimo 64 chars random |
+| SEC-02 | Rate limiting en login activo | ✅ hecho | 5 intentos → bloqueo 15min |
+| SEC-03 | Endpoints `/dev/*` deshabilitados en prod | ✅ hecho | `ALLOW_DEV_ENDPOINTS=false` |
+| SEC-04 | Google OAuth redirige a dominio real | ❌ pendiente | Actualizar en Google Cloud Console |
+| SEC-05 | HTTPS en todos los endpoints | ❌ pendiente | Railway + Vercel lo dan automático con dominio |
+| SEC-06 | Tokens JWT con expiración razonable | ✅ hecho | 30 días (revisar si es correcto para prod) |
+
+---
+
+### 3. Trial y monetización
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| MON-01 | Campo `trial_ends_at` en modelo Studio | ✅ hecho | Se setea al registrar |
+| MON-02 | Middleware que evalúa estado del trial | ❌ pendiente | No implementado aún |
+| MON-03 | Email día 25 avisando fin de trial | ❌ pendiente | Requiere job/cron o trigger |
+| MON-04 | Modo lectura día 31 (no puede crear) | ❌ pendiente | Bloqueo en middleware o frontend |
+| MON-05 | Página de "plan vencido" con CTA pago | ❌ pendiente | Diseño y ruta pendientes |
+| MON-06 | Integración de pagos (MercadoPago u otro) | ❌ pendiente | Post-MVP si se valida primero manualmente |
+
+> **Decisión sugerida:** para el primer deploy, MON-02/03/04/05 pueden ser manuales (el admin extiende el trial a mano). MON-06 es definitivamente post-MVP.
+
+---
+
+### 4. Email transaccional
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| EMAIL-01 | Resend configurado con dominio verificado | ❌ pendiente | Verificar dominio en resend.com |
+| EMAIL-02 | Email de invitación funciona en prod | ✅ hecho (código) | Depende de EMAIL-01 |
+| EMAIL-03 | Email de vencimientos urgentes funciona | ✅ hecho (código) | Depende de EMAIL-01 |
+| EMAIL-04 | Email de bienvenida al registrarse | ❌ pendiente | No implementado |
+
+---
+
+### 5. Observabilidad
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| OBS-01 | Sentry backend (FastAPI) | ❌ bloqueado | Activar con primer cliente real (US-11) |
+| OBS-02 | Sentry frontend (Next.js) | ❌ bloqueado | Ídem |
+| OBS-03 | Logs en Railway visibles | ✅ automático | Railway captura stdout |
+| OBS-04 | Health check endpoint | ✅ hecho | `GET /health` |
+
+---
+
+### 6. Calidad y datos
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| QA-01 | 117 tests pasan en CI | ✅ hecho | Suite completa verde |
+| QA-02 | Seed de demo deshabilitado en prod | ✅ hecho | Solo con `ALLOW_DEV_ENDPOINTS` |
+| QA-03 | Smoke test manual post-deploy | ❌ pendiente | Checklist de 5 min: register → expediente → vencimiento |
+| QA-04 | Backup automático de la DB | ❌ pendiente | Railway tiene snapshots, verificar que estén activos |
+
+---
+
+### 7. UX pre-launch
+
+| # | Item | Estado | Notas |
+|---|------|--------|-------|
+| UX-01 | Página de registro pulida (first impression) | ✅ hecho | `/register` |
+| UX-02 | Landing page o página de marketing | ❌ pendiente | Al menos una página `/` que explique el producto |
+| UX-03 | Error pages (404, 500) con branding | ❌ pendiente | Las de Next.js default no tienen marca |
+| UX-04 | Logo/favicon definitivo | ❌ pendiente | Actualmente usa ícono genérico |
+| UX-05 | Términos y condiciones + Privacidad | ❌ pendiente | Requerido legalmente para recolectar datos |
+
+---
+
+### Resumen ejecutivo
+
+| Categoría | Listo | Pendiente |
+|-----------|-------|-----------|
+| Infraestructura | 0/8 | 8 |
+| Seguridad | 3/6 | 3 |
+| Trial/Monetización | 1/6 | 5 |
+| Email | 2/4 | 2 |
+| Observabilidad | 2/4 | 2 |
+| Calidad | 2/4 | 2 |
+| UX pre-launch | 2/5 | 3 |
+| **Total** | **12/37** | **25** |
+
+> **Mínimo viable para primer usuario real:** INF-01 a INF-06 + SEC-01 + SEC-04 + EMAIL-01 + QA-03. El resto puede ir iterando.
+
+---
+
+## UX — Listados configurables
+
+### UX-001 · Columnas ordenables y configurables en listados — `idea`
+- **Prioridad:** P2
+- **Como** abogado, **quiero** ordenar las columnas de los listados y elegir cuáles ver **para** personalizar la vista según mi flujo de trabajo.
+- **Módulos:** Expedientes, Clientes
+- **Criterios de aceptación:**
+  - [ ] CA1: Puedo hacer clic en el header de cualquier columna para ordenar ASC/DESC
+  - [ ] CA2: El orden se mantiene mientras navego dentro del módulo
+  - [ ] CA3: Hay un botón/ícono para abrir un panel de configuración de columnas
+  - [ ] CA4: Puedo activar/desactivar columnas (con al menos una siempre visible)
+  - [ ] CA5: La configuración se persiste por usuario (localStorage como mínimo, DB como ideal)
+  - [ ] CA6: En mobile se adapta — columnas configurables no aplican en vista card
+- **Casos borde:** columna con todos los valores nulos al ordenar, resetear a configuración por defecto
 
 ---
 

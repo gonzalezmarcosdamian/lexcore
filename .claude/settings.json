@@ -6,8 +6,28 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = data.get('tool_input', {}).get('file_path') or data.get('tool_response', {}).get('filePath', '')\nif any(x in fp for x in ['backend/app', 'frontend/src']):\n    print(json.dumps({'systemMessage': 'RECORDATORIO LexCore: Actualizaste docs/producto/PRODUCTO.md? Si implementaste o modificaste una feature, es OBLIGATORIO.'}))\n\"",
-            "statusMessage": "Verificando trazabilidad de producto..."
+            "command": "python -c \"\nimport sys, json, subprocess\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = (data.get('tool_input', {}).get('file_path') or '').replace('\\\\', '/')\ncompose = 'C:/Users/gonza/OneDrive/Documentos/lexcore/docker-compose.yml'\nif 'frontend/src' in fp and not fp.endswith('.md'):\n    subprocess.Popen(['docker', 'compose', '-f', compose, 'restart', 'frontend'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n    print(json.dumps({'systemMessage': 'Frontend Docker reiniciado — listo en ~15s, recargá el browser (Ctrl+Shift+R).'}))\nelif 'backend/app' in fp and not fp.endswith('.md'):\n    subprocess.Popen(['docker', 'compose', '-f', compose, 'restart', 'backend'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n    print(json.dumps({'systemMessage': 'Backend Docker reiniciado.'}))\n\"",
+            "statusMessage": "Reiniciando contenedor Docker..."
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = (data.get('tool_input', {}).get('file_path') or '').replace('\\\\', '/')\nROUTERS = 'backend/app/routers'\nPAGES = 'frontend/src/app'\nif any(x in fp for x in [ROUTERS, PAGES]) and not fp.endswith('.md'):\n    print(json.dumps({'systemMessage': 'RECORDATORIO: Si esta es una feature completada, actualizaste docs/producto/PRODUCTO.md?'}))\n\"",
+            "statusMessage": "Verificando trazabilidad..."
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = (data.get('tool_input', {}).get('file_path') or '').replace('\\\\', '/')\nif 'backend/app/models/' in fp and fp.endswith('.py') and '__init__' not in fp:\n    print(json.dumps({'systemMessage': 'MODELO NUEVO/MODIFICADO — checklist OBLIGATORIO:\\n1. Agregar import en backend/app/models/__init__.py (sin esto Alembic genera migracion VACIA)\\n2. docker compose exec backend alembic revision --autogenerate -m \"add X table\"\\n3. Verificar que el .py de migracion tenga op.create_table — si esta vacio, falta el paso 1\\n4. docker compose exec backend alembic upgrade head'}))\n\"",
+            "statusMessage": "Verificando necesidad de migración..."
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = (data.get('tool_input', {}).get('file_path') or '').replace('\\\\', '/')\nif 'backend/alembic/versions/' in fp and fp.endswith('.py'):\n    print(json.dumps({'systemMessage': 'MIGRACION LISTA: Aplicala con:\\ndocker compose exec backend alembic upgrade head'}))\n\"",
+            "statusMessage": "Recordando aplicar migración..."
+          },
+          {
+            "type": "command",
+            "command": "python -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\nfp = (data.get('tool_input', {}).get('file_path') or '').replace('\\\\', '/')\nif 'docs/sprints' not in fp and 'BACKLOG' not in fp:\n    sys.exit(0)\ntry:\n    with open('docs/backlog/BACKLOG.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    blocked = re.findall(r'###.*?blocked.*', content, re.IGNORECASE)\n    if blocked:\n        ids = [re.search(r'(US-|PREC-|PJN-|COLLAB-|WHATSAPP-|AI-)\\w+', b) for b in blocked]\n        ids = [i.group(0) for i in ids if i]\n        if ids:\n            print(json.dumps({'systemMessage': 'ADVERTENCIA: Las siguientes historias estan BLOQUEADAS y NO deben planificarse:\\n' + chr(10).join('  - ' + i for i in ids)}))\nexcept:\n    pass\n\"",
+            "statusMessage": "Verificando historias bloqueadas..."
           }
         ]
       },
@@ -16,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\ncmd = data.get('tool_input', {}).get('command', '')\nif 'git commit' not in cmd:\n    sys.exit(0)\ntry:\n    with open('docs/producto/PRODUCTO.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    m = re.search(r'\\*\\*Versi.n:\\*\\*\\s*(\\S+)', content)\n    version = m.group(1) if m else 'desconocida'\n    print(json.dumps({'systemMessage': f'VERSION ACTUAL: v{version} — Si este commit sube la version, recordá hacer: git tag v{version} && git push --tags'}))\nexcept:\n    pass\n\"",
+            "command": "python -c \"\nimport sys, json, re\ntry:\n    data = json.load(sys.stdin)\nexcept:\n    sys.exit(0)\ncmd = data.get('tool_input', {}).get('command', '')\nif 'git commit' not in cmd:\n    sys.exit(0)\ntry:\n    with open('docs/producto/PRODUCTO.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    m = re.search(r'\\*\\*Versi.n:\\*\\*\\s*(\\S+)', content)\n    version = m.group(1) if m else 'desconocida'\n    print(json.dumps({'systemMessage': f'VERSION ACTUAL: v{version} — Si este commit sube la version, recordá: git tag v{version} && git push --tags'}))\nexcept:\n    pass\n\"",
             "statusMessage": "Revisando versión..."
           }
         ]
@@ -27,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -c \"\nimport json, re, subprocess, os\nmsg_lines = ['--- CIERRE DE SESION LexCore ---', 'Antes de terminar, confirma:', '[ ] PRODUCTO.md actualizado con features completadas', '[ ] Daily creado en docs/sprints/sprint-XX/daily/YYYY-MM-DD.md', '[ ] Historias completadas -> estado done en BACKLOG.md']\ntry:\n    with open('docs/producto/PRODUCTO.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    m = re.search(r'\\*\\*Versi.n:\\*\\*\\s*(\\S+)', content)\n    version = m.group(1) if m else '?'\n    try:\n        tags = subprocess.check_output(['git', 'tag'], text=True).strip().split()\n        tag = f'v{version}'\n        if tag not in tags:\n            msg_lines.append(f'[ ] git tag {tag} && git push --tags  (version {version} sin tag)')\n        else:\n            msg_lines.append(f'[x] Tag {tag} ya existe')\n    except:\n        msg_lines.append(f'[ ] Crear tag v{version} cuando commitees')\nexcept:\n    pass\nprint(json.dumps({'systemMessage': chr(10).join(msg_lines)}))\n\"",
+            "command": "python -c \"\nimport json, re, subprocess\nmsg_lines = ['--- CIERRE DE SESION LexCore ---', 'Antes de terminar, confirma:', '[ ] PRODUCTO.md actualizado con features completadas', '[ ] Daily creado en docs/sprints/sprint-XX/daily/YYYY-MM-DD.md', '[ ] Historias completadas -> estado done en BACKLOG.md', '[ ] BITACORA.md con entrada de la sesion']\ntry:\n    with open('docs/producto/PRODUCTO.md', 'r', encoding='utf-8') as f:\n        content = f.read()\n    m = re.search(r'\\*\\*Versi.n:\\*\\*\\s*(\\S+)', content)\n    version = m.group(1) if m else '?'\n    try:\n        tags = subprocess.check_output(['git', 'tag'], text=True).strip().split()\n        tag = f'v{version}'\n        if tag not in tags:\n            msg_lines.append(f'[ ] git tag {tag} && git push --tags  (version {version} sin tag)')\n        else:\n            msg_lines.append(f'[x] Tag {tag} ya existe')\n    except:\n        msg_lines.append(f'[ ] Crear tag v{version} cuando commitees')\nexcept:\n    pass\nprint(json.dumps({'systemMessage': chr(10).join(msg_lines)}))\n\"",
             "statusMessage": "Checklist de cierre..."
           }
         ]

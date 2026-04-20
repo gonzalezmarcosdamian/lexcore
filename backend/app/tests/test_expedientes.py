@@ -4,10 +4,8 @@ from app.tests.conftest import make_studio, make_user
 from app.models.user import UserRole
 
 
-def create_expediente(client, headers, *, numero="EXP-001", caratula="Test c/ Test"):
-    return client.post("/expedientes", json={
-        "numero": numero, "caratula": caratula, "estado": "activo"
-    }, headers=headers)
+def create_expediente(client, headers, *, caratula="Test c/ Test"):
+    return client.post("/expedientes", json={"caratula": caratula}, headers=headers)
 
 
 class TestExpedientesCRUD:
@@ -15,30 +13,30 @@ class TestExpedientesCRUD:
         r = create_expediente(client, auth_a)
         assert r.status_code == 201
         data = r.json()
-        assert data["numero"] == "EXP-001"
+        assert data["numero"].startswith("EXP-")
         assert data["estado"] == "activo"
         # El creador debe ser asignado como responsable
         assert len(data["abogados"]) == 1
         assert data["abogados"][0]["rol"] == "responsable"
 
     def test_listar_expedientes(self, client, auth_a):
-        create_expediente(client, auth_a, numero="EXP-001")
-        create_expediente(client, auth_a, numero="EXP-002")
+        create_expediente(client, auth_a, caratula="Caso A")
+        create_expediente(client, auth_a, caratula="Caso B")
         r = client.get("/expedientes", headers=auth_a)
         assert r.status_code == 200
         assert len(r.json()) == 2
 
     def test_filtrar_por_estado(self, client, auth_a):
-        eid = create_expediente(client, auth_a, numero="EXP-001").json()["id"]
+        eid = create_expediente(client, auth_a, caratula="Caso A").json()["id"]
         client.patch(f"/expedientes/{eid}", json={"estado": "cerrado"}, headers=auth_a)
-        create_expediente(client, auth_a, numero="EXP-002")
+        create_expediente(client, auth_a, caratula="Caso B")
         r = client.get("/expedientes?estado=activo", headers=auth_a)
         assert all(e["estado"] == "activo" for e in r.json())
 
-    def test_buscar_por_numero(self, client, auth_a):
-        create_expediente(client, auth_a, numero="EXP-2026-001", caratula="García")
-        create_expediente(client, auth_a, numero="EXP-2026-002", caratula="Martínez")
-        r = client.get("/expedientes?q=001", headers=auth_a)
+    def test_buscar_por_caratula(self, client, auth_a):
+        create_expediente(client, auth_a, caratula="García c/ Empresa")
+        create_expediente(client, auth_a, caratula="Martínez c/ Estado")
+        r = client.get("/expedientes?q=García", headers=auth_a)
         assert len(r.json()) == 1
 
     def test_obtener_expediente(self, client, auth_a):

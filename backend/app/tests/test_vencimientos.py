@@ -7,9 +7,7 @@ def hoy_plus(days: int) -> str:
 
 
 def create_expediente(client, headers):
-    return client.post("/expedientes", json={
-        "numero": "EXP-001", "caratula": "Test", "estado": "activo"
-    }, headers=headers).json()["id"]
+    return client.post("/expedientes", json={"caratula": "Test c/ Test"}, headers=headers).json()["id"]
 
 
 def create_vencimiento(client, headers, eid, *, dias=10, descripcion="Audiencia"):

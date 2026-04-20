@@ -13,12 +13,20 @@ class PagoCreate(BaseModel):
     moneda: Moneda = Moneda.ARS
     fecha: str  # YYYY-MM-DD
     comprobante: Optional[str] = None
+    tipo: str = "capital"  # "capital" | "interes"
 
     @field_validator("importe")
     @classmethod
     def importe_positivo(cls, v):
         if v <= 0:
             raise ValueError("El importe debe ser mayor a cero")
+        return v
+
+    @field_validator("tipo")
+    @classmethod
+    def tipo_valido(cls, v):
+        if v not in ("capital", "interes"):
+            raise ValueError("El tipo debe ser 'capital' o 'interes'")
         return v
 
 
@@ -29,6 +37,7 @@ class PagoOut(BaseModel):
     moneda: Moneda
     fecha: str
     comprobante: Optional[str] = None
+    tipo: str = "capital"
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -72,6 +81,8 @@ class HonorarioOut(BaseModel):
     pagos: list[PagoOut] = []
     # Calculado
     total_pagado: Decimal = Decimal("0")
+    total_capital: Decimal = Decimal("0")
+    total_intereses: Decimal = Decimal("0")
     saldo_pendiente: Decimal = Decimal("0")
     created_at: datetime
     updated_at: datetime
@@ -81,10 +92,14 @@ class HonorarioOut(BaseModel):
     @classmethod
     def from_orm_with_saldo(cls, obj) -> "HonorarioOut":
         pagos_misma_moneda = [p for p in obj.pagos if p.moneda == obj.moneda]
-        total_pagado = sum((p.importe for p in pagos_misma_moneda), Decimal("0"))
-        saldo = obj.monto_acordado - total_pagado
+        total_capital = sum((p.importe for p in pagos_misma_moneda if p.tipo == "capital"), Decimal("0"))
+        total_intereses = sum((p.importe for p in pagos_misma_moneda if p.tipo == "interes"), Decimal("0"))
+        total_pagado = total_capital + total_intereses
+        saldo = obj.monto_acordado - total_capital  # el saldo de capital es lo que falta pagar del principal
         data = cls.model_validate(obj)
         data.total_pagado = total_pagado
+        data.total_capital = total_capital
+        data.total_intereses = total_intereses
         data.saldo_pendiente = saldo
         return data
 

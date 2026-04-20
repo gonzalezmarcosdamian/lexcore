@@ -7,6 +7,7 @@ from app.models.expediente import (
 )
 from app.models.user import User
 from app.models.base import utcnow
+from app.services.resumen_invalidar import invalidar_resumen
 from app.schemas.expediente import (
     AbogadoEnExpedienteOut,
     AsignarAbogadoRequest,
@@ -67,6 +68,13 @@ def listar_expedientes(
     return [_enriquecer_abogados(db, e) for e in exps]
 
 
+def _generar_numero(db, tenant_id: str) -> str:
+    from datetime import datetime
+    year = datetime.utcnow().year
+    count = db.query(Expediente).filter(Expediente.tenant_id == tenant_id).count()
+    return f"EXP-{year}-{count + 1:04d}"
+
+
 @router.post("", response_model=ExpedienteOut, status_code=status.HTTP_201_CREATED)
 def crear_expediente(
     body: ExpedienteCreate,
@@ -75,7 +83,13 @@ def crear_expediente(
 ):
     tenant_id = current_user["studio_id"]
     data = body.model_dump(exclude={"abogado_ids"})
-    expediente = Expediente(tenant_id=tenant_id, **data)
+    numero = _generar_numero(db, tenant_id)
+    expediente = Expediente(
+        tenant_id=tenant_id,
+        numero=numero,
+        estado="activo",
+        **data,
+    )
     db.add(expediente)
     db.flush()  # get ID before adding abogados
 
@@ -163,6 +177,7 @@ def crear_movimiento(
         texto=body.texto,
     )
     db.add(mov)
+    invalidar_resumen(db, expediente_id, current_user["studio_id"])
     db.commit()
     db.refresh(mov)
     return mov

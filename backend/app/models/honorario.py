@@ -41,5 +41,6 @@ class PagoHonorario(TenantModel):
     moneda: Mapped[Moneda] = mapped_column(Enum(Moneda), nullable=False, default=Moneda.ARS)
     fecha: Mapped[str] = mapped_column(String(10), nullable=False)  # ISO date
     comprobante: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    tipo: Mapped[str] = mapped_column(String(20), nullable=False, default="capital")  # "capital" | "interes"
 
     honorario: Mapped["Honorario"] = relationship("Honorario", back_populates="pagos")

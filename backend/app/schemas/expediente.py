@@ -29,11 +29,9 @@ class MovimientoOut(BaseModel):
 
 
 class ExpedienteCreate(BaseModel):
-    numero: str
     caratula: str
     fuero: Optional[str] = None
     juzgado: Optional[str] = None
-    estado: EstadoExpediente = EstadoExpediente.activo
     cliente_id: Optional[str] = None
     abogado_ids: List[str] = []  # user_ids adicionales (el creador siempre es responsable)
 

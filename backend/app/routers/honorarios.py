@@ -12,6 +12,7 @@ from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import Expediente
 from app.models.honorario import Honorario, Moneda, PagoHonorario
 from app.models.base import utcnow
+from app.services.resumen_invalidar import invalidar_resumen
 from app.schemas.honorario import (
     HonorarioCreate, HonorarioOut, HonorarioResumen, HonorarioUpdate,
     PagoCreate, PagoOut,
@@ -165,6 +166,7 @@ def registrar_pago(
         **body.model_dump(),
     )
     db.add(pago)
+    invalidar_resumen(db, h.expediente_id, tenant_id)
     db.commit()
     db.refresh(pago)
     return pago

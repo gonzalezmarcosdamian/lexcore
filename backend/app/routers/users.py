@@ -51,6 +51,11 @@ class UserRoleUpdate(BaseModel):
     role: UserRole
 
 
+class UserProfileUpdate(BaseModel):
+    full_name: str | None = None
+    password: str | None = None
+
+
 @router.get("/me", response_model=UserProfile)
 def get_my_profile(db: DbSession, current_user: CurrentUser):
     """Devuelve el perfil del usuario autenticado con estado de Calendar."""
@@ -64,6 +69,32 @@ def get_my_profile(db: DbSession, current_user: CurrentUser):
         role=user.role,
         auth_provider=user.auth_provider.value if hasattr(user.auth_provider, "value") else str(user.auth_provider),
         google_refresh_token="***" if user.google_refresh_token else None,  # no exponer el token
+        google_calendar_id=user.google_calendar_id,
+    )
+
+
+@router.patch("/me", response_model=UserProfile)
+def update_my_profile(body: UserProfileUpdate, db: DbSession, current_user: CurrentUser):
+    """Actualiza nombre y/o contraseña del usuario autenticado."""
+    from app.core.auth import get_password_hash
+    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if body.full_name is not None:
+        user.full_name = body.full_name.strip()
+    if body.password is not None:
+        if len(body.password) < 8:
+            raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 8 caracteres")
+        user.hashed_password = get_password_hash(body.password)
+    db.commit()
+    db.refresh(user)
+    return UserProfile(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        role=user.role,
+        auth_provider=user.auth_provider.value if hasattr(user.auth_provider, "value") else str(user.auth_provider),
+        google_refresh_token="***" if user.google_refresh_token else None,
         google_calendar_id=user.google_calendar_id,
     )
 

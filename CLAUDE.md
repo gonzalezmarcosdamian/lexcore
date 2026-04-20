@@ -71,7 +71,7 @@ El hook de `Stop` muestra el checklist de cierre de sesión.
 /fa  → refina historia (criterios de aceptación)
 /tl  → valida diseño técnico, aprueba o rechaza
 /ux  → diseña UI si aplica (mobile-first 375px)
-/dev → implementa: model → migration → service → router → test → frontend
+/dev → implementa: model → __init__.py → migration → service → router → test → frontend
 /qa  → valida criterios de aceptación + test de tenant
 /sm  → actualiza docs, mueve historia a done
 ```
@@ -155,6 +155,21 @@ Invariantes críticos:
 
 ---
 
+## REGLA RÍGIDA — NUEVO MODELO SQLALCHEMY
+
+**Cada vez que se crea un archivo en `backend/app/models/`, OBLIGATORIO en este orden:**
+
+1. **Definir el modelo** en `backend/app/models/nuevo_modelo.py` (hereda de `TenantModel`)
+2. **Registrarlo en `backend/app/models/__init__.py`** — importar la clase Y agregarla a `__all__`
+   - ❌ Sin este paso, Alembic genera migraciones vacías (el autogenerate no detecta el modelo)
+3. **Generar la migración**: `docker compose exec backend alembic revision --autogenerate -m "add X table"`
+4. **Verificar** que el archivo de migración tenga `op.create_table(...)` — si está vacío, faltó el paso 2
+5. **Aplicar**: `docker compose exec backend alembic upgrade head`
+
+**Si la migración sale vacía → el modelo no está en `__init__.py`. Sin excepción.**
+
+---
+
 ## ARQUITECTURA MULTI-TENANT
 
 - Backend: middleware extrae `studio_id` del JWT → todos los modelos tienen `tenant_id`
@@ -222,3 +237,7 @@ Ver `docs/LEARNINGS.md` para el historial completo.
 | Puerto frontend 3001 | Puerto 3000 ocupado por otro proyecto local |
 | `pydantic[email]` | Requerido para usar `EmailStr` |
 | Mobile-first siempre | Abogados trabajan en movimiento |
+| Número de expediente autogenerado | El sistema genera `EXP-{año}-{NNNN}` — evita errores y garantiza formato. Ver `_generar_numero()` en `routers/expedientes.py` |
+| Estado inicial de expediente = activo | Un expediente nace activo siempre. `ExpedienteCreate` no acepta `estado`. |
+| Vencimientos y Tareas son ortogonales | No hay FK entre ellos. Vencimiento = plazo procesal. Tarea = trabajo interno. Si se relacionan en el futuro: `vencimiento_id` opcional en `Tarea`. |
+| Monetización: trial 30 días sin tarjeta | Acceso completo → día 25 aviso email → día 31 modo lectura. Campo `trial_ends_at` en modelo `Studio`. |
