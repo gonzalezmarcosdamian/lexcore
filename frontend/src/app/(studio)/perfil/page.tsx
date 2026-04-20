@@ -196,8 +196,8 @@ function PerfilPageInner() {
   }, [studio]);
 
   const isGoogleUser = profile?.auth_provider === "google" || (session?.user as any)?.authProvider === "google";
-  // Google users tienen refresh_token guardado en el backend desde el login
-  const isCalendarConnected = Boolean(profile?.google_refresh_token) || isGoogleUser;
+  // Conectado = tiene refresh_token guardado. Loading (profile null) asume true para Google users para evitar flicker.
+  const isCalendarConnected = profile !== null ? Boolean(profile?.google_refresh_token) : isGoogleUser;
   const initials = getInitials(profile?.full_name ?? session?.user?.name ?? "?");
   const avatarColor = getAvatarColor(profile?.full_name ?? session?.user?.name ?? "");
   const email = profile?.email ?? session?.user?.email ?? "";
