@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -20,7 +20,7 @@ const inputClass =
   "w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition";
 const labelClass = "block text-sm font-medium text-ink-700 mb-1.5";
 
-export default function NuevoVencimientoPage() {
+function NuevoVencimientoPageInner() {
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -67,7 +67,7 @@ export default function NuevoVencimientoPage() {
   };
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-2xl mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 mb-5 text-sm">
         {fromExpediente ? (
@@ -207,4 +207,8 @@ export default function NuevoVencimientoPage() {
       </form>
     </div>
   );
+}
+
+export default function NuevoVencimientoPage() {
+  return <Suspense><NuevoVencimientoPageInner /></Suspense>;
 }
