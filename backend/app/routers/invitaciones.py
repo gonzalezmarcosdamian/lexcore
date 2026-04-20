@@ -120,9 +120,14 @@ def aceptar_invitacion(token: str, db: DbSession):
     ).first()
     if not inv:
         raise HTTPException(status_code=404, detail="Invitación inválida o expirada")
+
+    # El usuario ya tiene cuenta en otro estudio → no necesita crear contraseña
+    user_exists = db.query(User).filter(User.email == inv.email).first() is not None
+
     return {
         "tenant_id": inv.tenant_id,
         "email": inv.email,
         "full_name": inv.full_name,
         "rol": inv.rol,
+        "user_exists": user_exists,
     }

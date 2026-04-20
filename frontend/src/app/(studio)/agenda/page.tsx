@@ -5,16 +5,20 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, Vencimiento, Expediente } from "@/lib/api";
 
-type Periodo = "hoy" | "semana" | "mes" | "anio";
+type Periodo = "hoy" | "semana" | "mes" | "anio" | "custom";
 
 const PERIODO_LABELS: Record<Periodo, string> = {
   hoy:    "Hoy",
   semana: "Esta semana",
   mes:    "Este mes",
   anio:   "Este año",
+  custom: "Personalizado",
 };
 
-function getDates(periodo: Periodo): { desde: string; hasta: string } {
+function getDates(periodo: Periodo, customDesde?: string, customHasta?: string): { desde: string; hasta: string } {
+  if (periodo === "custom") {
+    return { desde: customDesde ?? "", hasta: customHasta ?? "" };
+  }
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -35,7 +39,6 @@ function getDates(periodo: Periodo): { desde: string; hasta: string } {
     return { desde: fmt(inicio), hasta: fmt(fin) };
   }
 
-  // Este año
   return { desde: `${now.getFullYear()}-01-01`, hasta: `${now.getFullYear()}-12-31` };
 }
 
@@ -210,6 +213,8 @@ export default function AgendaPage() {
   const token = session?.user?.backendToken;
 
   const [periodo, setPeriodo] = useState<Periodo>("anio");
+  const [customDesde, setCustomDesde] = useState("");
+  const [customHasta, setCustomHasta] = useState("");
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,7 +285,7 @@ export default function AgendaPage() {
     setTareas(prev => prev.map(x => x.id === t.id ? updated : x));
   };
 
-  const { desde, hasta } = getDates(periodo);
+  const { desde, hasta } = getDates(periodo, customDesde, customHasta);
 
   const vFiltradas = vencimientos.filter(v => inRange(v.fecha, desde, hasta));
   const tFiltradas = tareas.filter(t => t.fecha_limite && inRange(t.fecha_limite, desde, hasta));
@@ -320,18 +325,38 @@ export default function AgendaPage() {
       </div>
 
       {/* Selector de período */}
-      <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-full sm:w-fit">
-        {(["hoy", "semana", "mes", "anio"] as Periodo[]).map(p => (
-          <button
-            key={p}
-            onClick={() => setPeriodo(p)}
-            className={`flex-1 sm:flex-none text-sm px-3 sm:px-4 py-2 rounded-lg font-medium transition ${
-              periodo === p ? "bg-white shadow-sm text-ink-900" : "text-ink-500 hover:text-ink-700"
-            }`}
-          >
-            {PERIODO_LABELS[p]}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-full sm:w-fit">
+          {(["hoy", "semana", "mes", "anio", "custom"] as Periodo[]).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriodo(p)}
+              className={`flex-1 sm:flex-none text-sm px-3 sm:px-4 py-2 rounded-lg font-medium transition ${
+                periodo === p ? "bg-white shadow-sm text-ink-900" : "text-ink-500 hover:text-ink-700"
+              }`}
+            >
+              {PERIODO_LABELS[p]}
+            </button>
+          ))}
+        </div>
+        {periodo === "custom" && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={customDesde}
+              onChange={(e) => setCustomDesde(e.target.value)}
+              className="border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
+            />
+            <span className="text-xs text-ink-400 font-medium">hasta</span>
+            <input
+              type="date"
+              value={customHasta}
+              onChange={(e) => setCustomHasta(e.target.value)}
+              min={customDesde}
+              className="border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
+            />
+          </div>
+        )}
       </div>
 
       {/* Leyenda */}

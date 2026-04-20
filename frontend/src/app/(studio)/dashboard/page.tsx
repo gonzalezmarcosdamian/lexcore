@@ -10,6 +10,28 @@ import { SplashScreen } from "@/components/ui/splash-screen";
 
 const today = new Date().toISOString().split("T")[0];
 
+type Periodo = "hoy" | "semana" | "mes" | "anio" | "custom";
+const PERIODO_LABELS: Record<Periodo, string> = { hoy: "Hoy", semana: "Esta semana", mes: "Este mes", anio: "Este año", custom: "Personalizado" };
+
+function getDates(periodo: Periodo, customDesde?: string, customHasta?: string): { desde: string; hasta: string } {
+  if (periodo === "custom") return { desde: customDesde ?? "", hasta: customHasta ?? "" };
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const t = fmt(now);
+  if (periodo === "hoy") return { desde: t, hasta: t };
+  if (periodo === "semana") {
+    const day = now.getDay() || 7;
+    const lunes = new Date(now); lunes.setDate(now.getDate() - day + 1);
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    return { desde: fmt(lunes), hasta: fmt(domingo) };
+  }
+  if (periodo === "mes") {
+    return { desde: fmt(new Date(now.getFullYear(), now.getMonth(), 1)), hasta: fmt(new Date(now.getFullYear(), now.getMonth() + 1, 0)) };
+  }
+  return { desde: `${now.getFullYear()}-01-01`, hasta: `${now.getFullYear()}-12-31` };
+}
+
 function isUrgente(fecha: string) {
   const diff = new Date(fecha).getTime() - Date.now();
   return diff >= 0 && diff < 48 * 3600 * 1000;
@@ -45,6 +67,9 @@ export default function DashboardPage() {
   const [loadingTareas, setLoadingTareas] = useState(true);
   const [marking, setMarking] = useState<string | null>(null);
   const [markingTarea, setMarkingTarea] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState<Periodo>("anio");
+  const [customDesde, setCustomDesde] = useState("");
+  const [customHasta, setCustomHasta] = useState("");
   const [honorarios, setHonorarios] = useState<HonorarioResumen | null>(null);
   const [gastoResumen, setGastoResumen] = useState<GastoResumen | null>(null);
   const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
@@ -103,11 +128,18 @@ export default function DashboardPage() {
     } catch {} finally { setMarkingTarea(null); }
   }
 
-  const tareasHoy = tareas.filter((t) => t.fecha_limite && t.fecha_limite <= today);
-  const tareasFuturas = tareas.filter((t) => !t.fecha_limite || t.fecha_limite > today);
-  const vencimientosHoy = proximos.filter((v) => v.fecha === today);
-  const urgentes = proximos.filter((v) => isUrgente(v.fecha) && v.fecha !== today);
-  const proximos30 = proximos.filter((v) => !isUrgente(v.fecha) && v.fecha !== today);
+  const { desde: pDesde, hasta: pHasta } = getDates(periodo, customDesde, customHasta);
+  const inRange = (f: string) => !pDesde || !pHasta ? true : f >= pDesde && f <= pHasta;
+
+  const tareasFiltradas = tareas.filter((t) => !t.fecha_limite || inRange(t.fecha_limite));
+  const proximosFiltrados = proximos.filter((v) => inRange(v.fecha));
+
+  const tareasHoy = tareasFiltradas.filter((t) => t.fecha_limite && t.fecha_limite <= today);
+  const tareasFuturas = tareasFiltradas.filter((t) => t.fecha_limite && t.fecha_limite > today);
+  const tareasSinFecha = tareasFiltradas.filter((t) => !t.fecha_limite);
+  const vencimientosHoy = proximosFiltrados.filter((v) => v.fecha === today);
+  const urgentes = proximosFiltrados.filter((v) => isUrgente(v.fecha) && v.fecha !== today);
+  const proximos30 = proximosFiltrados.filter((v) => !isUrgente(v.fecha) && v.fecha !== today);
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
@@ -134,6 +166,41 @@ export default function DashboardPage() {
           ]}
           tip="Marcá tareas y vencimientos como completados directamente desde el dashboard."
         />
+      </div>
+
+      {/* Selector de período */}
+      <div className="space-y-2">
+        <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-full sm:w-fit">
+          {(["hoy", "semana", "mes", "anio", "custom"] as Periodo[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriodo(p)}
+              className={`flex-1 sm:flex-none text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg font-medium transition ${
+                periodo === p ? "bg-white shadow-sm text-ink-900" : "text-ink-500 hover:text-ink-700"
+              }`}
+            >
+              {PERIODO_LABELS[p]}
+            </button>
+          ))}
+        </div>
+        {periodo === "custom" && (
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={customDesde}
+              onChange={(e) => setCustomDesde(e.target.value)}
+              className="border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
+            />
+            <span className="text-xs text-ink-400 font-medium">hasta</span>
+            <input
+              type="date"
+              value={customHasta}
+              onChange={(e) => setCustomHasta(e.target.value)}
+              min={customDesde}
+              className="border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent"
+            />
+          </div>
+        )}
       </div>
 
       {/* Empty state */}
@@ -177,8 +244,8 @@ export default function DashboardPage() {
             {[
               { label: "Expedientes activos", value: totalExpedientes ?? "—" },
               { label: "Clientes activos", value: totalClientes ?? "—" },
-              { label: "Tareas pendientes", value: tareas.length, accent: tareas.filter(t => t.fecha_limite && t.fecha_limite <= today).length > 0 ? "red" : undefined },
-              { label: "Vencimientos pendientes", value: proximos.length, accent: urgentes.length > 0 ? "red" : undefined },
+              { label: "Tareas pendientes", value: tareasFiltradas.length, accent: tareasHoy.length > 0 ? "red" : undefined },
+              { label: "Vencimientos pendientes", value: proximosFiltrados.length, accent: urgentes.length > 0 ? "red" : undefined },
             ].map(({ label, value, accent }) => (
               <div key={label} className="bg-white rounded-2xl border border-ink-100 shadow-sm px-4 py-3.5 flex flex-col gap-1">
                 <p className="text-xs text-ink-400 font-medium leading-tight truncate">{label}</p>
@@ -196,8 +263,8 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   <h2 className="text-sm font-semibold text-ink-900">Tareas pendientes</h2>
-                  {tareas.length > 0 && (
-                    <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{tareas.length}</span>
+                  {tareasFiltradas.length > 0 && (
+                    <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{tareasFiltradas.length}</span>
                   )}
                 </div>
                 <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
@@ -212,7 +279,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              ) : tareas.length === 0 ? (
+              ) : tareasFiltradas.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-10 text-center px-6">
                   <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
                     <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -247,12 +314,12 @@ export default function DashboardPage() {
                     </>
                   )}
                   {/* Sin fecha */}
-                  {tareas.filter(t => !t.fecha_limite).length > 0 && (
+                  {tareasSinFecha.length > 0 && (
                     <>
                       <div className="px-5 py-2 bg-ink-50/60">
                         <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Sin fecha límite</p>
                       </div>
-                      {tareas.filter(t => !t.fecha_limite).map((t) => (
+                      {tareasSinFecha.map((t) => (
                         <TareaRow key={t.id} tarea={t} onHecha={handleTareaHecha} marking={markingTarea} />
                       ))}
                     </>
@@ -267,8 +334,8 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                   <h2 className="text-sm font-semibold text-ink-900">Vencimientos</h2>
-                  {proximos.length > 0 && (
-                    <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{proximos.length}</span>
+                  {proximosFiltrados.length > 0 && (
+                    <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{proximosFiltrados.length}</span>
                   )}
                 </div>
                 <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
@@ -283,7 +350,7 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              ) : proximos.length === 0 ? (
+              ) : proximosFiltrados.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center py-10 text-center px-6">
                   <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center mb-3">
                     <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>

@@ -10,6 +10,7 @@ interface InvitacionData {
   full_name: string;
   rol: string;
   tenant_id: string;
+  user_exists: boolean;
 }
 
 export default function AceptarInvitacionPage() {
@@ -52,14 +53,33 @@ export default function AceptarInvitacionPage() {
       const r = await fetch(`${API}/auth/register-invited`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          password,
-        }),
+        body: JSON.stringify({ token, password }),
       });
       if (!r.ok) {
         const data = await r.json().catch(() => ({}));
         throw new Error(data.detail ?? "Error al registrar usuario");
+      }
+      setDone(true);
+      setTimeout(() => router.push("/login"), 3000);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleJoin() {
+    setError("");
+    setSubmitting(true);
+    try {
+      const r = await fetch(`${API}/auth/join-studio`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        throw new Error(data.detail ?? "Error al unirse al estudio");
       }
       setDone(true);
       setTimeout(() => router.push("/login"), 3000);
@@ -79,7 +99,9 @@ export default function AceptarInvitacionPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-[#0f1c2e] mb-2">¡Cuenta creada!</h2>
+          <h2 className="text-xl font-bold text-[#0f1c2e] mb-2">
+            {invitacion?.user_exists ? "¡Te uniste al estudio!" : "¡Cuenta creada!"}
+          </h2>
           <p className="text-sm text-[#6b8aaa]">Redirigiendo al login en unos segundos...</p>
         </div>
       </div>
@@ -89,7 +111,6 @@ export default function AceptarInvitacionPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f7fa] px-4">
       <div className="bg-white rounded-2xl border border-[#e8eef4] shadow-sm overflow-hidden w-full max-w-md">
-        {/* Header */}
         <div className="bg-[#0f1c2e] px-8 py-6 flex items-center gap-3">
           <div className="w-8 h-8 bg-[#2b4dd4] rounded-lg flex items-center justify-center">
             <span className="text-white text-base font-bold">⚖</span>
@@ -119,7 +140,6 @@ export default function AceptarInvitacionPage() {
               <h2 className="text-xl font-bold text-[#0f1c2e] mb-1">Aceptar invitación</h2>
               <p className="text-sm text-[#6b8aaa] mb-6">
                 Vas a unirte como <strong className="text-[#2b4dd4] capitalize">{invitacion.rol}</strong>.
-                Elegí una contraseña para tu cuenta.
               </p>
 
               <div className="bg-[#f4f7fa] rounded-xl p-4 mb-6 space-y-1">
@@ -128,42 +148,61 @@ export default function AceptarInvitacionPage() {
                 <p className="text-sm text-[#3a5272]">{invitacion.email}</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-[#3a5272] mb-1.5">Contraseña</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 8 caracteres"
-                    required
-                    className="w-full border border-[#e8eef4] rounded-xl px-4 py-2.5 text-sm text-[#0f1c2e] placeholder:text-[#b0c0d0] focus:outline-none focus:ring-2 focus:ring-[#2b4dd4]/20 focus:border-[#2b4dd4]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#3a5272] mb-1.5">Confirmar contraseña</label>
-                  <input
-                    type="password"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    placeholder="Repetí la contraseña"
-                    required
-                    className="w-full border border-[#e8eef4] rounded-xl px-4 py-2.5 text-sm text-[#0f1c2e] placeholder:text-[#b0c0d0] focus:outline-none focus:ring-2 focus:ring-[#2b4dd4]/20 focus:border-[#2b4dd4]"
-                  />
-                </div>
+              {invitacion.user_exists ? (
+                <>
+                  <p className="text-sm text-[#6b8aaa] mb-6">
+                    Ya tenés una cuenta en LexCore. No necesitás crear otra contraseña.
+                  </p>
+                  {error && (
+                    <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{error}</p>
+                  )}
+                  <button
+                    onClick={handleJoin}
+                    disabled={submitting}
+                    className="w-full bg-[#2b4dd4] hover:bg-[#2440b8] text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-60"
+                  >
+                    {submitting ? "Uniéndome..." : "Unirme al estudio →"}
+                  </button>
+                </>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <p className="text-sm text-[#6b8aaa] -mt-2 mb-2">Elegí una contraseña para tu cuenta.</p>
+                  <div>
+                    <label className="block text-xs font-medium text-[#3a5272] mb-1.5">Contraseña</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 8 caracteres"
+                      required
+                      className="w-full border border-[#e8eef4] rounded-xl px-4 py-2.5 text-sm text-[#0f1c2e] placeholder:text-[#b0c0d0] focus:outline-none focus:ring-2 focus:ring-[#2b4dd4]/20 focus:border-[#2b4dd4]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#3a5272] mb-1.5">Confirmar contraseña</label>
+                    <input
+                      type="password"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      placeholder="Repetí la contraseña"
+                      required
+                      className="w-full border border-[#e8eef4] rounded-xl px-4 py-2.5 text-sm text-[#0f1c2e] placeholder:text-[#b0c0d0] focus:outline-none focus:ring-2 focus:ring-[#2b4dd4]/20 focus:border-[#2b4dd4]"
+                    />
+                  </div>
 
-                {error && (
-                  <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
-                )}
+                  {error && (
+                    <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+                  )}
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-[#2b4dd4] hover:bg-[#2440b8] text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-60"
-                >
-                  {submitting ? "Creando cuenta..." : "Crear mi cuenta →"}
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-[#2b4dd4] hover:bg-[#2440b8] text-white font-semibold py-3 rounded-xl text-sm transition-colors disabled:opacity-60"
+                  >
+                    {submitting ? "Creando cuenta..." : "Crear mi cuenta →"}
+                  </button>
+                </form>
+              )}
             </>
           ) : null}
         </div>

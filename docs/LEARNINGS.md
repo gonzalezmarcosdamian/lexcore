@@ -32,6 +32,45 @@
 **Dependencia:** Requiere AUTH-004 (token OAuth de Google guardado en DB).
 **Historia:** VCT-001.
 
+## 2026-04-20
+
+### Multi-tenant con usuarios compartidos entre estudios
+**Decisión:** Un usuario puede pertenecer a múltiples tenants — cada fila en `users` está vinculada a un `tenant_id`. El mismo email puede tener N filas en la tabla.
+**Razón:** Un abogado puede trabajar en varios estudios simultáneamente. Las invitaciones crean filas nuevas por tenant.
+**Implicación:** Al aceptar la segunda invitación, no se crea contraseña nueva — el backend copia el `hashed_password` de la fila existente vía `POST /auth/join-studio`.
+**Limitación conocida:** Un usuario no puede "migrar" su email a un estudio propio sin soporte CX (queda para roadmap).
+
+### Railway — forzar redeploy cuando GitHub auto-deploy no triggered
+**Decisión:** Usar `railway up --detach` desde el directorio del servicio.
+**Razón:** El webhook de GitHub a Railway a veces no dispara (rate limit, timeout, branch filter). `railway up` sube el build directamente sin depender del webhook.
+**Prerequisito:** `railway service link <nombre>` antes de correr el comando.
+
+### Admin API protegida por API Key (no JWT)
+**Decisión:** Endpoints `/admin/*` usan `X-Admin-Key` header con `secrets.compare_digest`.
+**Razón:** El admin no tiene un usuario en el sistema — es soporte externo que necesita corregir datos. JWT requeriría un usuario con rol especial en cada tenant. La API key se setea como variable de entorno y se comparte solo entre devs.
+**Archivo clave:** `backend/app/routers/admin.py`
+
+### Filtros de período en cliente, no en servidor
+**Decisión:** Dashboard y Agenda fetchean datos amplios (365 días) y filtran en el cliente con `inRange()`.
+**Razón:** Evita round-trips al cambiar el período — la UX es instantánea. Aceptable para volumen de un estudio (cientos, no millones de registros).
+**Límite:** Si un estudio tiene miles de vencimientos históricos, habría que paginar en servidor. Queda para escalar.
+
+### Número de expediente autogenerado por el sistema
+**Decisión:** El campo `numero` en `Expediente` no lo ingresa el usuario — lo genera el backend con formato `EXP-{año}-{correlativo 4 dígitos por tenant}`.
+**Razón:** Reducir fricción en creación (el abogado no sabe el correlativo), garantizar formato consistente entre estudios, y evitar duplicados por error humano.
+**Implementación:** `_generar_numero(db, tenant_id)` cuenta los expedientes del tenant y genera el siguiente. Si en el futuro se quiere permitir el número judicial real, se puede agregar un campo `numero_judicial` opcional separado.
+**Archivo clave:** `backend/app/routers/expedientes.py`
+
+### Vencimientos y Tareas son entidades ortogonales
+**Decisión:** No hay FK entre `Vencimiento` y `Tarea`. Son modelos independientes que comparten `expediente_id`.
+**Razón:** Conceptualmente distintos: un vencimiento es un plazo procesal del expediente (audiencia, plazo, notificación) — existe independientemente del equipo. Una tarea es trabajo interno del estudio (redactar un escrito, llamar al cliente) — existe independientemente del proceso judicial. Forzar una FK sería modelar mal el dominio.
+**Futuro:** Si se quiere relacionar "esta tarea nació de este vencimiento", se agrega `vencimiento_id: Optional[str]` en `Tarea` como FK nullable — no requiere cambios en la lógica existente.
+
+### Estado inicial de expediente siempre "activo"
+**Decisión:** `ExpedienteCreate` no acepta `estado`. El router lo fija en `activo` al crear.
+**Razón:** Un expediente que recién nace siempre está activo. Elegir el estado al crear era ruido innecesario en el formulario.
+**Impacto:** `ExpedienteUpdate` sí permite cambiar el estado (para archivar o cerrar más adelante).
+
 ### pydantic[email] obligatorio
 **Decisión:** Usar `pydantic[email]` en requirements.txt, no `pydantic` solo.
 **Razón:** `EmailStr` de Pydantic requiere `email-validator` instalado. Sin el extra, el backend falla al arrancar.

@@ -264,6 +264,61 @@ def register_invited(body: RegisterInvitedRequest, db: DbSession):
     )
 
 
+class JoinStudioRequest(BaseModel):
+    token: str
+
+
+@router.post("/join-studio", response_model=TokenResponse, status_code=201)
+def join_studio(body: JoinStudioRequest, db: DbSession):
+    """Une a un usuario existente a un nuevo estudio sin necesitar contraseña."""
+    now = datetime.now(timezone.utc)
+    inv = db.query(Invitacion).filter(
+        Invitacion.token == body.token,
+        Invitacion.usado == False,
+        Invitacion.expires_at > now,
+    ).first()
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invitación inválida o expirada")
+
+    existing = db.query(User).filter(User.email == inv.email).first()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado. Usá el flujo de registro.")
+
+    # Verificar que no esté ya en este tenant
+    already_in = db.query(User).filter(
+        User.email == inv.email,
+        User.tenant_id == inv.tenant_id,
+    ).first()
+    if already_in:
+        raise HTTPException(status_code=409, detail="Ya pertenecés a este estudio")
+
+    user = User(
+        tenant_id=inv.tenant_id,
+        email=inv.email,
+        full_name=inv.full_name,
+        role=inv.rol,
+        auth_provider=existing.auth_provider,
+        hashed_password=existing.hashed_password,
+        google_id=existing.google_id,
+    )
+    db.add(user)
+    inv.usado = True
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(
+        studio_id=user.tenant_id, user_id=user.id, role=user.role.value
+    )
+    return TokenResponse(
+        access_token=token,
+        user_id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        studio_id=user.tenant_id,
+        role=user.role.value,
+    )
+
+
 # ── Reset de contraseña ───────────────────────────────────────────────────────
 
 class ForgotPasswordRequest(BaseModel):
