@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.core.config import settings
-from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte
+from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte, admin
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
 
 _ALLOWED_ORIGINS = re.compile(
@@ -64,6 +64,7 @@ app.include_router(google_calendar_router)
 app.include_router(calendar_sync_router)
 app.include_router(whatsapp.router)
 app.include_router(soporte.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")

@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Endpoints de desarrollo — desactivar en producción
     ALLOW_DEV_ENDPOINTS: bool = False
 
+    # API key para endpoints de admin/soporte (LexCore internos)
+    ADMIN_API_KEY: str = ""
+
     # OpenAI — para resúmenes IA de expedientes
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
