@@ -80,6 +80,9 @@ function LoginPageInner() {
             <label className="block text-xs font-semibold text-ink-600 tracking-wide uppercase">
               Contraseña
             </label>
+            <Link href="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700 font-medium transition">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
           <input
             type="password"

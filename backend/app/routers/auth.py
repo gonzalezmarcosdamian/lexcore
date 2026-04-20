@@ -1,16 +1,46 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from collections import defaultdict
+import time
+import secrets
 
-from app.core.auth import create_access_token, hash_password, verify_password
+from app.core.auth import create_access_token, hash_password, verify_password, decode_token
 from app.core.deps import DbSession
 from app.models.invitacion import Invitacion
 from app.models.studio import Studio
 from app.models.user import AuthProvider, User, UserRole
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# ── Rate limiting in-memory (MVP) ────────────────────────────────────────────
+# {ip: [timestamp, ...]}  — solo intentos fallidos
+_failed_attempts: dict[str, list[float]] = defaultdict(list)
+_MAX_ATTEMPTS = 5
+_WINDOW_SECONDS = 15 * 60  # 15 minutos
+
+
+def _check_rate_limit(ip: str) -> None:
+    now = time.time()
+    # Limpiar intentos fuera de la ventana
+    _failed_attempts[ip] = [t for t in _failed_attempts[ip] if now - t < _WINDOW_SECONDS]
+    if len(_failed_attempts[ip]) >= _MAX_ATTEMPTS:
+        retry_after = int(_WINDOW_SECONDS - (now - _failed_attempts[ip][0]))
+        raise HTTPException(
+            status_code=429,
+            detail=f"Demasiados intentos fallidos. Intentá en {retry_after // 60} minutos.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
+def _register_failure(ip: str) -> None:
+    _failed_attempts[ip].append(time.time())
+
+
+def _clear_failures(ip: str) -> None:
+    _failed_attempts.pop(ip, None)
 
 
 class TokenResponse(BaseModel):
@@ -80,12 +110,16 @@ class LoginRequest(BaseModel):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(body: LoginRequest, db: DbSession):
+def login(body: LoginRequest, db: DbSession, request: Request):
+    ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(ip)
+
     user = db.query(User).filter(User.email == body.email).first()
-    if not user or not user.hashed_password:
+    if not user or not user.hashed_password or not verify_password(body.password, user.hashed_password):
+        _register_failure(ip)
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
-    if not verify_password(body.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+
+    _clear_failures(ip)
 
     token = create_access_token(
         studio_id=user.tenant_id, user_id=user.id, role=user.role.value
@@ -230,19 +264,80 @@ def register_invited(body: RegisterInvitedRequest, db: DbSession):
     )
 
 
+# ── Reset de contraseña ───────────────────────────────────────────────────────
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+
+@router.post("/forgot-password", status_code=200)
+def forgot_password(body: ForgotPasswordRequest, db: DbSession):
+    """Genera token de reset y envía email. Siempre responde 200 (no revela si el email existe)."""
+    from app.core.config import settings
+    from app.services.email import send_reset_password_email
+
+    user = db.query(User).filter(User.email == body.email, User.tenant_id != "pending").first()
+    if user:
+        token = secrets.token_urlsafe(32)
+        user.reset_password_token = token
+        user.reset_password_expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        db.commit()
+        send_reset_password_email(
+            to_email=user.email,
+            full_name=user.full_name,
+            token=token,
+            frontend_url=settings.BASE_URL,
+        )
+    return {"message": "Si el email existe, recibirás un link para restablecer tu contraseña."}
+
+
+@router.post("/reset-password", status_code=200)
+def reset_password(body: ResetPasswordRequest, db: DbSession):
+    """Valida token y actualiza contraseña."""
+    now = datetime.now(timezone.utc)
+    user = db.query(User).filter(
+        User.reset_password_token == body.token,
+        User.reset_password_expires_at > now,
+    ).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Token inválido o expirado")
+
+    if len(body.password) < 8:
+        raise HTTPException(status_code=422, detail="La contraseña debe tener al menos 8 caracteres")
+
+    user.hashed_password = hash_password(body.password)
+    user.reset_password_token = None
+    user.reset_password_expires_at = None
+    user.auth_provider = AuthProvider.email
+    db.commit()
+    return {"message": "Contraseña actualizada correctamente"}
+
+
 class SetupStudioRequest(BaseModel):
     studio_name: str
     studio_slug: str
 
 
 @router.post("/setup-studio", response_model=TokenResponse)
-def setup_studio(body: SetupStudioRequest, db: DbSession):
+def setup_studio(body: SetupStudioRequest, db: DbSession, request: Request):
+    # Extraer user_id del JWT temporal emitido durante el registro
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.removeprefix("Bearer ").strip()
+    payload = decode_token(token)
+    user_id = payload.get("sub")
+    if not user_id or payload.get("studio_id") != "pending":
+        raise HTTPException(status_code=401, detail="Token inválido o ya fue utilizado")
+
     # Validar slug único
     if db.query(Studio).filter(Studio.slug == body.studio_slug).first():
         raise HTTPException(status_code=400, detail="El slug del estudio ya está en uso")
 
-    # Buscar usuario pending (simplificado — en prod validar con token)
-    user = db.query(User).filter(User.tenant_id == "pending").first()
+    user = db.query(User).filter(User.id == user_id, User.tenant_id == "pending").first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 

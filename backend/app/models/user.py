@@ -1,7 +1,8 @@
 import enum
 
-from sqlalchemy import Enum, String
+from sqlalchemy import Enum, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.models.base import TenantModel
 
@@ -35,3 +36,7 @@ class User(TenantModel):
     google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     google_refresh_token: Mapped[str | None] = mapped_column(String, nullable=True)
     google_calendar_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Reset contraseña
+    reset_password_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    reset_password_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
