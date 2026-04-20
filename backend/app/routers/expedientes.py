@@ -6,6 +6,7 @@ from app.models.expediente import (
     Expediente, ExpedienteAbogado, Movimiento, RolEnExpediente
 )
 from app.models.user import User
+from app.models.cliente import Cliente
 from app.models.base import utcnow
 from app.services.resumen_invalidar import invalidar_resumen
 from app.schemas.expediente import (
@@ -19,7 +20,7 @@ router = APIRouter(prefix="/expedientes", tags=["expedientes"])
 
 
 def _enriquecer_abogados(db, exp: Expediente) -> ExpedienteOut:
-    """Construye ExpedienteOut enriqueciendo cada abogado con full_name."""
+    """Construye ExpedienteOut enriqueciendo abogados con full_name y cliente con nombre."""
     out = ExpedienteOut.model_validate(exp)
     for i, a in enumerate(exp.abogados):
         user = db.query(User).filter(User.id == a.user_id).first()
@@ -29,6 +30,9 @@ def _enriquecer_abogados(db, exp: Expediente) -> ExpedienteOut:
             rol=a.rol,
             full_name=user.full_name if user else None,
         )
+    if exp.cliente_id:
+        cliente = db.query(Cliente).filter(Cliente.id == exp.cliente_id).first()
+        out.cliente_nombre = cliente.nombre if cliente else None
     return out
 
 

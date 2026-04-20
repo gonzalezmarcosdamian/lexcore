@@ -87,6 +87,7 @@ export interface Expediente {
   juzgado?: string;
   estado: EstadoExpediente;
   cliente_id?: string;
+  cliente_nombre?: string;
   created_at: string;
   updated_at: string;
   abogados: AbogadoEnExpediente[];

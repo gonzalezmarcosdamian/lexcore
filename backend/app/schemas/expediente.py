@@ -54,6 +54,7 @@ class ExpedienteOut(BaseModel):
     juzgado: Optional[str] = None
     estado: EstadoExpediente
     cliente_id: Optional[str] = None
+    cliente_nombre: Optional[str] = None   # enriquecido en el router
     created_at: datetime
     updated_at: datetime
     abogados: List[AbogadoEnExpedienteOut] = []

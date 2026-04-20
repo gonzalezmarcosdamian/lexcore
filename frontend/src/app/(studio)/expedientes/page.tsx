@@ -38,7 +38,7 @@ const ALL_COLS: { key: ColKey; label: string }[] = [
   { key: "cliente", label: "Cliente" },
   { key: "equipo", label: "Equipo" },
 ];
-const DEFAULT_COLS: ColKey[] = ["numero", "caratula", "fuero", "estado", "created_at", "equipo"];
+const DEFAULT_COLS: ColKey[] = ["numero", "caratula", "fuero", "estado", "created_at", "cliente", "equipo"];
 const COLS_STORAGE_KEY = "lexcore_exp_cols";
 
 export default function ExpedientesPage() {
@@ -430,16 +430,30 @@ export default function ExpedientesPage() {
                       </td>
                     )}
                     {visibleCols.includes("cliente") && (
-                      <td className="px-4 py-3.5">
-                        <span className="text-xs text-ink-500 truncate">
-                          {(e as Expediente & { cliente_nombre?: string }).cliente_nombre ?? <span className="text-ink-300">—</span>}
-                        </span>
+                      <td className="px-4 py-3.5 max-w-[160px]">
+                        {e.cliente_nombre
+                          ? <span className="text-sm text-ink-700 truncate block">{e.cliente_nombre}</span>
+                          : <span className="text-ink-300 text-xs">—</span>}
                       </td>
                     )}
                     {visibleCols.includes("equipo") && (
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-3.5">
                         {e.abogados.length > 0 ? (
-                          <span className="text-xs bg-ink-100 text-ink-500 px-2 py-0.5 rounded-full font-medium">{e.abogados.length}</span>
+                          <div className="flex items-center -space-x-1.5">
+                            {e.abogados.slice(0, 3).map((a) => {
+                              const initials = (a.full_name ?? "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+                              return (
+                                <div key={a.id} title={a.full_name ?? ""} className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 border-2 border-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                                  {initials}
+                                </div>
+                              );
+                            })}
+                            {e.abogados.length > 3 && (
+                              <div className="w-6 h-6 rounded-full bg-ink-100 text-ink-500 border-2 border-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">
+                                +{e.abogados.length - 3}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-ink-300 text-xs">—</span>
                         )}
