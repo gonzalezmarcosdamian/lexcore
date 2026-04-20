@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
         },
       },
+      checks: ["state"], // deshabilita PKCE — evita que bounce-tracking-mitigations de Chrome borre el cookie
     }),
 
     CredentialsProvider({
