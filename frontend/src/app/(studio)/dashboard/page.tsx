@@ -205,6 +205,9 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* ── Google Calendar sync banner ── */}
+          <CalendarSyncButton variant="banner" />
+
           {/* ── Bloque principal: Tareas + Vencimientos ── */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
@@ -289,10 +292,7 @@ export default function DashboardPage() {
                     <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{proximosFiltrados.length}</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <CalendarSyncButton variant="compact" />
-                  <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
-                </div>
+                <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
               </div>
 
               {loading ? (
