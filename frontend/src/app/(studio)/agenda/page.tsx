@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Tarea, TareaEstado, Vencimiento } from "@/lib/api";
+import { api, Tarea, TareaEstado, Vencimiento, Expediente } from "@/lib/api";
 
 type Periodo = "hoy" | "semana" | "mes";
 
@@ -207,6 +207,11 @@ export default function AgendaPage() {
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTareaModal, setShowTareaModal] = useState(false);
+  const [tareaForm, setTareaForm] = useState({ titulo: "", expediente_id: "", fecha_limite: "", descripcion: "" });
+  const [savingTarea, setSavingTarea] = useState(false);
+  const [tareaError, setTareaError] = useState("");
+  const [expedientes, setExpedientes] = useState<Expediente[]>([]);
 
   const fetchData = useCallback(() => {
     if (!token) return;
@@ -223,6 +228,11 @@ export default function AgendaPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
+    if (!token) return;
+    api.get<Expediente[]>("/expedientes", token, { estado: "activo" }).then(setExpedientes).catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
     const onVisible = () => { if (document.visibilityState === "visible") fetchData(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
@@ -232,6 +242,28 @@ export default function AgendaPage() {
     if (!token) return;
     const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { cumplido: !v.cumplido }, token);
     setVencimientos(prev => prev.map(x => x.id === v.id ? updated : x));
+  };
+
+  const handleCrearTarea = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSavingTarea(true);
+    setTareaError("");
+    try {
+      const created = await api.post<Tarea>("/tareas", {
+        titulo: tareaForm.titulo,
+        expediente_id: tareaForm.expediente_id || undefined,
+        fecha_limite: tareaForm.fecha_limite || undefined,
+        descripcion: tareaForm.descripcion || undefined,
+      }, token);
+      setTareas(prev => [...prev, created]);
+      setShowTareaModal(false);
+      setTareaForm({ titulo: "", expediente_id: "", fecha_limite: "", descripcion: "" });
+    } catch (err: unknown) {
+      setTareaError(err instanceof Error ? err.message : "Error al crear tarea");
+    } finally {
+      setSavingTarea(false);
+    }
   };
 
   const toggleTarea = async (t: Tarea) => {
@@ -268,6 +300,12 @@ export default function AgendaPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => { setShowTareaModal(true); setTareaError(""); }}
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-semibold transition hidden sm:block"
+          >
+            + Tarea
+          </button>
           <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-semibold transition hidden sm:block">
             + Vencimiento
           </Link>
@@ -418,6 +456,69 @@ export default function AgendaPage() {
             })}
           </div>
         </>
+      )}
+
+      {/* ── Modal: Nueva tarea ── */}
+      {showTareaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowTareaModal(false); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink-900">Nueva tarea</h2>
+              <button onClick={() => setShowTareaModal(false)} className="text-ink-400 hover:text-ink-700 transition p-1">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleCrearTarea} className="px-6 py-5 space-y-4">
+              {tareaError && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{tareaError}</div>}
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">Título <span className="text-red-500">*</span></label>
+                <input
+                  required
+                  autoFocus
+                  value={tareaForm.titulo}
+                  onChange={(e) => setTareaForm({ ...tareaForm, titulo: e.target.value })}
+                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  placeholder="Ej: Redactar escrito de responde"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
+                  <select
+                    value={tareaForm.expediente_id}
+                    onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })}
+                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  >
+                    <option value="">Sin expediente</option>
+                    {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Fecha límite</label>
+                  <input
+                    type="date"
+                    value={tareaForm.fecha_limite}
+                    onChange={(e) => setTareaForm({ ...tareaForm, fecha_limite: e.target.value })}
+                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">Descripción</label>
+                <input
+                  value={tareaForm.descripcion}
+                  onChange={(e) => setTareaForm({ ...tareaForm, descripcion: e.target.value })}
+                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  placeholder="Opcional"
+                />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => setShowTareaModal(false)} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={savingTarea} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{savingTarea ? "Creando…" : "Crear tarea"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
