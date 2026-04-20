@@ -174,6 +174,25 @@ export default function DashboardPage() {
         </span>
       </div>
 
+      {/* Primeros pasos — solo cuando el estudio está vacío y ya cargó */}
+      {totalExpedientes === 0 && totalClientes === 0 && (
+        <div className="bg-brand-50 border border-brand-100 rounded-2xl p-6">
+          <p className="text-sm font-semibold text-brand-700 mb-1">¡Bienvenido a tu estudio!</p>
+          <p className="text-sm text-brand-600 mb-4">Empezá cargando tus primeros datos para ver el dashboard en acción.</p>
+          <div className="flex flex-wrap gap-3">
+            <a href="/clientes/nuevo" className="inline-flex items-center gap-2 bg-white border border-brand-200 text-brand-700 text-sm font-medium px-4 py-2 rounded-xl hover:bg-brand-50 transition">
+              <span>👤</span> Agregar cliente
+            </a>
+            <a href="/expedientes/nuevo" className="inline-flex items-center gap-2 bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-brand-700 transition">
+              <span>📁</span> Crear expediente
+            </a>
+            <a href="/vencimientos/nuevo" className="inline-flex items-center gap-2 bg-white border border-brand-200 text-brand-700 text-sm font-medium px-4 py-2 rounded-xl hover:bg-brand-50 transition">
+              <span>📅</span> Cargar vencimiento
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Stats grid — operativos */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Expedientes activos" value={totalExpedientes ?? "—"} loading={totalExpedientes === null} />
