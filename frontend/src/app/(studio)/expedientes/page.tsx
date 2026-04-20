@@ -151,11 +151,18 @@ export default function ExpedientesPage() {
     </span>
   );
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="flex gap-6 h-full min-h-0">
 
+      {/* ── Sidebar mobile overlay ── */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ── Sidebar ─────────────────────────────────────────────────────────── */}
-      <aside className="w-56 flex-shrink-0 space-y-4">
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-56 bg-white lg:bg-transparent shadow-2xl lg:shadow-none flex-shrink-0 space-y-4 overflow-y-auto p-4 lg:p-0 transition-transform duration-200 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
 
         {/* Stats */}
         <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4 space-y-3">
@@ -239,8 +246,17 @@ export default function ExpedientesPage() {
       <div className="flex-1 min-w-0 space-y-4">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
           <div className="flex items-center gap-3">
+            {/* Filtros mobile */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 border border-ink-200 rounded-xl text-ink-500 hover:bg-ink-50 transition"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M11 12h4" />
+              </svg>
+            </button>
             <h1 className="text-2xl font-bold text-ink-900">Expedientes</h1>
             {!loading && (
               <span className="text-sm text-ink-400 bg-ink-100 px-2.5 py-0.5 rounded-full font-medium">
@@ -248,8 +264,8 @@ export default function ExpedientesPage() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative flex-1 sm:flex-none">
               <svg className="w-4 h-4 text-ink-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -258,7 +274,7 @@ export default function ExpedientesPage() {
                 placeholder="Buscar número, carátula…"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                className="pl-9 pr-4 py-2.5 bg-white border border-ink-200 rounded-xl text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition w-56 focus:w-72"
+                className="pl-9 pr-4 py-2.5 bg-white border border-ink-200 rounded-xl text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition w-full sm:w-56 sm:focus:w-72"
               />
             </div>
             <div className="relative">
@@ -324,7 +340,8 @@ export default function ExpedientesPage() {
 
         {/* Tabla */}
         <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[500px]">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/60">
                 {ALL_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => {
@@ -434,6 +451,7 @@ export default function ExpedientesPage() {
             </tbody>
           </table>
 
+          </div>
           {!loading && sorted.length > 0 && (
             <div className="px-4 py-2.5 border-t border-ink-50 bg-ink-50/40 text-xs text-ink-400">
               {sorted.length} expediente{sorted.length !== 1 ? "s" : ""}

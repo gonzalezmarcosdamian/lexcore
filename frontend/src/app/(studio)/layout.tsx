@@ -570,7 +570,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Mobile bottom tab bar */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-ink-100 flex z-20">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-ink-100 flex z-20 pb-[env(safe-area-inset-bottom)]">
         {NAV_MOBILE.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           const showBadge = item.badge && urgentes > 0;

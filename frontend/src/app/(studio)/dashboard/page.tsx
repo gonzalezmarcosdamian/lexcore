@@ -180,9 +180,9 @@ export default function DashboardPage() {
               { label: "Tareas pendientes", value: tareas.length, accent: tareas.filter(t => t.fecha_limite && t.fecha_limite <= today).length > 0 ? "red" : undefined },
               { label: "Vencimientos pendientes", value: proximos.length, accent: urgentes.length > 0 ? "red" : undefined },
             ].map(({ label, value, accent }) => (
-              <div key={label} className="bg-white rounded-2xl border border-ink-100 shadow-sm px-4 py-3.5 flex items-center justify-between gap-3">
-                <p className="text-xs text-ink-400 font-medium leading-tight">{label}</p>
-                <p className={`text-2xl font-bold flex-shrink-0 ${accent === "red" ? "text-red-600" : "text-ink-900"}`}>{value}</p>
+              <div key={label} className="bg-white rounded-2xl border border-ink-100 shadow-sm px-4 py-3.5 flex flex-col gap-1">
+                <p className="text-xs text-ink-400 font-medium leading-tight truncate">{label}</p>
+                <p className={`text-2xl font-bold ${accent === "red" ? "text-red-600" : "text-ink-900"}`}>{value}</p>
               </div>
             ))}
           </div>

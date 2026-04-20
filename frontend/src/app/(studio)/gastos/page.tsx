@@ -76,7 +76,7 @@ function nextMes(mes: number, anio: number) {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 const inputClass =
-  "w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition";
+  "w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition";
 const labelClass = "block text-sm font-medium text-ink-700 mb-1.5";
 
 function SkeletonRow() {
@@ -443,7 +443,7 @@ export default function ContablePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-ink-100 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 bg-ink-100 p-1 rounded-xl w-full sm:w-fit">
         <button
           onClick={() => setTab("periodo")}
           className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "periodo" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
@@ -527,7 +527,7 @@ export default function ContablePage() {
           </div>
 
           {/* Totales del período */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
               <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total ARS</p>
               <p className="text-xl font-bold text-ink-900">
@@ -705,7 +705,7 @@ export default function ContablePage() {
           </div>
 
           {/* Totales */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
               <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total ARS</p>
               <p className="text-xl font-bold text-green-700">{loadingIngresos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `$ ${ingresosARS.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}</p>
@@ -767,8 +767,8 @@ export default function ContablePage() {
 
       {/* ══ MODAL: Gasto puntual ══ */}
       {showGastoForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowGastoForm(false); setEditingGastoId(null); setError(""); } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowGastoForm(false); setEditingGastoId(null); setError(""); } }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">{editingGastoId ? "Editar gasto" : "Nuevo gasto"}</h2>
               <button onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
@@ -781,7 +781,7 @@ export default function ContablePage() {
                 <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
                 <input required autoFocus value={gastoForm.descripcion} onChange={(e) => setGastoForm({ ...gastoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Reparación impresora" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
                   <select required value={gastoForm.categoria} onChange={(e) => setGastoForm({ ...gastoForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
@@ -809,8 +809,8 @@ export default function ContablePage() {
                 <input value={gastoForm.notas} onChange={(e) => setGastoForm({ ...gastoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
               </div>
               <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingGastoId ? "Guardar cambios" : "Registrar"}</button>
+                <button type="button" onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-3 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingGastoId ? "Guardar cambios" : "Registrar"}</button>
               </div>
             </form>
           </div>
@@ -819,8 +819,8 @@ export default function ContablePage() {
 
       {/* ══ MODAL: Ingreso ══ */}
       {showIngresoForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); } }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">{editingIngresoId ? "Editar ingreso" : "Registrar ingreso"}</h2>
               <button onClick={() => { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
@@ -833,7 +833,7 @@ export default function ContablePage() {
                 <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
                 <input required autoFocus value={ingresoForm.descripcion} onChange={(e) => setIngresoForm({ ...ingresoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Pago honorarios García" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
                   <select required value={ingresoForm.categoria} onChange={(e) => setIngresoForm({ ...ingresoForm, categoria: e.target.value as IngresoCategoria })} className={inputClass}>
@@ -878,8 +878,8 @@ export default function ContablePage() {
 
       {/* ══ MODAL: Plantilla recurrente ══ */}
       {showPlantillaForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); } }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">{editingPlantillaId ? "Editar plantilla" : "Nueva plantilla recurrente"}</h2>
               <button onClick={() => { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
@@ -892,7 +892,7 @@ export default function ContablePage() {
                 <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
                 <input required autoFocus value={plantillaForm.descripcion} onChange={(e) => setPlantillaForm({ ...plantillaForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Alquiler oficina" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
                   <select required value={plantillaForm.categoria} onChange={(e) => setPlantillaForm({ ...plantillaForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
@@ -930,8 +930,8 @@ export default function ContablePage() {
 
       {/* ══ MODAL: Panel de plantillas recurrentes ══ */}
       {showPlantillasPanel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowPlantillasPanel(false); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowPlantillasPanel(false); }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[88vh] flex flex-col">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between flex-shrink-0">
               <div>
                 <h2 className="text-base font-semibold text-ink-900">Gastos recurrentes</h2>

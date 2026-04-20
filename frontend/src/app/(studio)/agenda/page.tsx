@@ -74,13 +74,13 @@ function VencimientoCard({ v, onToggle }: { v: Vencimiento; onToggle: () => void
                         "bg-white border-ink-100 hover:border-ink-200"
     }`}>
       {/* Checkbox circular */}
-      <button onClick={onToggle} className="mt-0.5 flex-shrink-0">
+      <button onClick={onToggle} className="mt-0.5 flex-shrink-0 p-1 -m-1">
         {v.cumplido ? (
-          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+          <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
           </div>
         ) : (
-          <div className={`w-4 h-4 rounded-full border-2 ${urgente ? "border-amber-400" : vencida ? "border-red-400" : "border-ink-300 hover:border-brand-400"}`} />
+          <div className={`w-5 h-5 rounded-full border-2 ${urgente ? "border-amber-400" : vencida ? "border-red-400" : "border-ink-300 hover:border-brand-400"}`} />
         )}
       </button>
 
@@ -127,17 +127,17 @@ function TareaCard({ t, onToggle }: { t: Tarea; onToggle: () => void }) {
                              "bg-white border-ink-100 hover:border-ink-200"
     }`}>
       {/* Checkbox cuadrado */}
-      <button onClick={onToggle} className="mt-0.5 flex-shrink-0" title={`Estado: ${t.estado} → click para avanzar`}>
+      <button onClick={onToggle} className="mt-0.5 flex-shrink-0 p-1 -m-1" title={`Estado: ${t.estado} → click para avanzar`}>
         {t.estado === "hecha" ? (
-          <div className="w-4 h-4 rounded bg-green-500 flex items-center justify-center">
-            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+          <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center">
+            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
           </div>
         ) : t.estado === "en_curso" ? (
-          <div className="w-4 h-4 rounded border-2 border-blue-400 bg-blue-100 flex items-center justify-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          <div className="w-5 h-5 rounded border-2 border-blue-400 bg-blue-100 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
           </div>
         ) : (
-          <div className="w-4 h-4 rounded border-2 border-ink-300 hover:border-brand-400" />
+          <div className="w-5 h-5 rounded border-2 border-ink-300 hover:border-brand-400" />
         )}
       </button>
 
@@ -309,23 +309,23 @@ export default function AgendaPage() {
         <div className="flex gap-2">
           <button
             onClick={() => { setShowTareaModal(true); setTareaError(""); }}
-            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-semibold transition hidden sm:block"
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition"
           >
             + Tarea
           </button>
-          <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-semibold transition hidden sm:block">
+          <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition">
             + Vencimiento
           </Link>
         </div>
       </div>
 
       {/* Selector de período */}
-      <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-fit">
+      <div className="flex gap-1 bg-ink-50 rounded-xl p-1 w-full sm:w-fit">
         {(["hoy", "semana", "mes", "anio"] as Periodo[]).map(p => (
           <button
             key={p}
             onClick={() => setPeriodo(p)}
-            className={`text-sm px-4 py-1.5 rounded-lg font-medium transition ${
+            className={`flex-1 sm:flex-none text-sm px-3 sm:px-4 py-2 rounded-lg font-medium transition ${
               periodo === p ? "bg-white shadow-sm text-ink-900" : "text-ink-500 hover:text-ink-700"
             }`}
           >
@@ -472,8 +472,8 @@ export default function AgendaPage() {
 
       {/* ── Modal: Nueva tarea ── */}
       {showTareaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowTareaModal(false); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowTareaModal(false); }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">Nueva tarea</h2>
               <button onClick={() => setShowTareaModal(false)} className="text-ink-400 hover:text-ink-700 transition p-1">
@@ -489,17 +489,17 @@ export default function AgendaPage() {
                   autoFocus
                   value={tareaForm.titulo}
                   onChange={(e) => setTareaForm({ ...tareaForm, titulo: e.target.value })}
-                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
                   placeholder="Ej: Redactar escrito de responde"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
                   <select
                     value={tareaForm.expediente_id}
                     onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })}
-                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
                   >
                     <option value="">Sin expediente</option>
                     {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
@@ -511,7 +511,7 @@ export default function AgendaPage() {
                     type="date"
                     value={tareaForm.fecha_limite}
                     onChange={(e) => setTareaForm({ ...tareaForm, fecha_limite: e.target.value })}
-                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
                   />
                 </div>
               </div>
@@ -520,13 +520,13 @@ export default function AgendaPage() {
                 <input
                   value={tareaForm.descripcion}
                   onChange={(e) => setTareaForm({ ...tareaForm, descripcion: e.target.value })}
-                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
                   placeholder="Opcional"
                 />
               </div>
               <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setShowTareaModal(false)} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
-                <button type="submit" disabled={savingTarea} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{savingTarea ? "Creando…" : "Crear tarea"}</button>
+                <button type="button" onClick={() => setShowTareaModal(false)} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={savingTarea} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-4 py-3 text-sm font-semibold transition shadow-sm disabled:opacity-50">{savingTarea ? "Creando…" : "Crear tarea"}</button>
               </div>
             </form>
           </div>
