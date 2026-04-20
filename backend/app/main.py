@@ -1,9 +1,15 @@
-from fastapi import FastAPI
+import re
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from app.core.config import settings
 from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
+
+_ALLOWED_ORIGINS = re.compile(
+    r"^(http://localhost:(3000|3001)|https://[a-z0-9\-]+\.vercel\.app)$"
+)
 
 app = FastAPI(
     title="LexCore API",
@@ -11,17 +17,31 @@ app = FastAPI(
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3001",
-        "http://localhost:3000",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+
+def _cors_headers(origin: str) -> dict:
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept",
+        "Access-Control-Max-Age": "600",
+    }
+
+
+@app.middleware("http")
+async def cors_middleware(request: Request, call_next):
+    origin = request.headers.get("origin", "")
+    allowed = bool(origin and _ALLOWED_ORIGINS.match(origin))
+
+    if request.method == "OPTIONS":
+        headers = _cors_headers(origin) if allowed else {}
+        return Response(status_code=204, headers=headers)
+
+    response = await call_next(request)
+    if allowed:
+        for k, v in _cors_headers(origin).items():
+            response.headers[k] = v
+    return response
 
 app.include_router(auth.router)
 app.include_router(clientes.router)
