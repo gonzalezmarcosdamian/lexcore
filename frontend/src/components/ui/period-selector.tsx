@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 export type Periodo = "hoy" | "semana" | "mes" | "anio" | "custom";
 
@@ -56,19 +56,7 @@ export function PeriodSelector({ value, onChange }: Props) {
   const [tempHasta, setTempHasta] = useState(value.hasta);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Close panel on outside click
-  useEffect(() => {
-    if (!showCustom) return;
-    const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        setShowCustom(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showCustom]);
-
-  function selectPeriodo(p: Periodo) {
+function selectPeriodo(p: Periodo) {
     if (p === "custom") {
       setTempDesde(value.desde || "");
       setTempHasta(value.hasta || "");
@@ -129,29 +117,16 @@ export function PeriodSelector({ value, onChange }: Props) {
         </button>
       </div>
 
-      {/* Custom panel — desktop: dropdown anchored, mobile: bottom sheet via portal-like fixed */}
+      {/* Custom panel — siempre modal centrado con backdrop */}
       {showCustom && (
-        <>
-          {/* Mobile overlay */}
-          <div
-            className="fixed inset-0 z-40 bg-black/30 sm:hidden"
-            onClick={() => setShowCustom(false)}
-          />
-
-          {/* Panel */}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4 bg-black/40"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowCustom(false); }}>
           <div
             ref={panelRef}
-            className={`
-              z-50
-              fixed bottom-0 left-0 right-0 sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2
-              bg-white border border-ink-100 shadow-xl
-              rounded-t-2xl sm:rounded-2xl
-              p-5 sm:w-72
-              animate-slide-up sm:animate-none sm:opacity-100
-            `}
+            className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl p-5"
             style={{ animation: "slideUp 0.22s cubic-bezier(0.32,0.72,0,1)" }}
           >
-            {/* Handle (mobile) */}
+            {/* Handle mobile */}
             <div className="w-10 h-1 bg-ink-200 rounded-full mx-auto mb-4 sm:hidden" />
 
             <p className="text-sm font-semibold text-ink-900 mb-4">Rango personalizado</p>
@@ -194,13 +169,20 @@ export function PeriodSelector({ value, onChange }: Props) {
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       <style jsx>{`
         @keyframes slideUp {
           from { transform: translateY(100%); opacity: 0; }
           to   { transform: translateY(0);    opacity: 1; }
+        }
+        @media (min-width: 640px) {
+          div[style*="slideUp"] { animation: fadeIn 0.15s ease; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: scale(0.97); }
+          to   { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
