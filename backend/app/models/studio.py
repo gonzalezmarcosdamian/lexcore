@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -21,7 +21,7 @@ class Studio(Base):
     )
 
     # Perfil del estudio
-    logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     direccion: Mapped[str | None] = mapped_column(String(500), nullable=True)
     telefono: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email_contacto: Mapped[str | None] = mapped_column(String(255), nullable=True)

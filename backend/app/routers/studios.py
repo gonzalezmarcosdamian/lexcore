@@ -2,10 +2,13 @@
 Router del estudio (tenant).
 GET  /studios/me               — datos del estudio actual
 PATCH /studios/me              — actualizar perfil del estudio
+POST  /studios/me/logo         — subir logo (multipart → base64 en DB)
 POST  /studios/me/whatsapp     — configurar WhatsApp Business
 DELETE /studios/me/whatsapp    — desconectar WhatsApp
 """
-from fastapi import APIRouter, HTTPException
+import base64
+
+from fastapi import APIRouter, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession
@@ -61,6 +64,29 @@ def update_studio(body: StudioUpdate, db: DbSession, current_user: CurrentUser):
     studio = _get_studio_or_404(db, current_user["studio_id"])
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(studio, field, value)
+    db.commit()
+    db.refresh(studio)
+    return studio
+
+
+LOGO_MAX_BYTES = 2 * 1024 * 1024  # 2 MB
+LOGO_ALLOWED = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
+
+@router.post("/me/logo", response_model=StudioOut)
+async def upload_logo(file: UploadFile, db: DbSession, current_user: CurrentUser):
+    """Sube el logo del estudio y lo almacena como data URL en la DB."""
+    if current_user.get("role") not in ("admin", "socio"):
+        raise HTTPException(status_code=403, detail="Solo admin o socio puede editar el estudio")
+    if file.content_type not in LOGO_ALLOWED:
+        raise HTTPException(status_code=400, detail="Formato no soportado. Usá JPG, PNG o WebP.")
+    data = await file.read()
+    if len(data) > LOGO_MAX_BYTES:
+        raise HTTPException(status_code=400, detail="El archivo supera los 2 MB")
+    b64 = base64.b64encode(data).decode()
+    data_url = f"data:{file.content_type};base64,{b64}"
+    studio = _get_studio_or_404(db, current_user["studio_id"])
+    studio.logo_url = data_url
     db.commit()
     db.refresh(studio)
     return studio

@@ -59,7 +59,7 @@ class UserProfileUpdate(BaseModel):
 @router.get("/me", response_model=UserProfile)
 def get_my_profile(db: DbSession, current_user: CurrentUser):
     """Devuelve el perfil del usuario autenticado con estado de Calendar."""
-    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return UserProfile(
@@ -77,7 +77,7 @@ def get_my_profile(db: DbSession, current_user: CurrentUser):
 def update_my_profile(body: UserProfileUpdate, db: DbSession, current_user: CurrentUser):
     """Actualiza nombre y/o contraseña del usuario autenticado."""
     from app.core.auth import get_password_hash
-    user = db.query(User).filter(User.id == current_user["user_id"]).first()
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     if body.full_name is not None:

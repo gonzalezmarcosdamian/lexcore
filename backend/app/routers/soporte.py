@@ -133,7 +133,7 @@ def _notificar_soporte(ticket: SoporteTicket) -> None:
 def crear_ticket(body: TicketCreate, db: DbSession, current_user: CurrentUser):
     ticket = SoporteTicket(
         tenant_id=current_user["studio_id"],
-        user_id=current_user["user_id"],
+        user_id=current_user["sub"],
         modulo=body.modulo,
         descripcion=body.descripcion,
         captura_url=body.captura_url,
