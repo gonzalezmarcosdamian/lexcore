@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda } from "@/lib/api";
+import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
 
@@ -108,8 +108,15 @@ export default function ContablePage() {
   const [loadingGastos, setLoadingGastos] = useState(true);
   const [loadingPlantillas, setLoadingPlantillas] = useState(true);
 
+  // Expedientes para selector de ingresos
+  const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  useEffect(() => {
+    if (!token) return;
+    api.get<Expediente[]>("/expedientes", token, { estado: "activo" }).then(setExpedientes).catch(() => {});
+  }, [token]);
+
   // Ingresos form
-  const EMPTY_INGRESO_FORM = { descripcion: "", categoria: "otros" as IngresoCategoria, monto: "", moneda: "ARS" as Moneda, fecha: today, notas: "" };
+  const EMPTY_INGRESO_FORM = { descripcion: "", categoria: "otros" as IngresoCategoria, monto: "", moneda: "ARS" as Moneda, fecha: today, notas: "", expediente_id: "" };
   const [ingresoForm, setIngresoForm] = useState(EMPTY_INGRESO_FORM);
   const [showIngresoForm, setShowIngresoForm] = useState(false);
   const [editingIngresoId, setEditingIngresoId] = useState<string | null>(null);
@@ -129,9 +136,10 @@ export default function ContablePage() {
   };
 
   // UI state
-  const [tab, setTab] = useState<"periodo" | "ingresos" | "plantillas">("periodo");
+  const [tab, setTab] = useState<"periodo" | "ingresos">("periodo");
   const [showGastoForm, setShowGastoForm] = useState(false);
   const [showPlantillaForm, setShowPlantillaForm] = useState(false);
+  const [showPlantillasPanel, setShowPlantillasPanel] = useState(false);
   const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
   const [editingPlantillaId, setEditingPlantillaId] = useState<string | null>(null);
   const [gastoForm, setGastoForm] = useState(EMPTY_GASTO_FORM);
@@ -227,7 +235,7 @@ export default function ContablePage() {
     setSaving(true);
     setError("");
     try {
-      const payload = { ...ingresoForm, monto: ingresoForm.monto, notas: ingresoForm.notas || undefined };
+      const payload = { ...ingresoForm, monto: ingresoForm.monto, notas: ingresoForm.notas || undefined, expediente_id: ingresoForm.expediente_id || undefined };
       if (editingIngresoId) {
         const updated = await api.patch<Ingreso>(`/ingresos/${editingIngresoId}`, payload, token);
         setIngresos((prev) => prev.map((i) => (i.id === editingIngresoId ? updated : i)));
@@ -453,13 +461,6 @@ export default function ContablePage() {
         >
           Ingresos
         </button>
-        <button
-          onClick={() => setTab("plantillas")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "plantillas" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
-        >
-          Recurrentes
-          <span className="ml-1.5 text-xs text-ink-400">({plantillas.length})</span>
-        </button>
       </div>
 
       {/* ══ TAB: PERÍODO ══ */}
@@ -503,6 +504,17 @@ export default function ContablePage() {
                 )}
               </div>
               <button
+                onClick={() => setShowPlantillasPanel(true)}
+                className="flex items-center gap-1.5 border border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl px-3 py-2.5 text-sm font-medium transition"
+                title="Gestionar gastos recurrentes"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span className="hidden sm:inline">Recurrentes</span>
+                {plantillas.length > 0 && <span className="text-xs text-ink-400">({plantillas.length})</span>}
+              </button>
+              <button
                 onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
                 className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
               >
@@ -539,54 +551,6 @@ export default function ContablePage() {
             </div>
           </div>
 
-          {/* Formulario gasto puntual */}
-          {showGastoForm && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-6 max-w-2xl">
-              <h2 className="text-base font-semibold text-ink-900 mb-4">{editingGastoId ? "Editar gasto" : "Nuevo gasto puntual"}</h2>
-              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
-              <form onSubmit={handleGastoSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
-                    <input required value={gastoForm.descripcion} onChange={(e) => setGastoForm({ ...gastoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Reparación impresora" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
-                    <select required value={gastoForm.categoria} onChange={(e) => setGastoForm({ ...gastoForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
-                      {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-                    <input required type="date" value={gastoForm.fecha} onChange={(e) => setGastoForm({ ...gastoForm, fecha: e.target.value })} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
-                    <input required type="number" step="0.01" min="0" value={gastoForm.monto} onChange={(e) => setGastoForm({ ...gastoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Moneda</label>
-                    <select value={gastoForm.moneda} onChange={(e) => setGastoForm({ ...gastoForm, moneda: e.target.value as Moneda })} className={inputClass}>
-                      <option value="ARS">ARS — Peso</option>
-                      <option value="USD">USD — Dólar</option>
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Notas</label>
-                    <input value={gastoForm.notas} onChange={(e) => setGastoForm({ ...gastoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">
-                    Cancelar
-                  </button>
-                  <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">
-                    {saving ? "Guardando…" : editingGastoId ? "Guardar cambios" : "Registrar"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
 
           {/* Sección: Recurrentes del mes */}
           {(loadingGastos || recurrentes.length > 0) && (
@@ -756,51 +720,6 @@ export default function ContablePage() {
             </div>
           </div>
 
-          {/* Formulario */}
-          {showIngresoForm && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-6 max-w-2xl">
-              <h2 className="text-base font-semibold text-ink-900 mb-4">{editingIngresoId ? "Editar ingreso" : "Registrar ingreso"}</h2>
-              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
-              <form onSubmit={handleIngresoSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
-                    <input required value={ingresoForm.descripcion} onChange={(e) => setIngresoForm({ ...ingresoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Pago honorarios García" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
-                    <select required value={ingresoForm.categoria} onChange={(e) => setIngresoForm({ ...ingresoForm, categoria: e.target.value as IngresoCategoria })} className={inputClass}>
-                      {CATEGORIAS_INGRESO.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-                    <input required type="date" value={ingresoForm.fecha} onChange={(e) => setIngresoForm({ ...ingresoForm, fecha: e.target.value })} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
-                    <input required type="number" step="0.01" min="0" value={ingresoForm.monto} onChange={(e) => setIngresoForm({ ...ingresoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Moneda</label>
-                    <select value={ingresoForm.moneda} onChange={(e) => setIngresoForm({ ...ingresoForm, moneda: e.target.value as Moneda })} className={inputClass}>
-                      <option value="ARS">ARS — Peso</option>
-                      <option value="USD">USD — Dólar</option>
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Notas</label>
-                    <input value={ingresoForm.notas} onChange={(e) => setIngresoForm({ ...ingresoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
-                  <button type="submit" disabled={saving} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingIngresoId ? "Guardar" : "Registrar"}</button>
-                </div>
-              </form>
-            </div>
-          )}
-
           {/* Lista */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
             {loadingIngresos ? (
@@ -820,11 +739,17 @@ export default function ContablePage() {
                       <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{catLabel}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-ink-900 font-medium truncate">{i.descripcion}</p>
-                        <p className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</p>
+                          {i.expediente_id && (() => {
+                            const exp = expedientes.find(e => e.id === i.expediente_id);
+                            return exp ? <span className="text-xs font-mono text-ink-500 bg-ink-50 border border-ink-100 rounded px-1.5 py-0.5">{exp.numero}</span> : null;
+                          })()}
+                        </div>
                       </div>
                       <span className="text-sm font-semibold text-green-700 flex-shrink-0">{formatMoney(Number(i.monto), i.moneda)}</span>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                        <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
                         <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
@@ -840,138 +765,223 @@ export default function ContablePage() {
         </div>
       )}
 
-      {/* ══ TAB: PLANTILLAS ══ */}
-      {tab === "plantillas" && (
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-ink-500">
-              Las plantillas activas generan instancias automáticamente al inicio de cada mes.
-            </p>
-            <button
-              onClick={() => { setShowPlantillaForm(true); setEditingPlantillaId(null); setPlantillaForm(EMPTY_PLANTILLA_FORM); setError(""); }}
-              className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Nueva plantilla
-            </button>
-          </div>
-
-          {/* Formulario plantilla */}
-          {showPlantillaForm && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-6 max-w-2xl">
-              <h2 className="text-base font-semibold text-ink-900 mb-4">{editingPlantillaId ? "Editar plantilla" : "Nueva plantilla recurrente"}</h2>
-              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>}
-              <form onSubmit={handlePlantillaSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
-                    <input required value={plantillaForm.descripcion} onChange={(e) => setPlantillaForm({ ...plantillaForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Alquiler oficina" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
-                    <select required value={plantillaForm.categoria} onChange={(e) => setPlantillaForm({ ...plantillaForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
-                      {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Día del mes</label>
-                    <input type="number" min="1" max="28" value={plantillaForm.dia_del_mes} onChange={(e) => setPlantillaForm({ ...plantillaForm, dia_del_mes: e.target.value })} className={inputClass} />
-                    <p className="text-xs text-ink-400 mt-1">Máx. 28 para evitar problemas en febrero.</p>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Monto esperado <span className="text-red-500">*</span></label>
-                    <input required type="number" step="0.01" min="0" value={plantillaForm.monto_esperado} onChange={(e) => setPlantillaForm({ ...plantillaForm, monto_esperado: e.target.value })} className={inputClass} placeholder="0.00" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Moneda</label>
-                    <select value={plantillaForm.moneda} onChange={(e) => setPlantillaForm({ ...plantillaForm, moneda: e.target.value as Moneda })} className={inputClass}>
-                      <option value="ARS">ARS — Peso</option>
-                      <option value="USD">USD — Dólar</option>
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Notas</label>
-                    <input value={plantillaForm.notas} onChange={(e) => setPlantillaForm({ ...plantillaForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
-                  </div>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">
-                    Cancelar
-                  </button>
-                  <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">
-                    {saving ? "Guardando…" : editingPlantillaId ? "Guardar cambios" : "Crear plantilla"}
-                  </button>
-                </div>
-              </form>
+      {/* ══ MODAL: Gasto puntual ══ */}
+      {showGastoForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowGastoForm(false); setEditingGastoId(null); setError(""); } }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink-900">{editingGastoId ? "Editar gasto" : "Nuevo gasto"}</h2>
+              <button onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-          )}
-
-          {/* Lista plantillas */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-            {loadingPlantillas ? (
-              <div className="divide-y divide-ink-50">
-                {[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}
+            <form onSubmit={handleGastoSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
+              <div>
+                <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
+                <input required autoFocus value={gastoForm.descripcion} onChange={(e) => setGastoForm({ ...gastoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Reparación impresora" />
               </div>
-            ) : plantillas.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <p className="text-2xl mb-2">🔄</p>
-                <p className="text-sm font-medium text-ink-700 mb-1">Sin plantillas aún</p>
-                <p className="text-xs text-ink-400 mb-3">Creá plantillas para gastos fijos mensuales como alquiler o sueldos.</p>
-                <button
-                  onClick={() => { setShowPlantillaForm(true); setError(""); }}
-                  className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-                >
-                  Crear primera plantilla →
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
+                  <select required value={gastoForm.categoria} onChange={(e) => setGastoForm({ ...gastoForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
+                    {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
+                  <input required type="date" value={gastoForm.fecha} onChange={(e) => setGastoForm({ ...gastoForm, fecha: e.target.value })} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
+                  <input required type="number" step="0.01" min="0" value={gastoForm.monto} onChange={(e) => setGastoForm({ ...gastoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className={labelClass}>Moneda</label>
+                  <select value={gastoForm.moneda} onChange={(e) => setGastoForm({ ...gastoForm, moneda: e.target.value as Moneda })} className={inputClass}>
+                    <option value="ARS">ARS — Peso</option>
+                    <option value="USD">USD — Dólar</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Notas</label>
+                <input value={gastoForm.notas} onChange={(e) => setGastoForm({ ...gastoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingGastoId ? "Guardar cambios" : "Registrar"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL: Ingreso ══ */}
+      {showIngresoForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); } }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink-900">{editingIngresoId ? "Editar ingreso" : "Registrar ingreso"}</h2>
+              <button onClick={() => { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleIngresoSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
+              <div>
+                <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
+                <input required autoFocus value={ingresoForm.descripcion} onChange={(e) => setIngresoForm({ ...ingresoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Pago honorarios García" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
+                  <select required value={ingresoForm.categoria} onChange={(e) => setIngresoForm({ ...ingresoForm, categoria: e.target.value as IngresoCategoria })} className={inputClass}>
+                    {CATEGORIAS_INGRESO.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
+                  <input required type="date" value={ingresoForm.fecha} onChange={(e) => setIngresoForm({ ...ingresoForm, fecha: e.target.value })} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
+                  <input required type="number" step="0.01" min="0" value={ingresoForm.monto} onChange={(e) => setIngresoForm({ ...ingresoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className={labelClass}>Moneda</label>
+                  <select value={ingresoForm.moneda} onChange={(e) => setIngresoForm({ ...ingresoForm, moneda: e.target.value as Moneda })} className={inputClass}>
+                    <option value="ARS">ARS — Peso</option>
+                    <option value="USD">USD — Dólar</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Expediente <span className="text-ink-400 font-normal">(opcional)</span></label>
+                <select value={ingresoForm.expediente_id} onChange={(e) => setIngresoForm({ ...ingresoForm, expediente_id: e.target.value })} className={inputClass}>
+                  <option value="">Sin expediente asociado</option>
+                  {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Notas</label>
+                <input value={ingresoForm.notas} onChange={(e) => setIngresoForm({ ...ingresoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingIngresoId ? "Guardar" : "Registrar"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL: Plantilla recurrente ══ */}
+      {showPlantillaForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); } }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-ink-900">{editingPlantillaId ? "Editar plantilla" : "Nueva plantilla recurrente"}</h2>
+              <button onClick={() => { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handlePlantillaSubmit} className="px-6 py-5 space-y-4">
+              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
+              <div>
+                <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
+                <input required autoFocus value={plantillaForm.descripcion} onChange={(e) => setPlantillaForm({ ...plantillaForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Alquiler oficina" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
+                  <select required value={plantillaForm.categoria} onChange={(e) => setPlantillaForm({ ...plantillaForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
+                    {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Día del mes</label>
+                  <input type="number" min="1" max="28" value={plantillaForm.dia_del_mes} onChange={(e) => setPlantillaForm({ ...plantillaForm, dia_del_mes: e.target.value })} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Monto esperado <span className="text-red-500">*</span></label>
+                  <input required type="number" step="0.01" min="0" value={plantillaForm.monto_esperado} onChange={(e) => setPlantillaForm({ ...plantillaForm, monto_esperado: e.target.value })} className={inputClass} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className={labelClass}>Moneda</label>
+                  <select value={plantillaForm.moneda} onChange={(e) => setPlantillaForm({ ...plantillaForm, moneda: e.target.value as Moneda })} className={inputClass}>
+                    <option value="ARS">ARS — Peso</option>
+                    <option value="USD">USD — Dólar</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Notas</label>
+                <input value={plantillaForm.notas} onChange={(e) => setPlantillaForm({ ...plantillaForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
+              </div>
+              <div className="flex gap-3 pt-1">
+                <button type="button" onClick={() => { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingPlantillaId ? "Guardar cambios" : "Crear plantilla"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL: Panel de plantillas recurrentes ══ */}
+      {showPlantillasPanel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowPlantillasPanel(false); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h2 className="text-base font-semibold text-ink-900">Gastos recurrentes</h2>
+                <p className="text-xs text-ink-400 mt-0.5">Se generan automáticamente al inicio de cada mes</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setShowPlantillaForm(true); setEditingPlantillaId(null); setPlantillaForm(EMPTY_PLANTILLA_FORM); setError(""); }} className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-3 py-2 text-sm font-semibold transition">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Nueva
+                </button>
+                <button onClick={() => setShowPlantillasPanel(false)} className="text-ink-400 hover:text-ink-700 transition p-1">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-            ) : (
-              <div className="divide-y divide-ink-50">
-                {plantillas.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
-                    {/* Activa toggle */}
-                    <button
-                      onClick={() => handleToggleActiva(p)}
-                      title={p.activa ? "Desactivar" : "Activar"}
-                      className={`flex-shrink-0 w-8 h-5 rounded-full transition ${p.activa ? "bg-brand-500" : "bg-ink-200"} relative`}
-                    >
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.activa ? "translate-x-3" : "translate-x-0.5"}`} />
-                    </button>
-
-                    <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORIA_COLORS[p.categoria]}`}>
-                      {catLabel(p.categoria)}
-                    </span>
-
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${p.activa ? "text-ink-900" : "text-ink-400 line-through"}`}>{p.descripcion}</p>
-                      <p className="text-xs text-ink-400">Día {p.dia_del_mes} de cada mes</p>
-                    </div>
-
-                    <span className="text-sm font-semibold text-ink-900 flex-shrink-0">
-                      {formatMoney(Number(p.monto_esperado), p.moneda)}
-                    </span>
-
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button onClick={() => handleEditPlantilla(p)} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {loadingPlantillas ? (
+                <div className="divide-y divide-ink-50">{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
+              ) : plantillas.length === 0 ? (
+                <div className="px-5 py-10 text-center">
+                  <p className="text-2xl mb-2">🔄</p>
+                  <p className="text-sm font-medium text-ink-700 mb-1">Sin plantillas aún</p>
+                  <p className="text-xs text-ink-400 mb-3">Creá plantillas para gastos fijos mensuales.</p>
+                  <button onClick={() => { setShowPlantillaForm(true); setError(""); }} className="text-sm text-brand-600 hover:text-brand-700 font-medium">Crear primera plantilla →</button>
+                </div>
+              ) : (
+                <div className="divide-y divide-ink-50">
+                  {plantillas.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3 px-5 py-3.5">
+                      <button onClick={() => handleToggleActiva(p)} title={p.activa ? "Desactivar" : "Activar"} className={`flex-shrink-0 w-8 h-5 rounded-full transition ${p.activa ? "bg-brand-500" : "bg-ink-200"} relative`}>
+                        <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.activa ? "translate-x-3" : "translate-x-0.5"}`} />
                       </button>
-                      <button onClick={() => handleDeletePlantilla(p.id)} disabled={deletingId === p.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-                        {deletingId === p.id ? (
-                          <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
-                        ) : (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        )}
-                      </button>
+                      <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORIA_COLORS[p.categoria]}`}>{catLabel(p.categoria)}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${p.activa ? "text-ink-900" : "text-ink-400 line-through"}`}>{p.descripcion}</p>
+                        <p className="text-xs text-ink-400">Día {p.dia_del_mes} · {formatMoney(Number(p.monto_esperado), p.moneda)}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={() => { handleEditPlantilla(p); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onClick={() => handleDeletePlantilla(p.id)} disabled={deletingId === p.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+                          {deletingId === p.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
