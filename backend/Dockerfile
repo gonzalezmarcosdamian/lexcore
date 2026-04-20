@@ -13,6 +13,5 @@ FROM base AS dev
 # Prod: imagen final autocontenida
 FROM base AS prod
 COPY . .
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-CMD ["/entrypoint.sh"]
+RUN chmod +x /app/entrypoint.sh
+CMD ["/app/entrypoint.sh"]
