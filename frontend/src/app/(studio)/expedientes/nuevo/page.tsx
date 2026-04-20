@@ -227,19 +227,21 @@ export default function NuevoExpedientePage() {
                 <div className="relative">
                   <input
                     value={clienteSearch}
-                    onChange={(e) => { setClienteSearch(e.target.value); setClienteOpen(true); setClienteError(""); }}
+                    onChange={(e) => {
+                      setClienteSearch(e.target.value);
+                      setForm({ ...form, cliente_id: "" });
+                      setClienteOpen(true);
+                      setClienteError("");
+                    }}
                     onFocus={() => setClienteOpen(true)}
-                    className={`${inputCls} ${clienteError ? "border-red-300 focus:ring-red-300" : ""}`}
+                    onBlur={() => {
+                      setTimeout(() => setClienteOpen(false), 150);
+                      if (!form.cliente_id) setClienteSearch("");
+                    }}
+                    className={`${inputCls} ${clienteError ? "border-red-300 focus:ring-red-300" : form.cliente_id ? "border-brand-300 bg-brand-50" : ""}`}
                     placeholder="Buscar cliente…"
                     autoComplete="off"
                   />
-                  {form.cliente_id && !clienteSearch && (
-                    <div className="pointer-events-none absolute inset-0 flex items-center px-4">
-                      <span className="text-sm text-ink-900">
-                        {clientes.find((c) => c.id === form.cliente_id)?.nombre}
-                      </span>
-                    </div>
-                  )}
                   {clienteOpen && (
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto">
                       {clientes
@@ -248,7 +250,12 @@ export default function NuevoExpedientePage() {
                           <button
                             key={c.id}
                             type="button"
-                            onMouseDown={() => { setForm({ ...form, cliente_id: c.id }); setClienteSearch(""); setClienteOpen(false); }}
+                            onMouseDown={() => {
+                              setForm({ ...form, cliente_id: c.id });
+                              setClienteSearch(c.nombre);
+                              setClienteOpen(false);
+                              setClienteError("");
+                            }}
                             className={`w-full text-left px-4 py-2.5 text-sm hover:bg-ink-50 transition flex items-center justify-between ${form.cliente_id === c.id ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-800"}`}
                           >
                             <span>{c.nombre}</span>
