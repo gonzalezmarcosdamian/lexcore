@@ -209,7 +209,7 @@ export default function AgendaPage() {
   const { data: session } = useSession();
   const token = session?.user?.backendToken;
 
-  const [periodo, setPeriodo] = useState<Periodo>("semana");
+  const [periodo, setPeriodo] = useState<Periodo>("anio");
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
