@@ -29,9 +29,10 @@ const ESTADO_DOT: Record<EstadoExpediente, string> = {
 type SortKey = "numero" | "caratula" | "fuero" | "estado" | "created_at";
 type SortDir = "asc" | "desc";
 
-type ColKey = "numero" | "caratula" | "fuero" | "juzgado" | "localidad" | "estado" | "created_at" | "cliente" | "equipo";
+type ColKey = "numero" | "numero_judicial" | "caratula" | "fuero" | "juzgado" | "localidad" | "estado" | "created_at" | "cliente" | "equipo";
 const ALL_COLS: { key: ColKey; label: string }[] = [
-  { key: "numero", label: "Número" },
+  { key: "numero", label: "N° interno" },
+  { key: "numero_judicial", label: "N° judicial" },
   { key: "caratula", label: "Carátula" },
   { key: "fuero", label: "Fuero" },
   { key: "juzgado", label: "Juzgado" },
@@ -361,7 +362,7 @@ export default function ExpedientesPage() {
               <tr className="border-b border-ink-100 bg-ink-50/60">
                 {ALL_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => {
                   const isSortable = ["numero","caratula","fuero","estado","created_at"].includes(col.key);
-                  const cls = col.key === "numero" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "juzgado" ? "w-40" : col.key === "localidad" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
+                  const cls = col.key === "numero" ? "w-32" : col.key === "numero_judicial" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "juzgado" ? "w-40" : col.key === "localidad" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
                   return (
                     <th
                       key={col.key}
@@ -422,6 +423,11 @@ export default function ExpedientesPage() {
                             </>
                           : <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>
                         }
+                      </td>
+                    )}
+                    {visibleCols.includes("numero_judicial") && (
+                      <td className="px-4 py-3.5">
+                        <span className="font-mono text-xs font-bold text-ink-700">{e.numero_judicial ?? <span className="text-ink-300">—</span>}</span>
                       </td>
                     )}
                     {visibleCols.includes("caratula") && (
