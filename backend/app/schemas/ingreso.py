@@ -15,6 +15,7 @@ class IngresoCreate(BaseModel):
     moneda: Moneda = Moneda.ARS
     fecha: str  # ISO YYYY-MM-DD
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     notas: Optional[str] = None
 
 
@@ -25,6 +26,7 @@ class IngresoUpdate(BaseModel):
     moneda: Optional[Moneda] = None
     fecha: Optional[str] = None
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     notas: Optional[str] = None
 
 
@@ -38,6 +40,7 @@ class IngresoOut(BaseModel):
     mes: int
     anio: int
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     notas: Optional[str] = None
     tenant_id: str
 

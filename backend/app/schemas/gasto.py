@@ -14,6 +14,7 @@ class GastoCreate(BaseModel):
     moneda: Moneda = Moneda.ARS
     fecha: str  # ISO date YYYY-MM-DD
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     notas: Optional[str] = None
 
 
@@ -24,6 +25,7 @@ class GastoUpdate(BaseModel):
     moneda: Optional[Moneda] = None
     fecha: Optional[str] = None
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     notas: Optional[str] = None
 
 
@@ -38,6 +40,7 @@ class GastoOut(BaseModel):
     anio: int
     estado: GastoEstado
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     plantilla_id: Optional[str] = None
     notas: Optional[str] = None
     tenant_id: str

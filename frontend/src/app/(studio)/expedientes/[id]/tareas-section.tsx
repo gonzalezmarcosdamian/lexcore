@@ -198,18 +198,21 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
                     </span>
                     {t.tipo && t.tipo !== "judicial" && (
                       <span className="text-xs px-1.5 py-0.5 rounded border bg-ink-50 text-ink-500 border-ink-100">
-                        {t.tipo === "administrativa" ? "🏢 Admin" : "🤝 Extrajudicial"}
-                      </span>
-                    )}
-                    {dias && (
-                      <span className={`text-xs font-medium ${vencida ? "text-red-600" : dias === "Hoy" || dias === "Mañana" ? "text-amber-600" : "text-ink-400"}`}>
-                        {dias}{t.hora && ` · ${t.hora}`}
+                        {t.tipo === "administrativa" ? "🏢 Admin" : t.tipo === "extrajudicial" ? "🤝 Extrajudicial" : "🔧 Operativa"}
                       </span>
                     )}
                     {t.responsable_nombre && (
-                      <span className="text-xs text-ink-400">{t.responsable_nombre}</span>
+                      <span className="text-xs text-ink-400">👤 {t.responsable_nombre}</span>
                     )}
                   </div>
+                  {t.fecha_limite && (
+                    <div className={`flex items-center gap-1 mt-1.5 text-xs font-semibold px-2 py-1 rounded-lg w-fit ${vencida ? "bg-red-100 text-red-700" : dias === "Hoy" || dias === "Mañana" ? "bg-amber-100 text-amber-700" : "bg-ink-100 text-ink-600"}`}>
+                      <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      {new Date(t.fecha_limite + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                      {t.hora && <span className="ml-1">{t.hora}</span>}
+                      {dias && <span className="ml-1 opacity-70">· {dias}</span>}
+                    </div>
+                  )}
                   {t.descripcion && <p className="text-xs text-ink-500 mt-1">{t.descripcion}</p>}
                   <AdjuntosInline tareaId={t.id} token={token} />
                 </div>

@@ -222,6 +222,7 @@ export interface Gasto {
   anio: number;
   estado: GastoEstado;
   expediente_id?: string;
+  cliente_id?: string;
   plantilla_id?: string;
   notas?: string;
   created_at: string;
@@ -258,6 +259,7 @@ export interface Ingreso {
   mes: number;
   anio: number;
   expediente_id?: string;
+  cliente_id?: string;
   notas?: string;
   created_at: string;
   updated_at: string;

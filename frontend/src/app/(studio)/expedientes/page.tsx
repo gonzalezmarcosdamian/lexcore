@@ -413,7 +413,13 @@ export default function ExpedientesPage() {
                   >
                     {visibleCols.includes("numero") && (
                       <td className="px-4 py-3.5">
-                        <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>
+                        {e.numero_judicial
+                          ? <>
+                              <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition block">{e.numero_judicial}</span>
+                              <span className="font-mono text-[10px] text-ink-400">{e.numero}</span>
+                            </>
+                          : <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>
+                        }
                       </td>
                     )}
                     {visibleCols.includes("caratula") && (

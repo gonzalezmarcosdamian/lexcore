@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente } from "@/lib/api";
+import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente, Cliente } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
 
@@ -40,6 +40,7 @@ const EMPTY_GASTO_FORM = {
   moneda: "ARS" as Moneda,
   fecha: today,
   notas: "",
+  cliente_id: "",
 };
 
 const EMPTY_PLANTILLA_FORM = {
@@ -110,13 +111,15 @@ export default function ContablePage() {
 
   // Expedientes para selector de ingresos
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   useEffect(() => {
     if (!token) return;
     api.get<Expediente[]>("/expedientes", token, { estado: "activo" }).then(setExpedientes).catch(() => {});
+    api.get<Cliente[]>("/clientes", token).then((cls) => setClientes(cls.filter(c => !c.archivado))).catch(() => {});
   }, [token]);
 
   // Ingresos form
-  const EMPTY_INGRESO_FORM = { descripcion: "", categoria: "otros" as IngresoCategoria, monto: "", moneda: "ARS" as Moneda, fecha: today, notas: "", expediente_id: "" };
+  const EMPTY_INGRESO_FORM = { descripcion: "", categoria: "otros" as IngresoCategoria, monto: "", moneda: "ARS" as Moneda, fecha: today, notas: "", expediente_id: "", cliente_id: "" };
   const [ingresoForm, setIngresoForm] = useState(EMPTY_INGRESO_FORM);
   const [showIngresoForm, setShowIngresoForm] = useState(false);
   const [editingIngresoId, setEditingIngresoId] = useState<string | null>(null);
@@ -235,7 +238,7 @@ export default function ContablePage() {
     setSaving(true);
     setError("");
     try {
-      const payload = { ...ingresoForm, monto: ingresoForm.monto, notas: ingresoForm.notas || undefined, expediente_id: ingresoForm.expediente_id || undefined };
+      const payload = { ...ingresoForm, monto: ingresoForm.monto, notas: ingresoForm.notas || undefined, expediente_id: ingresoForm.expediente_id || undefined, cliente_id: ingresoForm.cliente_id || undefined };
       if (editingIngresoId) {
         const updated = await api.patch<Ingreso>(`/ingresos/${editingIngresoId}`, payload, token);
         setIngresos((prev) => prev.map((i) => (i.id === editingIngresoId ? updated : i)));
@@ -274,6 +277,7 @@ export default function ContablePage() {
         ...gastoForm,
         monto: gastoForm.monto,
         notas: gastoForm.notas || undefined,
+        cliente_id: gastoForm.cliente_id || undefined,
       };
       if (editingGastoId) {
         const updated = await api.patch<Gasto>(`/gastos/${editingGastoId}`, payload, token);
@@ -300,6 +304,7 @@ export default function ContablePage() {
       moneda: g.moneda,
       fecha: g.fecha,
       notas: g.notas ?? "",
+      cliente_id: g.cliente_id ?? "",
     });
     setEditingGastoId(g.id);
     setShowGastoForm(true);
@@ -751,7 +756,7 @@ export default function ContablePage() {
                       </div>
                       <span className="text-sm font-semibold text-green-700 flex-shrink-0">{formatMoney(Number(i.monto), i.moneda)}</span>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                        <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "", cliente_id: i.cliente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
                         <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
@@ -807,6 +812,13 @@ export default function ContablePage() {
                 </div>
               </div>
               <div>
+                <label className={labelClass}>Cliente <span className="text-ink-400 font-normal">(opcional)</span></label>
+                <select value={gastoForm.cliente_id} onChange={(e) => setGastoForm({ ...gastoForm, cliente_id: e.target.value })} className={inputClass}>
+                  <option value="">Sin cliente asociado</option>
+                  {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </div>
+              <div>
                 <label className={labelClass}>Notas</label>
                 <input value={gastoForm.notas} onChange={(e) => setGastoForm({ ...gastoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
               </div>
@@ -857,6 +869,13 @@ export default function ContablePage() {
                     <option value="USD">USD — Dólar</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className={labelClass}>Cliente <span className="text-ink-400 font-normal">(opcional)</span></label>
+                <select value={ingresoForm.cliente_id} onChange={(e) => setIngresoForm({ ...ingresoForm, cliente_id: e.target.value })} className={inputClass}>
+                  <option value="">Sin cliente asociado</option>
+                  {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
               </div>
               <div>
                 <label className={labelClass}>Expediente <span className="text-ink-400 font-normal">(opcional)</span></label>

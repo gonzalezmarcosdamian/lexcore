@@ -32,6 +32,9 @@ class Ingreso(TenantModel):
     expediente_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("expedientes.id"), nullable=True, index=True
     )
+    cliente_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("clientes.id"), nullable=True, index=True
+    )
     notas: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
@@ -88,6 +91,9 @@ class Gasto(TenantModel):
     )
     expediente_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("expedientes.id"), nullable=True, index=True
+    )
+    cliente_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("clientes.id"), nullable=True, index=True
     )
     plantilla_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("gasto_plantillas.id"), nullable=True, index=True
