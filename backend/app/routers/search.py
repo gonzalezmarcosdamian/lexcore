@@ -20,6 +20,8 @@ class SearchCliente(BaseModel):
     nombre: str
     tipo: str
     cuit_dni: Optional[str] = None
+    dni: Optional[str] = None
+    cuit: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

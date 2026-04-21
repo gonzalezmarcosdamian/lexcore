@@ -102,6 +102,7 @@ export default function NuevoExpedientePage() {
   const [error, setError] = useState("");
   const [step1Error, setStep1Error] = useState("");
   const [clienteError, setClienteError] = useState("");
+  const [localidadOpen, setLocalidadOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -281,19 +282,26 @@ export default function NuevoExpedientePage() {
                     autoFocus
                   />
                 </div>
-                <div>
+                <div className="relative">
                   <label className={labelCls}>Localidad</label>
                   <input
                     value={form.localidad}
-                    onChange={(e) => setForm({ ...form, localidad: e.target.value })}
+                    onChange={(e) => { setForm({ ...form, localidad: e.target.value }); setLocalidadOpen(true); }}
+                    onFocus={() => setLocalidadOpen(true)}
+                    onBlur={() => setTimeout(() => setLocalidadOpen(false), 150)}
                     className={inputCls}
-                    placeholder="Buenos Aires, CABA…"
-                    list="localidades-list"
+                    placeholder="Escribí para filtrar…"
                     autoComplete="off"
                   />
-                  <datalist id="localidades-list">
-                    {LOCALIDADES.map((l) => <option key={l} value={l} />)}
-                  </datalist>
+                  {localidadOpen && form.localidad && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-44 overflow-y-auto">
+                      {LOCALIDADES.filter((l) => l.toLowerCase().includes(form.localidad.toLowerCase())).map((l) => (
+                        <button key={l} type="button"
+                          onMouseDown={() => { setForm({ ...form, localidad: l }); setLocalidadOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-ink-50 transition text-ink-800">{l}</button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

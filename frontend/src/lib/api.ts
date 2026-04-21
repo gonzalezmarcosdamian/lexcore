@@ -176,7 +176,7 @@ export interface HonorarioResumen {
 
 export interface SearchResult {
   expedientes: Array<{ id: string; numero: string; caratula: string; estado: string; fuero?: string }>;
-  clientes: Array<{ id: string; nombre: string; tipo: string; cuit_dni?: string }>;
+  clientes: Array<{ id: string; nombre: string; tipo: string; cuit_dni?: string; dni?: string; cuit?: string }>;
 }
 
 export interface StudioUser {

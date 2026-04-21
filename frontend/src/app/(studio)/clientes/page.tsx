@@ -208,7 +208,7 @@ export default function ClientesPage() {
                 </div>
                 {(c.dni || c.cuit || c.cuit_dni) && (
                   <p className="text-xs text-ink-400 mt-0.5">
-                    {[c.dni && `DNI ${c.dni}`, c.cuit && `CUIT ${c.cuit}`].filter(Boolean).join(" · ") || c.cuit_dni}
+                    {[c.dni && `DNI ${c.dni}`, c.cuit && `CUIT ${c.cuit}`, !c.dni && !c.cuit && c.cuit_dni && `Doc. ${c.cuit_dni}`].filter(Boolean).join(" · ")}
                   </p>
                 )}
               </div>

@@ -157,12 +157,17 @@ export default function ExpedienteDetailPage() {
   const [savingAbogado, setSavingAbogado] = useState(false);
   const [addingAbogado, setAddingAbogado] = useState(false);
 
-  // Clientes
+  // Clientes (panel lateral)
   const [clientesDisponibles, setClientesDisponibles] = useState<Cliente[]>([]);
   const [clienteSearch, setClienteSearch] = useState("");
   const [clienteOpen, setClienteOpen] = useState(false);
   const [addingCliente, setAddingCliente] = useState(false);
   const [savingCliente, setSavingCliente] = useState(false);
+
+  // Modal edición — cliente + localidad combobox
+  const [modalClienteSearch, setModalClienteSearch] = useState("");
+  const [modalClienteOpen, setModalClienteOpen] = useState(false);
+  const [localidadOpen, setLocalidadOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -367,7 +372,10 @@ export default function ExpedienteDetailPage() {
             )}
           </div>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="flex-shrink-0 border border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl px-3 py-1.5 text-sm font-medium transition">
+            <button onClick={() => {
+              setEditing(true);
+              setModalClienteSearch(clientesDisponibles.find(c => c.id === expediente.cliente_id)?.nombre ?? "");
+            }} className="flex-shrink-0 border border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl px-3 py-1.5 text-sm font-medium transition">
               Editar
             </button>
           )}
@@ -416,12 +424,52 @@ export default function ExpedienteDetailPage() {
                   <label className={labelCls}>Juzgado</label>
                   <input value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} className={inputCls} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-2 relative">
                   <label className={labelCls}>Localidad</label>
-                  <input value={form.localidad} onChange={(e) => setForm({ ...form, localidad: e.target.value })} className={inputCls} placeholder="Buenos Aires, CABA" list="localidades-edit-list" autoComplete="off" />
-                  <datalist id="localidades-edit-list">
-                    {LOCALIDADES_ARG.map((l) => <option key={l} value={l} />)}
-                  </datalist>
+                  <input
+                    value={form.localidad}
+                    onChange={(e) => { setForm({ ...form, localidad: e.target.value }); setLocalidadOpen(true); }}
+                    onFocus={() => setLocalidadOpen(true)}
+                    onBlur={() => setTimeout(() => setLocalidadOpen(false), 150)}
+                    className={inputCls} placeholder="Escribí para filtrar…" autoComplete="off"
+                  />
+                  {localidadOpen && form.localidad && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-44 overflow-y-auto">
+                      {LOCALIDADES_ARG.filter((l) => l.toLowerCase().includes(form.localidad.toLowerCase())).map((l) => (
+                        <button key={l} type="button" onMouseDown={() => { setForm({ ...form, localidad: l }); setLocalidadOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-sm hover:bg-ink-50 transition text-ink-800">{l}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="col-span-2 relative">
+                  <label className={labelCls}>Cliente principal</label>
+                  <input
+                    value={modalClienteSearch}
+                    onChange={(e) => { setModalClienteSearch(e.target.value); setModalClienteOpen(true); if (!e.target.value) setForm({ ...form, cliente_id: "" }); }}
+                    onFocus={() => setModalClienteOpen(true)}
+                    onBlur={() => setTimeout(() => setModalClienteOpen(false), 150)}
+                    className={`${inputCls} ${form.cliente_id ? "border-brand-300 bg-brand-50" : ""}`}
+                    placeholder="Buscar cliente…" autoComplete="off"
+                  />
+                  {modalClienteOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-44 overflow-y-auto">
+                      {clientesDisponibles
+                        .filter((c) => !modalClienteSearch || c.nombre.toLowerCase().includes(modalClienteSearch.toLowerCase()))
+                        .map((c) => (
+                          <button key={c.id} type="button"
+                            onMouseDown={() => { setForm({ ...form, cliente_id: c.id }); setModalClienteSearch(c.nombre); setModalClienteOpen(false); }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-ink-50 transition flex items-center justify-between ${form.cliente_id === c.id ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-800"}`}
+                          >
+                            <span>{c.nombre}</span>
+                            {form.cliente_id === c.id && <svg className="w-4 h-4 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                          </button>
+                        ))}
+                      {clientesDisponibles.filter((c) => !modalClienteSearch || c.nombre.toLowerCase().includes(modalClienteSearch.toLowerCase())).length === 0 && (
+                        <p className="px-4 py-3 text-sm text-ink-400">Sin resultados</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">{error}</div>}
@@ -491,7 +539,7 @@ export default function ExpedienteDetailPage() {
                 {clienteOpen && (
                   <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
                     {clientesDisponibles
-                      .filter((c) => (!clienteSearch || c.nombre.toLowerCase().includes(clienteSearch.toLowerCase())) && !expediente.clientes_extra.find((x) => x.id === c.id))
+                      .filter((c) => (!clienteSearch || c.nombre.toLowerCase().includes(clienteSearch.toLowerCase())) && !expediente.clientes_extra.find((x) => x.id === c.id) && c.id !== expediente.cliente_id)
                       .map((c) => (
                         <button key={c.id} type="button" disabled={savingCliente}
                           onMouseDown={() => handleAddCliente(c.id)}
