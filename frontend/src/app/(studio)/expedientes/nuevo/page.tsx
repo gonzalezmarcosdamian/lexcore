@@ -92,8 +92,8 @@ export default function NuevoExpedientePage() {
     fueroCustom: "",
     juzgado: "",
     localidad: "",
-    cliente_id: "",
   });
+  const [selectedClientes, setSelectedClientes] = useState<Cliente[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteSearch, setClienteSearch] = useState("");
   const [clienteOpen, setClienteOpen] = useState(false);
@@ -133,8 +133,8 @@ export default function NuevoExpedientePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    if (!form.cliente_id) {
-      setClienteError("El cliente es obligatorio");
+    if (selectedClientes.length === 0) {
+      setClienteError("Al menos un cliente es obligatorio");
       return;
     }
     setClienteError("");
@@ -148,13 +148,21 @@ export default function NuevoExpedientePage() {
         fuero: fueroFinal || undefined,
         juzgado: form.juzgado || undefined,
         localidad: form.localidad || undefined,
-        cliente_id: form.cliente_id,
+        cliente_id: selectedClientes[0]?.id,
+        cliente_ids: selectedClientes.map((c) => c.id),
       }, token);
       router.push("/expedientes");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al crear expediente");
       setLoading(false);
     }
+  };
+
+  const toggleCliente = (c: Cliente) => {
+    setSelectedClientes((prev) =>
+      prev.find((x) => x.id === c.id) ? prev.filter((x) => x.id !== c.id) : [...prev, c]
+    );
+    setClienteError("");
   };
 
   return (
@@ -290,49 +298,48 @@ export default function NuevoExpedientePage() {
               </div>
 
               <div ref={clienteRef}>
-                <label className={labelCls}>Cliente <span className="text-brand-500">*</span></label>
+                <label className={labelCls}>Clientes <span className="text-brand-500">*</span></label>
+                {/* chips seleccionados */}
+                {selectedClientes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {selectedClientes.map((c) => (
+                      <span key={c.id} className="inline-flex items-center gap-1 bg-brand-50 border border-brand-200 text-brand-700 text-xs font-medium px-2.5 py-1 rounded-full">
+                        {c.nombre}
+                        <button type="button" onClick={() => toggleCliente(c)} className="hover:text-brand-900 transition">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <div className="relative">
                   <input
                     value={clienteSearch}
-                    onChange={(e) => {
-                      setClienteSearch(e.target.value);
-                      setForm({ ...form, cliente_id: "" });
-                      setClienteOpen(true);
-                      setClienteError("");
-                    }}
+                    onChange={(e) => { setClienteSearch(e.target.value); setClienteOpen(true); }}
                     onFocus={() => setClienteOpen(true)}
-                    onBlur={() => {
-                      setTimeout(() => setClienteOpen(false), 150);
-                      if (!form.cliente_id) setClienteSearch("");
-                    }}
-                    className={`${inputCls} ${clienteError ? "border-red-300 focus:ring-red-300" : form.cliente_id ? "border-brand-300 bg-brand-50" : ""}`}
-                    placeholder="Buscar cliente…"
+                    onBlur={() => setTimeout(() => setClienteOpen(false), 150)}
+                    className={`${inputCls} ${clienteError ? "border-red-300 focus:ring-red-300" : ""}`}
+                    placeholder={selectedClientes.length > 0 ? "Agregar otro cliente…" : "Buscar cliente…"}
                     autoComplete="off"
                   />
                   {clienteOpen && (
                     <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-52 overflow-y-auto">
                       {clientes
                         .filter((c) => !clienteSearch || c.nombre.toLowerCase().includes(clienteSearch.toLowerCase()))
-                        .map((c) => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onMouseDown={() => {
-                              setForm({ ...form, cliente_id: c.id });
-                              setClienteSearch(c.nombre);
-                              setClienteOpen(false);
-                              setClienteError("");
-                            }}
-                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-ink-50 transition flex items-center justify-between ${form.cliente_id === c.id ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-800"}`}
-                          >
-                            <span>{c.nombre}</span>
-                            {form.cliente_id === c.id && (
-                              <svg className="w-4 h-4 text-brand-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </button>
-                        ))}
+                        .map((c) => {
+                          const sel = !!selectedClientes.find((x) => x.id === c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onMouseDown={() => { toggleCliente(c); setClienteSearch(""); }}
+                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-ink-50 transition flex items-center justify-between ${sel ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-800"}`}
+                            >
+                              <span>{c.nombre}</span>
+                              {sel && <svg className="w-4 h-4 text-brand-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                            </button>
+                          );
+                        })}
                       {clientes.filter((c) => !clienteSearch || c.nombre.toLowerCase().includes(clienteSearch.toLowerCase())).length === 0 && (
                         <p className="px-4 py-3 text-sm text-ink-400">Sin resultados</p>
                       )}
@@ -341,10 +348,7 @@ export default function NuevoExpedientePage() {
                 </div>
                 {clienteError && <p className="text-xs text-red-500 mt-1.5">{clienteError}</p>}
                 {clientes.length === 0 && (
-                  <p className="text-xs text-ink-400 mt-1.5">
-                    No hay clientes creados.{" "}
-                    <Link href="/clientes/nuevo" className="text-brand-600 underline">Crear uno</Link>
-                  </p>
+                  <p className="text-xs text-ink-400 mt-1.5">No hay clientes creados.{" "}<Link href="/clientes/nuevo" className="text-brand-600 underline">Crear uno</Link></p>
                 )}
               </div>
 

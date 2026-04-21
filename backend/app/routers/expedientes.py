@@ -5,14 +5,14 @@ from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import (
-    Expediente, ExpedienteAbogado, Movimiento, Vencimiento, RolEnExpediente
+    Expediente, ExpedienteAbogado, ExpedienteCliente, Movimiento, Vencimiento, RolEnExpediente
 )
 from app.models.user import User
 from app.models.cliente import Cliente
 from app.models.base import utcnow
 from app.services.resumen_invalidar import invalidar_resumen
 from app.schemas.expediente import (
-    AbogadoEnExpedienteOut,
+    AbogadoEnExpedienteOut, ClienteMin,
     AsignarAbogadoRequest,
     ExpedienteCreate, ExpedienteOut, ExpedienteUpdate,
     MovimientoCreate, MovimientoOut, MovimientoUpdate,
@@ -31,19 +31,22 @@ router = APIRouter(prefix="/expedientes", tags=["expedientes"])
 
 
 def _enriquecer_abogados(db, exp: Expediente) -> ExpedienteOut:
-    """Construye ExpedienteOut enriqueciendo abogados con full_name y cliente con nombre."""
     out = ExpedienteOut.model_validate(exp)
     for i, a in enumerate(exp.abogados):
         user = db.query(User).filter(User.id == a.user_id).first()
         out.abogados[i] = AbogadoEnExpedienteOut(
-            id=a.id,
-            user_id=a.user_id,
-            rol=a.rol,
+            id=a.id, user_id=a.user_id, rol=a.rol,
             full_name=user.full_name if user else None,
         )
     if exp.cliente_id:
         cliente = db.query(Cliente).filter(Cliente.id == exp.cliente_id).first()
         out.cliente_nombre = cliente.nombre if cliente else None
+    # clientes extra (junction table)
+    out.clientes_extra = []
+    for ec in exp.clientes:
+        c = db.query(Cliente).filter(Cliente.id == ec.cliente_id).first()
+        if c:
+            out.clientes_extra.append(ClienteMin(id=c.id, nombre=c.nombre, tipo=c.tipo))
     return out
 
 
@@ -97,7 +100,10 @@ def crear_expediente(
     current_user: CurrentUser,
 ):
     tenant_id = current_user["studio_id"]
-    data = body.model_dump(exclude={"abogado_ids"})
+    data = body.model_dump(exclude={"abogado_ids", "cliente_ids"})
+    # primer cliente de la lista como cliente_id principal
+    if not data.get("cliente_id") and body.cliente_ids:
+        data["cliente_id"] = body.cliente_ids[0]
     numero = _generar_numero(db, tenant_id)
     expediente = Expediente(
         tenant_id=tenant_id,
@@ -106,24 +112,33 @@ def crear_expediente(
         **data,
     )
     db.add(expediente)
-    db.flush()  # get ID before adding abogados
+    db.flush()
 
     # El creador siempre es responsable
     db.add(ExpedienteAbogado(
-        tenant_id=tenant_id,
-        expediente_id=expediente.id,
-        user_id=current_user["sub"],
-        rol=RolEnExpediente.responsable,
+        tenant_id=tenant_id, expediente_id=expediente.id,
+        user_id=current_user["sub"], rol=RolEnExpediente.responsable,
     ))
-    # Abogados adicionales como colaboradores
     for uid in body.abogado_ids:
         if uid != current_user["sub"]:
             db.add(ExpedienteAbogado(
-                tenant_id=tenant_id,
-                expediente_id=expediente.id,
-                user_id=uid,
-                rol=RolEnExpediente.colaborador,
+                tenant_id=tenant_id, expediente_id=expediente.id,
+                user_id=uid, rol=RolEnExpediente.colaborador,
             ))
+
+    # Junction clientes (todos, incluyendo el principal)
+    seen = set()
+    for cid in body.cliente_ids:
+        if cid not in seen:
+            seen.add(cid)
+            db.add(ExpedienteCliente(
+                tenant_id=tenant_id, expediente_id=expediente.id, cliente_id=cid
+            ))
+    # si vino cliente_id pero no en cliente_ids, agregarlo igual
+    if data.get("cliente_id") and data["cliente_id"] not in seen:
+        db.add(ExpedienteCliente(
+            tenant_id=tenant_id, expediente_id=expediente.id, cliente_id=data["cliente_id"]
+        ))
 
     db.commit()
     db.refresh(expediente)
@@ -241,6 +256,61 @@ def eliminar_movimiento(
     if not mov:
         raise HTTPException(status_code=404, detail="Movimiento no encontrado")
     db.delete(mov)
+    db.commit()
+
+
+# ── Clientes ─────────────────────────────────────────────────────────────────
+
+class AgregarClienteRequest(BaseModel):
+    cliente_id: str
+
+
+@router.post("/{expediente_id}/clientes", status_code=status.HTTP_201_CREATED)
+def agregar_cliente(
+    expediente_id: str,
+    body: AgregarClienteRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+):
+    tenant_id = current_user["studio_id"]
+    exp = _get_expediente(db, expediente_id, tenant_id)
+    cliente = db.query(Cliente).filter(Cliente.id == body.cliente_id, Cliente.tenant_id == tenant_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    exists = db.query(ExpedienteCliente).filter(
+        ExpedienteCliente.expediente_id == expediente_id,
+        ExpedienteCliente.cliente_id == body.cliente_id,
+    ).first()
+    if exists:
+        raise HTTPException(status_code=400, detail="Cliente ya asociado")
+    db.add(ExpedienteCliente(
+        tenant_id=tenant_id, expediente_id=expediente_id, cliente_id=body.cliente_id
+    ))
+    # si no tiene cliente principal, asignarlo
+    if not exp.cliente_id:
+        exp.cliente_id = body.cliente_id
+    db.commit()
+    db.refresh(exp)
+    return _enriquecer_abogados(db, exp)
+
+
+@router.delete("/{expediente_id}/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
+def quitar_cliente(
+    expediente_id: str,
+    cliente_id: str,
+    db: DbSession,
+    current_user: CurrentUser,
+):
+    tenant_id = current_user["studio_id"]
+    _get_expediente(db, expediente_id, tenant_id)
+    ec = db.query(ExpedienteCliente).filter(
+        ExpedienteCliente.expediente_id == expediente_id,
+        ExpedienteCliente.cliente_id == cliente_id,
+        ExpedienteCliente.tenant_id == tenant_id,
+    ).first()
+    if not ec:
+        raise HTTPException(status_code=404, detail="Asociación no encontrada")
+    db.delete(ec)
     db.commit()
 
 

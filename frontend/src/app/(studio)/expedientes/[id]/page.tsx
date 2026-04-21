@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Expediente, Movimiento, Vencimiento, Honorario, Tarea, Documento, ActividadItem, EstadoExpediente, RolEnExpediente } from "@/lib/api";
+import { api, Cliente, Expediente, Movimiento, Vencimiento, Honorario, Tarea, Documento, ActividadItem, EstadoExpediente, RolEnExpediente } from "@/lib/api";
 import { HonorariosTab } from "./honorarios-tab";
 import { DocumentosTab } from "./documentos-tab";
 import { TareasSection } from "./tareas-section";
@@ -157,6 +157,13 @@ export default function ExpedienteDetailPage() {
   const [savingAbogado, setSavingAbogado] = useState(false);
   const [addingAbogado, setAddingAbogado] = useState(false);
 
+  // Clientes
+  const [clientesDisponibles, setClientesDisponibles] = useState<Cliente[]>([]);
+  const [clienteSearch, setClienteSearch] = useState("");
+  const [clienteOpen, setClienteOpen] = useState(false);
+  const [addingCliente, setAddingCliente] = useState(false);
+  const [savingCliente, setSavingCliente] = useState(false);
+
   useEffect(() => {
     if (!token) return;
     api.get<Expediente>(`/expedientes/${id}`, token)
@@ -167,6 +174,11 @@ export default function ExpedienteDetailPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get<Cliente[]>("/clientes", token).then(setClientesDisponibles).catch(() => {});
+  }, [token]);
 
   const loadActividad = useCallback(async () => {
     if (!token) return;
@@ -266,6 +278,32 @@ export default function ExpedienteDetailPage() {
       setExpediente((prev) => prev ? { ...prev, abogados: prev.abogados.filter((a) => a.user_id !== userId) } : prev);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al quitar abogado");
+    }
+  };
+
+  const handleAddCliente = async (clienteId: string) => {
+    if (!token) return;
+    setSavingCliente(true);
+    try {
+      const updated = await api.post<Expediente>(`/expedientes/${id}/clientes`, { cliente_id: clienteId }, token);
+      setExpediente(updated);
+      setClienteSearch("");
+      setClienteOpen(false);
+      setAddingCliente(false);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al agregar cliente");
+    } finally {
+      setSavingCliente(false);
+    }
+  };
+
+  const handleRemoveCliente = async (clienteId: string) => {
+    if (!token || !confirm("¿Quitar este cliente del expediente?")) return;
+    try {
+      await api.delete(`/expedientes/${id}/clientes/${clienteId}`, token);
+      setExpediente((prev) => prev ? { ...prev, clientes_extra: prev.clientes_extra.filter((c) => c.id !== clienteId) } : prev);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al quitar cliente");
     }
   };
 
@@ -413,6 +451,57 @@ export default function ExpedienteDetailPage() {
             <FieldRow label="Estado" value={ESTADO_LABELS[expediente.estado]} />
             <FieldRow label="Alta" value={new Date(expediente.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })} />
             <FieldRow label="Actualizado" value={new Date(expediente.updated_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })} />
+          </div>
+
+          {/* Clientes vinculados */}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">Clientes</p>
+              <button onClick={() => setAddingCliente((o) => !o)} className="text-xs text-brand-600 hover:text-brand-700 font-medium transition">+ Agregar</button>
+            </div>
+            <div className="space-y-1">
+              {expediente.clientes_extra.length === 0 && !expediente.cliente_nombre && (
+                <p className="text-xs text-ink-400">Sin clientes asignados</p>
+              )}
+              {expediente.clientes_extra.length > 0 ? expediente.clientes_extra.map((c) => (
+                <div key={c.id} className="flex items-center justify-between gap-2 py-1">
+                  <Link href={`/clientes/${c.id}`} className="text-sm text-ink-800 hover:text-brand-600 transition truncate">{c.nombre}</Link>
+                  <button onClick={() => handleRemoveCliente(c.id)} className="text-ink-300 hover:text-red-500 transition flex-shrink-0" title="Quitar">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+              )) : expediente.cliente_nombre ? (
+                <div className="flex items-center justify-between gap-2 py-1">
+                  <Link href={`/clientes/${expediente.cliente_id}`} className="text-sm text-ink-800 hover:text-brand-600 transition truncate">{expediente.cliente_nombre}</Link>
+                </div>
+              ) : null}
+            </div>
+            {addingCliente && (
+              <div className="mt-3 relative">
+                <input
+                  value={clienteSearch}
+                  onChange={(e) => { setClienteSearch(e.target.value); setClienteOpen(true); }}
+                  onFocus={() => setClienteOpen(true)}
+                  onBlur={() => setTimeout(() => setClienteOpen(false), 150)}
+                  className="w-full bg-white border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"
+                  placeholder="Buscar cliente…"
+                  autoFocus
+                  autoComplete="off"
+                />
+                {clienteOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">
+                    {clientesDisponibles
+                      .filter((c) => (!clienteSearch || c.nombre.toLowerCase().includes(clienteSearch.toLowerCase())) && !expediente.clientes_extra.find((x) => x.id === c.id))
+                      .map((c) => (
+                        <button key={c.id} type="button" disabled={savingCliente}
+                          onMouseDown={() => handleAddCliente(c.id)}
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-ink-50 transition text-ink-800"
+                        >{c.nombre}</button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Equipo colapsable */}

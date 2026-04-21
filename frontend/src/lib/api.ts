@@ -98,9 +98,16 @@ export interface Expediente {
   estado: EstadoExpediente;
   cliente_id?: string;
   cliente_nombre?: string;
+  clientes_extra: ClienteMin[];  // always [] for expedientes without multi-client
   created_at: string;
   updated_at: string;
   abogados: AbogadoEnExpediente[];
+}
+
+export interface ClienteMin {
+  id: string;
+  nombre: string;
+  tipo: string;
 }
 
 export interface Movimiento {

@@ -34,6 +34,9 @@ class Expediente(TenantModel):
         String, ForeignKey("clientes.id"), nullable=True, index=True
     )
 
+    clientes: Mapped[list["ExpedienteCliente"]] = relationship(
+        "ExpedienteCliente", back_populates="expediente", cascade="all, delete-orphan"
+    )
     abogados: Mapped[list["ExpedienteAbogado"]] = relationship(
         "ExpedienteAbogado", back_populates="expediente", cascade="all, delete-orphan"
     )
@@ -46,6 +49,19 @@ class Expediente(TenantModel):
     documentos: Mapped[list["Documento"]] = relationship(  # type: ignore[name-defined]
         "Documento", back_populates="expediente", cascade="all, delete-orphan"
     )
+
+
+class ExpedienteCliente(TenantModel):
+    __tablename__ = "expediente_clientes"
+
+    expediente_id: Mapped[str] = mapped_column(
+        String, ForeignKey("expedientes.id"), nullable=False, index=True
+    )
+    cliente_id: Mapped[str] = mapped_column(
+        String, ForeignKey("clientes.id"), nullable=False, index=True
+    )
+
+    expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="clientes")
 
 
 class ExpedienteAbogado(TenantModel):

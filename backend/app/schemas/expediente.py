@@ -5,6 +5,14 @@ from pydantic import BaseModel
 from app.models.expediente import EstadoExpediente, RolEnExpediente
 
 
+class ClienteMin(BaseModel):
+    id: str
+    nombre: str
+    tipo: str
+
+    model_config = {"from_attributes": True}
+
+
 class AbogadoEnExpedienteOut(BaseModel):
     id: str
     user_id: str
@@ -42,6 +50,7 @@ class ExpedienteCreate(BaseModel):
     juzgado: Optional[str] = None
     localidad: Optional[str] = None
     cliente_id: Optional[str] = None
+    cliente_ids: List[str] = []  # múltiples clientes
     abogado_ids: List[str] = []  # user_ids adicionales (el creador siempre es responsable)
 
 
@@ -71,6 +80,7 @@ class ExpedienteOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     abogados: List[AbogadoEnExpedienteOut] = []
+    clientes_extra: List[ClienteMin] = []
 
     model_config = {"from_attributes": True}
 

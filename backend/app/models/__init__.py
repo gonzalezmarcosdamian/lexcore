@@ -1,7 +1,7 @@
 from app.models.studio import Studio
 from app.models.user import User
 from app.models.cliente import Cliente
-from app.models.expediente import Expediente, ExpedienteAbogado, Movimiento, Vencimiento
+from app.models.expediente import Expediente, ExpedienteAbogado, ExpedienteCliente, Movimiento, Vencimiento
 from app.models.invitacion import Invitacion
 from app.models.honorario import Honorario, PagoHonorario
 from app.models.documento import Documento
@@ -12,7 +12,7 @@ from app.models.soporte import SoporteTicket
 
 __all__ = [
     "Studio", "User", "Cliente",
-    "Expediente", "ExpedienteAbogado", "Movimiento", "Vencimiento",
+    "Expediente", "ExpedienteAbogado", "ExpedienteCliente", "Movimiento", "Vencimiento",
     "Invitacion",
     "Honorario", "PagoHonorario",
     "Documento",
