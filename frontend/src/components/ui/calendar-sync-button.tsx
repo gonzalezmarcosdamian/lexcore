@@ -135,7 +135,7 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
                   : error}
               </p>
             ) : (
-              <p className="text-xs text-ink-400">Sincronizá vencimientos con tu calendario</p>
+              <p className="text-xs text-ink-400">Sincronizá vencimientos y tareas con tu calendario</p>
             )}
           </div>
         </div>

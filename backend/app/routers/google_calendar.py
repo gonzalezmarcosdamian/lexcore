@@ -192,7 +192,34 @@ def select_calendar(
 sync_router = APIRouter(prefix="/vencimientos", tags=["vencimientos"])
 
 
+LEXCORE_TAG = "lexcore_sync"
+
+
+def _delete_existing_lexcore_events(service, calendar_id: str):
+    """Elimina todos los eventos previos creados por LexCore para evitar duplicados."""
+    try:
+        page_token = None
+        while True:
+            events = service.events().list(
+                calendarId=calendar_id,
+                privateExtendedProperty=f"{LEXCORE_TAG}=1",
+                pageToken=page_token,
+            ).execute()
+            for e in events.get("items", []):
+                try:
+                    service.events().delete(calendarId=calendar_id, eventId=e["id"]).execute()
+                except HttpError:
+                    pass
+            page_token = events.get("nextPageToken")
+            if not page_token:
+                break
+    except HttpError:
+        pass
+
+
 def _insert_event(service, calendar_id: str, event: dict) -> bool:
+    event.setdefault("extendedProperties", {})
+    event["extendedProperties"]["private"] = {LEXCORE_TAG: "1"}
     try:
         service.events().insert(calendarId=calendar_id, body=event).execute()
         return True
@@ -220,6 +247,7 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
         raise HTTPException(status_code=400, detail=f"Error conectando con Google: {e}")
 
     cal_id = user.google_calendar_id
+    _delete_existing_lexcore_events(service, cal_id)
     synced = 0
     errors = 0
 
