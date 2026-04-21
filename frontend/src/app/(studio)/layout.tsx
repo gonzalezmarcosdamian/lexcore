@@ -218,6 +218,9 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
   const notifRef = useRef<HTMLDivElement>(null);
   const [studioConfigured, setStudioConfigured] = useState<boolean | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  const [studioForm, setStudioForm] = useState({ name: "", email_contacto: "" });
+  const [studioSaving, setStudioSaving] = useState(false);
+  const [studioError, setStudioError] = useState("");
 
   // Verificar si el estudio tiene perfil completo (email_contacto requerido)
   useEffect(() => {
@@ -225,6 +228,11 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
     api.get<StudioMe>("/studios/me", token)
       .then((s) => {
         setStudioConfigured(!!s.email_contacto);
+        // Pre-cargar formulario con datos existentes o defaults de la sesión
+        setStudioForm({
+          name: s.name || "",
+          email_contacto: s.email_contacto || (session?.user?.email ?? ""),
+        });
         if (s.trial_ends_at) {
           const diff = new Date(s.trial_ends_at).getTime() - Date.now();
           const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
@@ -558,8 +566,8 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Help widget — floating, siempre presente cuando hay sesión */}
       {session && <HelpWidget token={token ?? ""} />}
 
-      {/* Mandatory studio config modal */}
-      {studioConfigured === false && !pathname.startsWith("/perfil") && !sessionStorage.getItem("studio_modal_dismissed") && (
+      {/* Mandatory studio config modal — formulario inline */}
+      {studioConfigured === false && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full sm:max-w-md mx-0 sm:mx-4 bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-brand-600 px-6 py-5">
@@ -569,19 +577,60 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                 </svg>
               </div>
               <h2 className="text-lg font-bold text-white">Configurá tu estudio</h2>
-              <p className="text-sm text-brand-100 mt-1">Antes de continuar, completá los datos básicos del estudio.</p>
+              <p className="text-sm text-brand-100 mt-1">Confirmá los datos del estudio para continuar.</p>
             </div>
-            <div className="px-6 py-6">
-              <p className="text-sm text-ink-600 leading-relaxed mb-6">
-                Necesitamos al menos el <strong>email de contacto</strong> del estudio para poder enviarte notificaciones y que tus clientes puedan comunicarse con vos.
-              </p>
+            <form
+              className="px-6 py-5 space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!token) return;
+                setStudioSaving(true);
+                setStudioError("");
+                try {
+                  await api.patch("/studios/me", {
+                    name: studioForm.name || undefined,
+                    email_contacto: studioForm.email_contacto,
+                  }, token);
+                  setStudioConfigured(true);
+                } catch (err) {
+                  setStudioError(err instanceof Error ? err.message : "Error al guardar");
+                } finally {
+                  setStudioSaving(false);
+                }
+              }}
+            >
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Nombre del estudio</label>
+                <input
+                  value={studioForm.name}
+                  onChange={(e) => setStudioForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="Ej: Estudio Jurídico García & Asociados"
+                  className="w-full bg-ink-50 border border-ink-200 rounded-xl px-3 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Email de contacto <span className="text-red-500">*</span></label>
+                <input
+                  required
+                  type="email"
+                  value={studioForm.email_contacto}
+                  onChange={(e) => setStudioForm((f) => ({ ...f, email_contacto: e.target.value }))}
+                  placeholder="contacto@tuestudio.com"
+                  className="w-full bg-ink-50 border border-ink-200 rounded-xl px-3 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"
+                />
+                <p className="text-xs text-ink-400 mt-1">Para notificaciones y contacto de clientes</p>
+              </div>
+              {studioError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{studioError}</p>
+              )}
               <button
-                onClick={() => router.push("/perfil")}
-                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-2xl transition-all active:scale-95"
+                type="submit"
+                disabled={studioSaving || !studioForm.email_contacto}
+                className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-2xl transition-all active:scale-95"
               >
-                Completar perfil del estudio →
+                {studioSaving ? "Guardando…" : "Confirmar y continuar →"}
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
