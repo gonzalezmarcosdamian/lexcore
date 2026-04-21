@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Expediente, Movimiento, Vencimiento, EstadoExpediente, RolEnExpediente } from "@/lib/api";
+import { api, Expediente, Movimiento, Vencimiento, Honorario, Tarea, Documento, ActividadItem, EstadoExpediente, RolEnExpediente } from "@/lib/api";
 import { HonorariosTab } from "./honorarios-tab";
 import { DocumentosTab } from "./documentos-tab";
 import { TareasSection } from "./tareas-section";
@@ -111,6 +111,10 @@ export default function ExpedienteDetailPage() {
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
+  const [honorarios, setHonorarios] = useState<Honorario[]>([]);
+  const [tareas, setTareas] = useState<Tarea[]>([]);
+  const [documentos, setDocumentos] = useState<Documento[]>([]);
+  const [actividad, setActividad] = useState<ActividadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -119,7 +123,7 @@ export default function ExpedienteDetailPage() {
   const [form, setForm] = useState({ numero: "", caratula: "", fuero: "", juzgado: "", estado: "activo" as EstadoExpediente, cliente_id: "" });
   const [saving, setSaving] = useState(false);
 
-  // Movimientos
+  // Bitácora — entrada manual
   const [nuevoMov, setNuevoMov] = useState("");
   const [savingMov, setSavingMov] = useState(false);
 
@@ -143,10 +147,10 @@ export default function ExpedienteDetailPage() {
       .finally(() => setLoading(false));
   }, [id, token]);
 
-  const loadMovimientos = useCallback(async () => {
+  const loadActividad = useCallback(async () => {
     if (!token) return;
-    const movs = await api.get<Movimiento[]>(`/expedientes/${id}/movimientos`, token);
-    setMovimientos(movs);
+    const items = await api.get<ActividadItem[]>(`/expedientes/${id}/actividad`, token);
+    setActividad(items);
   }, [token, id]);
 
   const loadVencimientos = useCallback(async () => {
@@ -155,10 +159,25 @@ export default function ExpedienteDetailPage() {
     setVencimientos(vencs);
   }, [token, id]);
 
+  const loadSummaryData = useCallback(async () => {
+    if (!token) return;
+    const [movs, hons, tars, docs] = await Promise.all([
+      api.get<Movimiento[]>(`/expedientes/${id}/movimientos`, token),
+      api.get<Honorario[]>("/honorarios", token, { expediente_id: id }).catch(() => [] as Honorario[]),
+      api.get<Tarea[]>("/tareas", token, { expediente_id: id }).catch(() => [] as Tarea[]),
+      api.get<Documento[]>("/documentos", token, { expediente_id: id }).catch(() => [] as Documento[]),
+    ]);
+    setMovimientos(movs);
+    setHonorarios(hons);
+    setTareas(tars);
+    setDocumentos(docs);
+  }, [token, id]);
+
   useEffect(() => {
-    loadMovimientos();
+    loadActividad();
     loadVencimientos();
-  }, [loadMovimientos, loadVencimientos]);
+    loadSummaryData();
+  }, [loadActividad, loadVencimientos, loadSummaryData]);
 
   const handleSaveInfo = async () => {
     if (!token) return;
@@ -179,9 +198,9 @@ export default function ExpedienteDetailPage() {
     if (!token || !nuevoMov.trim()) return;
     setSavingMov(true);
     try {
-      const mov = await api.post<Movimiento>(`/expedientes/${id}/movimientos`, { texto: nuevoMov }, token);
-      setMovimientos((prev) => [mov, ...prev]);
+      await api.post<Movimiento>(`/expedientes/${id}/movimientos`, { texto: nuevoMov }, token);
       setNuevoMov("");
+      loadActividad();
     } catch { } finally { setSavingMov(false); }
   };
 
@@ -233,6 +252,10 @@ export default function ExpedienteDetailPage() {
   }
 
   const pendientesVenc = vencimientos.filter((v) => !v.cumplido).length;
+  const pendientasTareas = tareas.filter((t) => t.estado !== "hecha").length;
+  const totalHonorariosARS = honorarios.filter(h => h.moneda === "ARS").reduce((s, h) => s + h.monto_acordado, 0);
+  const saldoPendienteARS = honorarios.filter(h => h.moneda === "ARS").reduce((s, h) => s + h.saldo_pendiente, 0);
+  const proximoVenc = vencimientos.filter(v => !v.cumplido).sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
 
   return (
     <div className="space-y-4 pb-10">
@@ -414,39 +437,72 @@ export default function ExpedienteDetailPage() {
           </div>
         </div>
 
-        {/* ── Columna derecha: secciones colapsables ── */}
+        {/* ── Columna derecha ── */}
         <div className="min-w-0 space-y-3">
 
-          {/* Resumen IA — deshabilitado hasta configurar OpenAI */}
-          <SectionCollapsible
-            title="Resumen IA"
-            badge={
-              <span className="inline-flex items-center gap-1 text-xs font-medium bg-ink-100 text-ink-400 border border-ink-200 px-1.5 py-0.5 rounded-full">
-                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                Beta
-              </span>
-            }
-            defaultOpen={false}
-            disabled={true}
-          >
-            {token && <ResumenIASection expedienteId={id} token={token} />}
-          </SectionCollapsible>
+          {/* ── BITÁCORA (protagonista) ── */}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-ink-50">
+              <h2 className="text-sm font-semibold text-ink-700">Bitácora</h2>
+              <p className="text-xs text-ink-400 mt-0.5">Historial completo del expediente</p>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Entrada manual */}
+              <form onSubmit={handleAddMov} className="flex gap-2">
+                <textarea
+                  value={nuevoMov}
+                  onChange={(e) => setNuevoMov(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (nuevoMov.trim()) handleAddMov(e as unknown as React.FormEvent); } }}
+                  placeholder="Registrá un movimiento procesal… (Enter para guardar)"
+                  rows={2}
+                  className="flex-1 bg-ink-50 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white transition resize-none border-0"
+                />
+                <button type="submit" disabled={savingMov || !nuevoMov.trim()} className="self-end bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50 flex-shrink-0">
+                  {savingMov ? "…" : "Registrar"}
+                </button>
+              </form>
+
+              {/* Feed */}
+              {actividad.length === 0 ? (
+                <p className="text-sm text-ink-400 text-center py-6">Sin actividad registrada</p>
+              ) : (
+                <div className="relative">
+                  <div className="absolute left-[18px] top-3 bottom-3 w-px bg-ink-100" />
+                  <div className="space-y-2">
+                    {actividad.map((item) => (
+                      <ActividadRow key={`${item.tipo}-${item.id}`} item={item} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Honorarios */}
-          <SectionCollapsible title="Honorarios" defaultOpen={true}>
-            {token && (
-              <div className="p-4">
-                <HonorariosTab expedienteId={id} token={token} />
-              </div>
-            )}
+          <SectionCollapsible
+            title="Honorarios"
+            defaultOpen={false}
+            badge={totalHonorariosARS > 0 ? (
+              <span className="text-xs text-ink-500 font-normal">
+                ${(totalHonorariosARS / 1000).toFixed(0)}k ARS
+                {saldoPendienteARS > 0 && <span className="ml-1 text-amber-600 font-medium">· ${(saldoPendienteARS / 1000).toFixed(0)}k pendiente</span>}
+              </span>
+            ) : undefined}
+          >
+            {token && <div className="p-4"><HonorariosTab expedienteId={id} token={token} /></div>}
           </SectionCollapsible>
 
           {/* Vencimientos */}
           <SectionCollapsible
             title="Vencimientos"
             count={vencimientos.length}
-            badge={pendientesVenc > 0 ? <span className="text-xs bg-amber-100 text-amber-700 rounded-full px-1.5 py-0.5 font-medium">{pendientesVenc} pendientes</span> : undefined}
-            defaultOpen={true}
+            defaultOpen={false}
+            badge={pendientesVenc > 0 ? (
+              <span className="text-xs text-amber-600 font-medium">
+                {pendientesVenc} pendiente{pendientesVenc !== 1 ? "s" : ""}
+                {proximoVenc && <span className="text-ink-400 font-normal"> · próximo {new Date(proximoVenc.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>}
+              </span>
+            ) : <span className="text-xs text-green-600 font-medium">al día</span>}
           >
             <div className="p-4 space-y-3">
               <div className="flex justify-end">
@@ -487,62 +543,85 @@ export default function ExpedienteDetailPage() {
           </SectionCollapsible>
 
           {/* Tareas */}
-          <SectionCollapsible title="Tareas" defaultOpen={true}>
-            {token && (
-              <div className="p-4">
-                <TareasSection expedienteId={id} token={token} />
-              </div>
-            )}
-          </SectionCollapsible>
-
-          {/* Movimientos */}
-          <SectionCollapsible title="Movimientos" count={movimientos.length} defaultOpen={false}>
-            <div className="p-4 space-y-4">
-              <form onSubmit={handleAddMov}>
-                <textarea
-                  value={nuevoMov}
-                  onChange={(e) => setNuevoMov(e.target.value)}
-                  placeholder="Describí el movimiento procesal…"
-                  rows={3}
-                  className="w-full bg-ink-50 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white transition resize-none border-0"
-                />
-                <div className="flex justify-end mt-3">
-                  <button type="submit" disabled={savingMov || !nuevoMov.trim()} className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2 text-sm font-semibold transition shadow-sm disabled:opacity-50">
-                    {savingMov ? "Agregando…" : "Registrar movimiento"}
-                  </button>
-                </div>
-              </form>
-
-              {movimientos.length === 0 ? (
-                <p className="text-sm text-ink-400 text-center py-4">Sin movimientos registrados</p>
-              ) : (
-                <div className="relative pl-5">
-                  <div className="absolute left-7 top-2 bottom-2 w-px bg-ink-100" />
-                  <div className="space-y-3">
-                    {movimientos.map((m) => (
-                      <div key={m.id} className="relative bg-ink-50 rounded-2xl border border-ink-100 px-5 py-4 ml-4">
-                        <div className="absolute -left-6 top-4 w-2.5 h-2.5 rounded-full bg-brand-400 border-2 border-white" />
-                        <p className="text-sm text-ink-800 whitespace-pre-wrap">{m.texto}</p>
-                        <p className="text-xs text-ink-400 mt-2">
-                          {new Date(m.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          <SectionCollapsible
+            title="Tareas"
+            defaultOpen={false}
+            badge={pendientasTareas > 0 ? (
+              <span className="text-xs text-brand-600 font-medium">{pendientasTareas} pendiente{pendientasTareas !== 1 ? "s" : ""}</span>
+            ) : tareas.length > 0 ? <span className="text-xs text-green-600 font-medium">todas hechas</span> : undefined}
+          >
+            {token && <div className="p-4"><TareasSection expedienteId={id} token={token} /></div>}
           </SectionCollapsible>
 
           {/* Documentos */}
-          <SectionCollapsible title="Documentos" defaultOpen={false}>
-            {token && (
-              <div className="p-4">
-                <DocumentosTab expedienteId={id} token={token} />
-              </div>
-            )}
+          <SectionCollapsible
+            title="Documentos"
+            count={documentos.length}
+            defaultOpen={false}
+            badge={documentos.length > 0 ? (
+              <span className="text-xs text-ink-400">{documentos.filter(d => d.content_type === "application/pdf").length} PDF{documentos.filter(d => d.content_type === "application/pdf").length !== 1 ? "s" : ""}</span>
+            ) : undefined}
+          >
+            {token && <div className="p-4"><DocumentosTab expedienteId={id} token={token} /></div>}
           </SectionCollapsible>
+
+          {/* Resumen IA */}
+          <SectionCollapsible
+            title="Resumen IA"
+            badge={
+              <span className="inline-flex items-center gap-1 text-xs font-medium bg-ink-100 text-ink-400 border border-ink-200 px-1.5 py-0.5 rounded-full">
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                Beta
+              </span>
+            }
+            defaultOpen={false}
+            disabled={true}
+          >
+            {token && <ResumenIASection expedienteId={id} token={token} />}
+          </SectionCollapsible>
+
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Fila de actividad ─────────────────────────────────────────────────────────
+
+const ACTIVIDAD_CONFIG: Record<string, { color: string; bg: string; icon: string }> = {
+  movimiento: { color: "text-brand-600", bg: "bg-brand-100", icon: "📝" },
+  honorario:  { color: "text-emerald-600", bg: "bg-emerald-100", icon: "💼" },
+  pago:       { color: "text-green-600", bg: "bg-green-100", icon: "💵" },
+  vencimiento:{ color: "text-amber-600", bg: "bg-amber-100", icon: "📅" },
+  tarea:      { color: "text-purple-600", bg: "bg-purple-100", icon: "✅" },
+  documento:  { color: "text-ink-600", bg: "bg-ink-100", icon: "📄" },
+};
+
+function ActividadRow({ item }: { item: ActividadItem }) {
+  const cfg = ACTIVIDAD_CONFIG[item.tipo] ?? { color: "text-ink-600", bg: "bg-ink-100", icon: "•" };
+  const meta = item.meta as Record<string, unknown>;
+  return (
+    <div className="relative flex items-start gap-3 pl-8">
+      <div className={`absolute left-0 top-1 w-9 h-9 rounded-full ${cfg.bg} flex items-center justify-center text-base flex-shrink-0 z-10`}>
+        {cfg.icon}
+      </div>
+      <div className="flex-1 min-w-0 bg-ink-50 rounded-xl px-4 py-3 border border-ink-100">
+        <p className="text-sm text-ink-800">{item.descripcion}</p>
+        {item.tipo === "honorario" && meta.monto && (
+          <p className="text-xs text-emerald-600 font-medium mt-0.5">{meta.moneda as string} {Number(meta.monto).toLocaleString("es-AR")}</p>
+        )}
+        {item.tipo === "vencimiento" && meta.fecha && (
+          <p className="text-xs text-amber-600 font-medium mt-0.5">
+            {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+            {meta.cumplido ? " · ✓ cumplido" : ""}
+          </p>
+        )}
+        {item.tipo === "tarea" && meta.estado && (
+          <p className="text-xs text-ink-400 mt-0.5 capitalize">{String(meta.estado).replace("_", " ")}</p>
+        )}
+        <p className="text-xs text-ink-400 mt-1.5">
+          {new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
+        </p>
       </div>
     </div>
   );

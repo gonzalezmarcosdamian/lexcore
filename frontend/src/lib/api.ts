@@ -179,11 +179,13 @@ export interface Documento {
   id: string;
   expediente_id: string;
   nombre: string;
+  label?: string | null;
   descripcion?: string | null;
   file_key: string;
   size_bytes: number;
   content_type: string;
   uploaded_by: string;
+  orden: number;
   created_at: string;
 }
 
@@ -263,6 +265,15 @@ export interface Tarea {
   estado: TareaEstado;
   created_at: string;
   updated_at: string;
+}
+
+export interface ActividadItem {
+  id: string;
+  tipo: "movimiento" | "honorario" | "pago" | "vencimiento" | "tarea" | "documento";
+  subtipo: string;
+  descripcion: string;
+  meta: Record<string, unknown>;
+  created_at: string;
 }
 
 export interface StudioMe {
