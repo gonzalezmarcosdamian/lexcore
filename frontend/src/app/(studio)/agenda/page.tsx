@@ -362,6 +362,7 @@ export default function AgendaPage() {
   const [filtroTipoVenc, setFiltroTipoVenc] = useState<string>("");
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
 
+  const [diaPickerFecha, setDiaPickerFecha] = useState<string | null>(null);
   const [showTareaModal, setShowTareaModal] = useState(false);
   const [tareaForm, setTareaForm] = useState({ titulo: "", expediente_id: "", cliente_id: "", fecha_limite: "", hora: "", descripcion: "", tipo: "judicial" as TareaTipo });
   const [savingTarea, setSavingTarea] = useState(false);
@@ -535,8 +536,7 @@ export default function AgendaPage() {
     else setCalMes(m => m + 1);
   };
   const handleClickDia = (fecha: string) => {
-    setTareaForm(f => ({ ...f, fecha_limite: fecha }));
-    setShowTareaModal(true);
+    setDiaPickerFecha(fecha);
   };
 
   return (
@@ -546,6 +546,44 @@ export default function AgendaPage() {
       )}
       {editingT && token && (
         <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
+      )}
+
+      {/* Picker: qué crear al hacer click en día del calendario */}
+      {diaPickerFecha && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-semibold text-ink-800 mb-1">
+              {new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+            </p>
+            <p className="text-xs text-ink-400 mb-4">¿Qué querés agregar?</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setTareaForm(f => ({ ...f, fecha_limite: diaPickerFecha }));
+                  setShowTareaModal(true);
+                  setTareaError("");
+                  setDiaPickerFecha(null);
+                }}
+                className="flex-1 flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl py-4 transition"
+              >
+                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                <span className="text-xs font-semibold text-blue-700">Tarea</span>
+              </button>
+              <button
+                onClick={() => {
+                  setVencimientoForm(f => ({ ...f, fecha: diaPickerFecha }));
+                  setShowVencimientoModal(true);
+                  setVencimientoError("");
+                  setDiaPickerFecha(null);
+                }}
+                className="flex-1 flex flex-col items-center gap-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl py-4 transition"
+              >
+                <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span className="text-xs font-semibold text-purple-700">Vencimiento</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal Nuevo Vencimiento */}
