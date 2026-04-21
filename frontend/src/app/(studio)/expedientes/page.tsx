@@ -467,88 +467,79 @@ export default function ExpedientesPage() {
                     onClick={() => router.push(`/expedientes/${e.id}`)}
                     className="hover:bg-brand-50/40 cursor-pointer transition-colors group"
                   >
-                    {visibleCols.includes("numero") && (
-                      <td className="px-4 py-3.5">
-                        {e.numero_judicial
-                          ? <>
-                              <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition block">{e.numero_judicial}</span>
-                              <span className="font-mono text-[10px] text-ink-400">{e.numero}</span>
-                            </>
-                          : <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>
-                        }
-                      </td>
-                    )}
-                    {visibleCols.includes("numero_judicial") && (
-                      <td className="px-4 py-3.5">
-                        <span className="font-mono text-xs font-bold text-ink-700">{e.numero_judicial ?? <span className="text-ink-300">—</span>}</span>
-                      </td>
-                    )}
-                    {visibleCols.includes("caratula") && (
-                      <td className="px-4 py-3.5 max-w-0">
-                        <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
-                        {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
-                      </td>
-                    )}
-                    {visibleCols.includes("fuero") && (
-                      <td className="px-4 py-3.5">
-                        <span className="text-sm text-ink-600">{e.fuero ?? <span className="text-ink-300">—</span>}</span>
-                      </td>
-                    )}
-                    {visibleCols.includes("juzgado") && (
-                      <td className="px-4 py-3.5 max-w-[160px]">
-                        <span className="text-sm text-ink-600 truncate block">{e.juzgado ?? <span className="text-ink-300">—</span>}</span>
-                      </td>
-                    )}
-                    {visibleCols.includes("localidad") && (
-                      <td className="px-4 py-3.5 max-w-[140px]">
-                        <span className="text-sm text-ink-600 truncate block">{(e as any).localidad ?? <span className="text-ink-300">—</span>}</span>
-                      </td>
-                    )}
-                    {visibleCols.includes("estado") && (
-                      <td className="px-4 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTADO_BADGE[e.estado]}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[e.estado]}`} />
-                          {ESTADO_LABELS[e.estado]}
-                        </span>
-                      </td>
-                    )}
-                    {visibleCols.includes("created_at") && (
-                      <td className="px-4 py-3.5">
-                        <span className="text-xs text-ink-400">
-                          {new Date(e.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "2-digit" })}
-                        </span>
-                      </td>
-                    )}
-                    {visibleCols.includes("cliente") && (
-                      <td className="px-4 py-3.5 max-w-[160px]">
-                        {e.cliente_nombre
-                          ? <span className="text-sm text-ink-700 truncate block">{e.cliente_nombre}</span>
-                          : <span className="text-ink-300 text-xs">—</span>}
-                      </td>
-                    )}
-                    {visibleCols.includes("equipo") && (
-                      <td className="px-4 py-3.5">
-                        {e.abogados.length > 0 ? (
-                          <div className="flex items-center -space-x-1.5">
-                            {e.abogados.slice(0, 3).map((a) => {
-                              const initials = (a.full_name ?? "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-                              return (
-                                <div key={a.id} title={a.full_name ?? ""} className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 border-2 border-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                                  {initials}
-                                </div>
-                              );
-                            })}
-                            {e.abogados.length > 3 && (
-                              <div className="w-6 h-6 rounded-full bg-ink-100 text-ink-500 border-2 border-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                                +{e.abogados.length - 3}
+                    {visibleCols.map((colKey) => {
+                      switch (colKey) {
+                        case "numero": return (
+                          <td key="numero" className="px-4 py-3.5">
+                            {e.numero_judicial
+                              ? <><span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition block">{e.numero_judicial}</span><span className="font-mono text-[10px] text-ink-400">{e.numero}</span></>
+                              : <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>}
+                          </td>
+                        );
+                        case "numero_judicial": return (
+                          <td key="numero_judicial" className="px-4 py-3.5">
+                            <span className="font-mono text-xs font-bold text-ink-700">{e.numero_judicial ?? <span className="text-ink-300">—</span>}</span>
+                          </td>
+                        );
+                        case "caratula": return (
+                          <td key="caratula" className="px-4 py-3.5 max-w-0">
+                            <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
+                            {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
+                          </td>
+                        );
+                        case "fuero": return (
+                          <td key="fuero" className="px-4 py-3.5">
+                            <span className="text-sm text-ink-600">{e.fuero ?? <span className="text-ink-300">—</span>}</span>
+                          </td>
+                        );
+                        case "juzgado": return (
+                          <td key="juzgado" className="px-4 py-3.5 max-w-[160px]">
+                            <span className="text-sm text-ink-600 truncate block">{e.juzgado ?? <span className="text-ink-300">—</span>}</span>
+                          </td>
+                        );
+                        case "localidad": return (
+                          <td key="localidad" className="px-4 py-3.5 max-w-[140px]">
+                            <span className="text-sm text-ink-600 truncate block">{(e as any).localidad ?? <span className="text-ink-300">—</span>}</span>
+                          </td>
+                        );
+                        case "estado": return (
+                          <td key="estado" className="px-4 py-3.5">
+                            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTADO_BADGE[e.estado]}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[e.estado]}`} />
+                              {ESTADO_LABELS[e.estado]}
+                            </span>
+                          </td>
+                        );
+                        case "created_at": return (
+                          <td key="created_at" className="px-4 py-3.5">
+                            <span className="text-xs text-ink-400">{new Date(e.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "2-digit" })}</span>
+                          </td>
+                        );
+                        case "cliente": return (
+                          <td key="cliente" className="px-4 py-3.5 max-w-[160px]">
+                            {e.cliente_nombre ? <span className="text-sm text-ink-700 truncate block">{e.cliente_nombre}</span> : <span className="text-ink-300 text-xs">—</span>}
+                          </td>
+                        );
+                        case "equipo": return (
+                          <td key="equipo" className="px-4 py-3.5">
+                            {e.abogados.length > 0 ? (
+                              <div className="flex items-center -space-x-1.5">
+                                {e.abogados.slice(0, 3).map((a) => {
+                                  const initials = (a.full_name ?? "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+                                  return (
+                                    <div key={a.id} title={a.full_name ?? ""} className="w-6 h-6 rounded-full bg-brand-100 text-brand-700 border-2 border-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">{initials}</div>
+                                  );
+                                })}
+                                {e.abogados.length > 3 && (
+                                  <div className="w-6 h-6 rounded-full bg-ink-100 text-ink-500 border-2 border-white flex items-center justify-center text-[9px] font-bold flex-shrink-0">+{e.abogados.length - 3}</div>
+                                )}
                               </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-ink-300 text-xs">—</span>
-                        )}
-                      </td>
-                    )}
+                            ) : <span className="text-ink-300 text-xs">—</span>}
+                          </td>
+                        );
+                        default: return null;
+                      }
+                    })}
                   </tr>
                 ))
               )}
