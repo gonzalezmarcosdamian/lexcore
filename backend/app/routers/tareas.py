@@ -96,9 +96,28 @@ def actualizar_tarea(
 ):
     tenant_id = current_user["studio_id"]
     tarea = _get_tarea_or_404(db, tarea_id, tenant_id)
-    for field, value in body.model_dump(exclude_none=True).items():
+    cambios = body.model_dump(exclude_none=True)
+    solo_estado = set(cambios.keys()) == {"estado"}
+    for field, value in cambios.items():
         setattr(tarea, field, value)
     tarea.updated_at = utcnow()
+    if tarea.expediente_id and not solo_estado:
+        from app.models.expediente import Movimiento
+        texto = f"✏️ Tarea editada: {tarea.titulo}"
+        db.add(Movimiento(
+            tenant_id=tarea.tenant_id,
+            expediente_id=tarea.expediente_id,
+            user_id=current_user["sub"],
+            texto=texto,
+        ))
+    elif tarea.expediente_id and solo_estado and tarea.estado == "hecha":
+        from app.models.expediente import Movimiento
+        db.add(Movimiento(
+            tenant_id=tarea.tenant_id,
+            expediente_id=tarea.expediente_id,
+            user_id=current_user["sub"],
+            texto=f"✅ Tarea completada: {tarea.titulo}",
+        ))
     db.commit()
     db.refresh(tarea)
     push_tarea(db, tarea, current_user["sub"])

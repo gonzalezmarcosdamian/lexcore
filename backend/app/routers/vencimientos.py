@@ -93,9 +93,23 @@ def actualizar_vencimiento(
     ).first()
     if not venc:
         raise HTTPException(status_code=404, detail="Vencimiento no encontrado")
-    for field, value in body.model_dump(exclude_unset=True).items():
+    cambios = body.model_dump(exclude_unset=True)
+    # Detectar si es solo marcar cumplido (no loguear en bitácora)
+    solo_cumplido = set(cambios.keys()) == {"cumplido"}
+    for field, value in cambios.items():
         setattr(venc, field, value)
     venc.updated_at = utcnow()
+    if venc.expediente_id and not solo_cumplido:
+        from app.models.expediente import Movimiento
+        texto = f"✏️ Vencimiento editado: {venc.descripcion}"
+        if "fecha" in cambios:
+            texto += f" → {venc.fecha}"
+        db.add(Movimiento(
+            tenant_id=venc.tenant_id,
+            expediente_id=venc.expediente_id,
+            user_id=current_user["sub"],
+            texto=texto,
+        ))
     db.commit()
     db.refresh(venc)
     push_vencimiento(db, venc, current_user["sub"])
