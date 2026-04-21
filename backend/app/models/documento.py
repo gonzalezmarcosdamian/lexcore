@@ -15,8 +15,10 @@ class Documento(TenantModel):
         String, ForeignKey("expedientes.id", ondelete="CASCADE"), nullable=False, index=True
     )
     nombre: Mapped[str] = mapped_column(String, nullable=False)          # nombre display
+    label: Mapped[str | None] = mapped_column(String(200), nullable=True)
     descripcion: Mapped[str | None] = mapped_column(String, nullable=True)
     file_key: Mapped[str] = mapped_column(String, nullable=False)        # clave en R2
+    orden: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
     content_type: Mapped[str] = mapped_column(String, nullable=False)    # MIME type
     uploaded_by: Mapped[str] = mapped_column(

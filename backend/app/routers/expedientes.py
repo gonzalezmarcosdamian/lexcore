@@ -1,5 +1,7 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
+from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import (
@@ -15,6 +17,15 @@ from app.schemas.expediente import (
     ExpedienteCreate, ExpedienteOut, ExpedienteUpdate,
     MovimientoCreate, MovimientoOut,
 )
+
+
+class ActividadItem(BaseModel):
+    id: str
+    tipo: str        # movimiento | honorario | pago | vencimiento | tarea | documento
+    subtipo: str     # creado | cumplido | completado | pago | etc.
+    descripcion: str
+    meta: Dict[str, Any] = {}
+    created_at: datetime
 
 router = APIRouter(prefix="/expedientes", tags=["expedientes"])
 
@@ -236,3 +247,71 @@ def quitar_abogado(
         raise HTTPException(status_code=400, detail="No se puede quitar al abogado responsable")
     db.delete(abogado)
     db.commit()
+
+
+@router.get("/{expediente_id}/actividad", response_model=List[ActividadItem])
+def actividad_expediente(expediente_id: str, db: DbSession, current_user: CurrentUser):
+    """Feed cronológico unificado del expediente."""
+    from app.models.honorario import Honorario, PagoHonorario
+    from app.models.vencimiento import Vencimiento
+    from app.models.tarea import Tarea
+    from app.models.documento import Documento
+
+    tenant_id = current_user["studio_id"]
+    _get_expediente(db, expediente_id, tenant_id)
+
+    items: List[ActividadItem] = []
+
+    # Movimientos manuales
+    for m in db.query(Movimiento).filter(Movimiento.expediente_id == expediente_id).all():
+        items.append(ActividadItem(
+            id=m.id, tipo="movimiento", subtipo="manual",
+            descripcion=m.texto, created_at=m.created_at,
+        ))
+
+    # Honorarios
+    for h in db.query(Honorario).filter(Honorario.expediente_id == expediente_id, Honorario.tenant_id == tenant_id).all():
+        items.append(ActividadItem(
+            id=h.id, tipo="honorario", subtipo="creado",
+            descripcion=f"Honorario: {h.concepto}",
+            meta={"monto": h.monto_acordado, "moneda": h.moneda},
+            created_at=h.created_at,
+        ))
+        for p in h.pagos:
+            items.append(ActividadItem(
+                id=p.id, tipo="pago", subtipo=p.tipo,
+                descripcion=f"Pago registrado — {p.tipo}: {p.moneda} {p.importe:,.0f}",
+                meta={"importe": p.importe, "moneda": p.moneda, "tipo": p.tipo},
+                created_at=p.created_at,
+            ))
+
+    # Vencimientos
+    for v in db.query(Vencimiento).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all():
+        items.append(ActividadItem(
+            id=v.id, tipo="vencimiento", subtipo="creado",
+            descripcion=f"Vencimiento: {v.descripcion}",
+            meta={"fecha": v.fecha, "tipo": v.tipo, "cumplido": v.cumplido},
+            created_at=v.created_at,
+        ))
+
+    # Tareas
+    for t in db.query(Tarea).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all():
+        items.append(ActividadItem(
+            id=t.id, tipo="tarea", subtipo="creada",
+            descripcion=f"Tarea: {t.titulo}",
+            meta={"estado": t.estado, "fecha_limite": t.fecha_limite},
+            created_at=t.created_at,
+        ))
+
+    # Documentos
+    for d in db.query(Documento).filter(Documento.expediente_id == expediente_id, Documento.tenant_id == tenant_id).all():
+        nombre_display = d.label or d.nombre
+        items.append(ActividadItem(
+            id=d.id, tipo="documento", subtipo="subido",
+            descripcion=f"Documento: {nombre_display}",
+            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type},
+            created_at=d.created_at,
+        ))
+
+    items.sort(key=lambda x: x.created_at, reverse=True)
+    return items

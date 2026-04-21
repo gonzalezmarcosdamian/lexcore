@@ -30,14 +30,21 @@ class DocumentoOut(BaseModel):
     id: str
     expediente_id: str
     nombre: str
+    label: Optional[str] = None
     descripcion: Optional[str]
     file_key: str
     size_bytes: int
     content_type: str
     uploaded_by: str
+    orden: int = 0
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class DocumentoUpdate(BaseModel):
+    label: Optional[str] = None
+    orden: Optional[int] = None
 
 
 class DownloadUrlResponse(BaseModel):

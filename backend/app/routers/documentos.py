@@ -1,5 +1,6 @@
+import io
 import urllib.parse
-from typing import List
+from typing import List, Optional
 
 import httpx
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
@@ -8,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from app.core.deps import CurrentUser, DbSession
 from app.models.documento import Documento
 from app.models.expediente import Expediente
-from app.schemas.documento import DocumentoOut, DownloadUrlResponse
+from app.schemas.documento import DocumentoOut, DocumentoUpdate, DownloadUrlResponse
 from app.services.storage import StorageNotConfigured, generate_download_url, delete_object, upload_file
 
 router = APIRouter(prefix="/documentos", tags=["documentos"])
@@ -78,8 +79,78 @@ def listar_documentos(expediente_id: str, db: DbSession, current_user: CurrentUs
             Documento.expediente_id == expediente_id,
             Documento.tenant_id == tenant_id,
         )
-        .order_by(Documento.created_at.desc())
+        .order_by(Documento.orden.asc(), Documento.created_at.asc())
         .all()
+    )
+
+
+@router.patch("/{documento_id}", response_model=DocumentoOut)
+def actualizar_documento(documento_id: str, body: DocumentoUpdate, db: DbSession, current_user: CurrentUser):
+    tenant_id = current_user["studio_id"]
+    doc = db.query(Documento).filter(
+        Documento.id == documento_id,
+        Documento.tenant_id == tenant_id,
+    ).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(doc, field, value)
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+@router.get("/merged-pdf")
+async def merged_pdf(expediente_id: str, db: DbSession, current_user: CurrentUser):
+    """Descarga todos los PDFs del expediente concatenados en un solo archivo, respetando el orden."""
+    tenant_id = current_user["studio_id"]
+    _get_expediente(expediente_id, tenant_id, db)
+    docs = (
+        db.query(Documento)
+        .filter(
+            Documento.expediente_id == expediente_id,
+            Documento.tenant_id == tenant_id,
+            Documento.content_type == "application/pdf",
+        )
+        .order_by(Documento.orden.asc(), Documento.created_at.asc())
+        .all()
+    )
+    if not docs:
+        raise HTTPException(status_code=404, detail="No hay PDFs en este expediente")
+
+    try:
+        from pypdf import PdfWriter
+    except ImportError:
+        raise HTTPException(status_code=503, detail="pypdf no instalado")
+
+    writer = PdfWriter()
+    async with httpx.AsyncClient() as client:
+        for doc in docs:
+            try:
+                signed_url = generate_download_url(file_key=doc.file_key, filename=doc.nombre, force_attachment=False)
+                resp = await client.get(signed_url)
+                resp.raise_for_status()
+                from pypdf import PdfReader
+                reader = PdfReader(io.BytesIO(resp.content))
+                for page in reader.pages:
+                    writer.add_page(page)
+            except Exception:
+                continue  # saltar PDFs que no se puedan leer
+
+    if len(writer.pages) == 0:
+        raise HTTPException(status_code=422, detail="No se pudieron procesar los PDFs")
+
+    buf = io.BytesIO()
+    writer.write(buf)
+    buf.seek(0)
+
+    exp = db.query(Expediente).filter(Expediente.id == expediente_id).first()
+    nombre = f"{exp.numero if exp else 'documentos'}_completo.pdf"
+
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{urllib.parse.quote(nombre)}"},
     )
 
 
