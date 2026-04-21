@@ -67,6 +67,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
       if (editingId) {
         const updated = await api.patch<Tarea>(`/tareas/${editingId}`, payload, token);
         setTareas(prev => prev.map(t => t.id === editingId ? updated : t));
+        onCreated?.();
       } else {
         const created = await api.post<Tarea>("/tareas", payload, token);
         setTareas(prev => [created, ...prev]);

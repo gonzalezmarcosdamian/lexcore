@@ -916,7 +916,7 @@ export default function ExpedienteDetailPage() {
                       v={v}
                       token={token!}
                       onToggle={() => toggleVencCumplido(v.id, !v.cumplido)}
-                      onUpdated={(updated) => setVencimientos(prev => prev.map(x => x.id === updated.id ? updated : x))}
+                      onUpdated={(updated) => { setVencimientos(prev => prev.map(x => x.id === updated.id ? updated : x)); loadActividad(); }}
                       onDeleted={() => { setVencimientos(prev => prev.filter(x => x.id !== v.id)); loadActividad(); }}
                     />
                   ))}
