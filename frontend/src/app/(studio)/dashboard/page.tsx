@@ -667,11 +667,9 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: 
   const esHoy = tarea.fecha_limite === today;
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${vencida ? "bg-red-50/30" : ""}`}>
-      <div className={`flex-shrink-0 w-5 h-5 rounded border-2 ${
-        tarea.estado === "hecha" ? "bg-green-500 border-green-500" : tarea.estado === "en_curso" ? "bg-blue-100 border-blue-300" : "border-ink-200"
-      }`}>
-        {tarea.estado === "hecha" && <svg className="w-full h-full text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
-      </div>
+      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${
+        tarea.estado === "hecha" ? "bg-green-500" : tarea.estado === "en_curso" ? "bg-blue-400" : "bg-ink-300"
+      }`} />
       <div className="flex-1 min-w-0">
         {exp
           ? <Link href={`/expedientes/${exp.id}`} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{tarea.titulo}</Link>
