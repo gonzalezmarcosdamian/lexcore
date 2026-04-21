@@ -98,7 +98,11 @@ def _auto_generar_recurrentes(db, tenant_id: str, mes: int, anio: int):
             Gasto.anio == anio,
         ).first()
         if not existe:
-            dia = min(p.dia_del_mes, 28)  # evitar días inválidos
+            import calendar
+            if p.dia_del_mes == 0:
+                dia = calendar.monthrange(anio, mes)[1]  # último día del mes
+            else:
+                dia = min(p.dia_del_mes, calendar.monthrange(anio, mes)[1])
             fecha_str = f"{anio:04d}-{mes:02d}-{dia:02d}"
             gasto = Gasto(
                 tenant_id=tenant_id,

@@ -901,7 +901,12 @@ export default function ContablePage() {
                 </div>
                 <div>
                   <label className={labelClass}>Día del mes</label>
-                  <input type="number" min="1" max="28" value={plantillaForm.dia_del_mes} onChange={(e) => setPlantillaForm({ ...plantillaForm, dia_del_mes: e.target.value })} className={inputClass} />
+                  <select value={plantillaForm.dia_del_mes} onChange={(e) => setPlantillaForm({ ...plantillaForm, dia_del_mes: e.target.value })} className={inputClass}>
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={String(d)}>{d}</option>
+                    ))}
+                    <option value="0">Último día del mes</option>
+                  </select>
                 </div>
                 <div>
                   <label className={labelClass}>Monto esperado <span className="text-red-500">*</span></label>
@@ -967,7 +972,7 @@ export default function ContablePage() {
                       <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORIA_COLORS[p.categoria]}`}>{catLabel(p.categoria)}</span>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${p.activa ? "text-ink-900" : "text-ink-400 line-through"}`}>{p.descripcion}</p>
-                        <p className="text-xs text-ink-400">Día {p.dia_del_mes} · {formatMoney(Number(p.monto_esperado), p.moneda)}</p>
+                        <p className="text-xs text-ink-400">{p.dia_del_mes === 0 ? "Último día del mes" : `Día ${p.dia_del_mes}`} · {formatMoney(Number(p.monto_esperado), p.moneda)}</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button onClick={() => { handleEditPlantilla(p); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
