@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 
@@ -710,6 +710,19 @@ function PerfilPageInner() {
           </div>
         )}
       </SectionCard>
+
+      {/* ── Cerrar sesión ── */}
+      <div className="pb-2">
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="w-full flex items-center justify-center gap-2 text-sm text-red-500 hover:text-red-600 border border-red-200 hover:border-red-300 hover:bg-red-50 px-4 py-3 rounded-2xl transition"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Cerrar sesión
+        </button>
+      </div>
 
       {/* ── WhatsApp Business — próximamente ── */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden opacity-60">
