@@ -418,7 +418,7 @@
 > **Feedback usuario real — 2026-04-21 (Gonzalo Martin, estudio piloto)**
 > Las siguientes 4 historias vienen de feedback directo de un usuario usando el producto en producción.
 
-### EXP-NUM-001 · Número de expediente judicial manual + número de orden interno — `idea`
+### EXP-NUM-001 · Número de expediente judicial manual + número de orden interno — `done`
 - **Prioridad:** P1 ⭐ (feedback usuario real, crítico para identificación judicial)
 - **Fuente:** feedback usuarios reales 2026-04-21 (Gonzalo Martin + Chipi)
 - **Contexto:** El sistema actual autogenera `EXP-2026-XXXX` como identificador interno. Los abogados necesitan registrar el número oficial asignado por el juzgado (ej: `12345/2026` o `CAF 87654/2025`), que es el que usan en todos sus escritos.
@@ -991,11 +991,12 @@ El `[?]` es un botón circular fijo `fixed bottom-6 right-6 z-50` con tooltip "A
   - [ ] CA1: Indicador "X personas viendo este expediente ahora"
   - [ ] CA2: Nuevo movimiento aparece en el timeline sin recargar la página
 
-### CAL-001 · Calendario integrado de audiencias del estudio
+### CAL-001 · Calendario integrado de audiencias del estudio — `done`
 - **Quién lo tiene:** LITIS (feature destacada).
 - **Qué hace:** Vista de calendario con todos los vencimientos de todos los expedientes del estudio.
+- **Implementado:** 2026-04-21 — vista mensual en /agenda con tareas + vencimientos + feriados AR
 - **Criterios de aceptación:**
-  - [ ] CA1: Vista mensual con todos los vencimientos del estudio (no solo los del usuario)
+  - [x] CA1: Vista mensual con todos los vencimientos del estudio (no solo los del usuario)
   - [ ] CA2: Filtros por abogado, fuero, tipo de vencimiento
   - [ ] CA3: Click en evento navega al expediente
   - [ ] CA4: Exportar a Google Calendar / iCal

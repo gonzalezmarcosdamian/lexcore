@@ -5,8 +5,8 @@
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
 **Última actualización:** 2026-04-21
-**Sprint activo:** Sprint 11 — completado
-**Versión:** 0.11.0
+**Sprint activo:** Sprint 12 — completado
+**Versión:** 0.12.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -19,7 +19,7 @@
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada con feed de actividad completo, documentos con label+reordenamiento+descarga concatenada, sistema de trial, y notificaciones automáticas diarias.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, y notificaciones automáticas diarias.**
 
 ---
 
@@ -345,6 +345,62 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 ---
 
 ## Changelog
+
+### v0.12.0 — 2026-04-21
+
+**Sprint 12 — Agenda calendario, feriados AR, cliente en tareas/gastos, UX agenda**
+
+#### CAL-001 · Vista calendario mensual en agenda
+- Toggle Lista / Calendario en `/agenda`
+- Grilla mensual con navegación prev/next mes
+- Chips de eventos por día (hasta 3 visibles + "+N más")
+- Click en chip → navega al expediente; click en celda → pre-llena fecha en modal
+- Tareas completadas y vencimientos cumplidos con tachado y opacidad reducida
+- Leyenda: Tarea / Vencimiento / Inhábil
+- Componente reutilizable `frontend/src/components/ui/calendar-mensual.tsx`
+
+#### CAL-002 · Feriados argentinos automáticos
+- Backend: modelos `FeriadoCache` + `DiaInhabil` (tenant-specific)
+- Auto-fetch desde `https://api.argentinadatos.com/v1/feriados/{anio}` — sin API key, sin límite
+- Cache en DB por año — solo fetchea una vez por año
+- `GET /feriados?desde=&hasta=` — unión de feriados nacionales + días inhábiles del tenant
+- `POST /feriados/inhabiles` + `DELETE /feriados/inhabiles/{id}` — días inhábiles manuales
+- Frontend carga feriados del mes visible automáticamente
+- Migración `2d4a964522d2`
+
+#### AGE-003 · Hora en tareas y vencimientos desde agenda
+- Modal nueva tarea: campo hora opcional
+- Modal nuevo vencimiento: campo hora opcional (grilla Fecha/Hora)
+- Hora persistida en Google Calendar como `dateTime` (antes solo `date`)
+
+#### AGE-004 · Cliente en tareas
+- `cliente_id` FK opcional en modelo `Tarea`
+- Selector de cliente en modal nueva tarea (agenda y dashboard)
+- `cliente_nombre` enriquecido en `TareaOut`
+- Migración `e9b46f338ee1`
+
+#### CONT-003 · Cliente en gastos e ingresos
+- `cliente_id` FK opcional en modelos `Gasto` e `Ingreso`
+- Selector de cliente antes del selector de expediente en formularios
+- Migración `a7658760af6a`
+
+#### EXP-NUM-001 · Número judicial como referencia primaria
+- Lista de expedientes muestra `numero_judicial` en bold cuando existe, `numero` interno debajo en gris
+
+#### FIX · Google Calendar sync al borrar
+- `delete_vencimiento` y `delete_tarea` ahora reciben `tenant_id` e iteran todos los usuarios del tenant con Calendar configurado
+- Antes solo afectaba al usuario que ejecutó la acción
+
+#### FIX · Fecha límite prominente en tareas
+- Pill badge con color semántico: rojo (vencida), amber (hoy/mañana), gris (futuro)
+- Muestra hora si existe, días relativos ("Hoy", "Mañana", "en 3 días")
+
+**Migraciones:** `e9b46f338ee1`, `a7658760af6a`, `2d4a964522d2`
+**Modelos nuevos:** `FeriadoCache`, `DiaInhabil`
+**Router nuevo:** `feriados.py`
+**Componente nuevo:** `calendar-mensual.tsx`
+
+---
 
 ### v0.11.0 — 2026-04-21
 
