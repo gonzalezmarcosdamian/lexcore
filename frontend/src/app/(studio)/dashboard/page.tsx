@@ -47,6 +47,11 @@ export default function DashboardPage() {
   const [loadingTareas, setLoadingTareas] = useState(true);
   const [marking, setMarking] = useState<string | null>(null);
   const [markingTarea, setMarkingTarea] = useState<string | null>(null);
+  const [deletingV, setDeletingV] = useState<string | null>(null);
+  const [deletingT, setDeletingT] = useState<string | null>(null);
+  const [editingV, setEditingV] = useState<Vencimiento | null>(null);
+  const [editingT, setEditingT] = useState<Tarea | null>(null);
+  const [expLookup, setExpLookup] = useState<Record<string, Expediente>>({});
   const now = new Date();
   const [periodoValue, setPeriodoValue] = useState<PeriodoValue>({
     periodo: "anio",
@@ -73,6 +78,16 @@ export default function DashboardPage() {
     api.get<Tarea[]>("/tareas", token)
       .then((t) => setTareas(t.filter((x) => x.estado !== "hecha")))
       .catch(() => {}).finally(() => setLoadingTareas(false));
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get<Expediente[]>("/expedientes", token)
+      .then((exps) => {
+        const map: Record<string, Expediente> = {};
+        for (const e of exps) map[e.id] = e;
+        setExpLookup(map);
+      }).catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -111,6 +126,24 @@ export default function DashboardPage() {
     } catch {} finally { setMarkingTarea(null); }
   }
 
+  async function handleDeleteVencimiento(id: string) {
+    if (!token) return;
+    setDeletingV(id);
+    try {
+      await api.delete(`/vencimientos/${id}`, token);
+      setProximos((prev) => prev.filter((v) => v.id !== id));
+    } catch {} finally { setDeletingV(null); }
+  }
+
+  async function handleDeleteTarea(id: string) {
+    if (!token) return;
+    setDeletingT(id);
+    try {
+      await api.delete(`/tareas/${id}`, token);
+      setTareas((prev) => prev.filter((t) => t.id !== id));
+    } catch {} finally { setDeletingT(null); }
+  }
+
   const { desde: pDesde, hasta: pHasta } = getDatesFromValue(periodoValue);
   const inRange = (f: string) => !pDesde || !pHasta ? true : f >= pDesde && f <= pHasta;
 
@@ -126,6 +159,8 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
+      {editingT && token && <EditTareaModal tarea={editingT} token={token} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
+      {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
       <SplashScreen />
 
       {/* Header */}
@@ -250,7 +285,7 @@ export default function DashboardPage() {
                         <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Vencidas o para hoy</p>
                       </div>
                       {tareasHoy.map((t) => (
-                        <TareaRow key={t.id} tarea={t} onHecha={handleTareaHecha} marking={markingTarea} />
+                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
                       ))}
                     </>
                   )}
@@ -263,7 +298,7 @@ export default function DashboardPage() {
                         </div>
                       )}
                       {tareasFuturas.map((t) => (
-                        <TareaRow key={t.id} tarea={t} onHecha={handleTareaHecha} marking={markingTarea} />
+                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
                       ))}
                     </>
                   )}
@@ -274,7 +309,7 @@ export default function DashboardPage() {
                         <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Sin fecha límite</p>
                       </div>
                       {tareasSinFecha.map((t) => (
-                        <TareaRow key={t.id} tarea={t} onHecha={handleTareaHecha} marking={markingTarea} />
+                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
                       ))}
                     </>
                   )}
@@ -321,7 +356,7 @@ export default function DashboardPage() {
                         <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Hoy</p>
                       </div>
                       {vencimientosHoy.map((v) => (
-                        <VencimientoRow key={v.id} v={v} onCumplido={handleCumplido} marking={marking} />
+                        <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
                       ))}
                     </>
                   )}
@@ -332,7 +367,7 @@ export default function DashboardPage() {
                         <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">⚡ Urgentes (menos de 48hs)</p>
                       </div>
                       {urgentes.map((v) => (
-                        <VencimientoRow key={v.id} v={v} onCumplido={handleCumplido} marking={marking} />
+                        <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
                       ))}
                     </>
                   )}
@@ -345,7 +380,7 @@ export default function DashboardPage() {
                         </div>
                       )}
                       {proximos30.slice(0, 12).map((v) => (
-                        <VencimientoRow key={v.id} v={v} onCumplido={handleCumplido} marking={marking} />
+                        <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
                       ))}
                     </>
                   )}
@@ -437,7 +472,115 @@ export default function DashboardPage() {
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
-function TareaRow({ tarea, onHecha, marking }: { tarea: Tarea; onHecha: (id: string) => void; marking: string | null }) {
+function EditTareaModal({ tarea, token, onSaved, onClose }: { tarea: Tarea; token: string; onSaved: (t: Tarea) => void; onClose: () => void }) {
+  const [titulo, setTitulo] = useState(tarea.titulo);
+  const [fechaLimite, setFechaLimite] = useState(tarea.fecha_limite ?? "");
+  const [estado, setEstado] = useState(tarea.estado);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = { titulo, estado };
+      if (fechaLimite) body.fecha_limite = fechaLimite; else body.fecha_limite = null;
+      const updated = await api.patch<Tarea>(`/tareas/${tarea.id}`, body, token);
+      onSaved(updated);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-ink-900">Editar tarea</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Título</label>
+            <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
+            <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
+            <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="pendiente">Pendiente</option>
+              <option value="en_curso">En curso</option>
+            </select>
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; token: string; onSaved: (u: Vencimiento) => void; onClose: () => void }) {
+  const [descripcion, setDescripcion] = useState(v.descripcion);
+  const [fecha, setFecha] = useState(v.fecha);
+  const [tipo, setTipo] = useState(v.tipo);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, tipo }, token);
+      onSaved(updated);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
+            <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="vencimiento">Vencimiento</option>
+              <option value="audiencia">Audiencia</option>
+              <option value="presentacion">Presentación</option>
+              <option value="pericia">Pericia</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: {
+  tarea: Tarea;
+  exp?: Expediente;
+  onHecha: (id: string) => void;
+  onEdit: (t: Tarea) => void;
+  onDelete: (id: string) => void;
+  marking: string | null;
+  deleting: string | null;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const vencida = tarea.fecha_limite && tarea.fecha_limite < today;
   const esHoy = tarea.fecha_limite === today;
   return (
@@ -453,28 +596,59 @@ function TareaRow({ tarea, onHecha, marking }: { tarea: Tarea; onHecha: (id: str
       </button>
       <div className="flex-1 min-w-0">
         <p className="text-sm text-ink-900 font-medium truncate">{tarea.titulo}</p>
-        {tarea.expediente_id && <p className="text-xs text-ink-400 truncate">expediente vinculado</p>}
+        {exp && (
+          <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate block max-w-[180px]">
+            {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
+          </Link>
+        )}
       </div>
-      {tarea.estado === "en_curso" && (
-        <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">En curso</span>
-      )}
-      {tarea.fecha_limite && (
-        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
-          vencida ? "bg-red-100 text-red-600" : esHoy ? "bg-amber-100 text-amber-700" : "bg-ink-100 text-ink-500"
-        }`}>
-          {vencida ? `venció ${formatFecha(tarea.fecha_limite)}` : formatFechaLarga(tarea.fecha_limite)}
-        </span>
+      {confirmDelete ? (
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+          <button onClick={() => { onDelete(tarea.id); setConfirmDelete(false); }} disabled={deleting === tarea.id} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition disabled:opacity-50">Sí</button>
+          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2.5 py-1.5 rounded-lg hover:bg-ink-50 transition">No</button>
+        </div>
+      ) : (
+        <>
+          {tarea.estado === "en_curso" && (
+            <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">En curso</span>
+          )}
+          {tarea.fecha_limite && (
+            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+              vencida ? "bg-red-100 text-red-600" : esHoy ? "bg-amber-100 text-amber-700" : "bg-ink-100 text-ink-500"
+            }`}>
+              {vencida ? `venció ${formatFecha(tarea.fecha_limite)}` : formatFechaLarga(tarea.fecha_limite)}
+            </span>
+          )}
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+            <button onClick={() => onEdit(tarea)} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+            <button onClick={() => setConfirmDelete(true)} title="Eliminar" className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function VencimientoRow({ v, onCumplido, marking }: { v: Vencimiento; onCumplido: (id: string) => void; marking: string | null }) {
-  const urgente = isUrgente(v.fecha);
-  const warning = !urgente && isWarning(v.fecha);
+function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, marking, deleting }: {
+  v: Vencimiento;
+  exp?: Expediente;
+  onCumplido: (id: string) => void;
+  onEdit: (v: Vencimiento) => void;
+  onDelete: (id: string) => void;
+  marking: string | null;
+  deleting: string | null;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const urg = isUrgente(v.fecha);
+  const warning = !urg && isWarning(v.fecha);
   const vencida = isVencida(v.fecha);
   return (
-    <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urgente ? "bg-red-50/20" : ""}`}>
+    <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
       <button
         onClick={() => onCumplido(v.id)}
         disabled={marking === v.id}
@@ -484,13 +658,37 @@ function VencimientoRow({ v, onCumplido, marking }: { v: Vencimiento; onCumplido
       />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
-        <p className="text-xs text-ink-400 truncate">{v.tipo}</p>
+        {exp ? (
+          <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate block max-w-[180px]">
+            {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
+          </Link>
+        ) : (
+          <p className="text-xs text-ink-400 truncate">{v.tipo}</p>
+        )}
       </div>
-      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
-        urgente || vencida ? "bg-red-100 text-red-700" : warning ? "bg-yellow-100 text-yellow-700" : "bg-ink-100 text-ink-500"
-      }`}>
-        {formatFecha(v.fecha)}
-      </span>
+      {confirmDelete ? (
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+          <button onClick={() => { onDelete(v.id); setConfirmDelete(false); }} disabled={deleting === v.id} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition disabled:opacity-50">Sí</button>
+          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2.5 py-1.5 rounded-lg hover:bg-ink-50 transition">No</button>
+        </div>
+      ) : (
+        <>
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+            urg || vencida ? "bg-red-100 text-red-700" : warning ? "bg-yellow-100 text-yellow-700" : "bg-ink-100 text-ink-500"
+          }`}>
+            {formatFecha(v.fecha)}
+          </span>
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+            <button onClick={() => onEdit(v)} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            </button>
+            <button onClick={() => setConfirmDelete(true)} title="Eliminar" className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
