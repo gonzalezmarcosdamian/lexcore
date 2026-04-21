@@ -29,11 +29,13 @@ const ESTADO_DOT: Record<EstadoExpediente, string> = {
 type SortKey = "numero" | "caratula" | "fuero" | "estado" | "created_at";
 type SortDir = "asc" | "desc";
 
-type ColKey = "numero" | "caratula" | "fuero" | "estado" | "created_at" | "cliente" | "equipo";
+type ColKey = "numero" | "caratula" | "fuero" | "juzgado" | "localidad" | "estado" | "created_at" | "cliente" | "equipo";
 const ALL_COLS: { key: ColKey; label: string }[] = [
   { key: "numero", label: "Número" },
   { key: "caratula", label: "Carátula" },
   { key: "fuero", label: "Fuero" },
+  { key: "juzgado", label: "Juzgado" },
+  { key: "localidad", label: "Localidad" },
   { key: "estado", label: "Estado" },
   { key: "created_at", label: "Alta" },
   { key: "cliente", label: "Cliente" },
@@ -359,7 +361,7 @@ export default function ExpedientesPage() {
               <tr className="border-b border-ink-100 bg-ink-50/60">
                 {ALL_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => {
                   const isSortable = ["numero","caratula","fuero","estado","created_at"].includes(col.key);
-                  const cls = col.key === "numero" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
+                  const cls = col.key === "numero" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "juzgado" ? "w-40" : col.key === "localidad" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
                   return (
                     <th
                       key={col.key}
@@ -431,6 +433,16 @@ export default function ExpedientesPage() {
                     {visibleCols.includes("fuero") && (
                       <td className="px-4 py-3.5">
                         <span className="text-sm text-ink-600">{e.fuero ?? <span className="text-ink-300">—</span>}</span>
+                      </td>
+                    )}
+                    {visibleCols.includes("juzgado") && (
+                      <td className="px-4 py-3.5 max-w-[160px]">
+                        <span className="text-sm text-ink-600 truncate block">{e.juzgado ?? <span className="text-ink-300">—</span>}</span>
+                      </td>
+                    )}
+                    {visibleCols.includes("localidad") && (
+                      <td className="px-4 py-3.5 max-w-[140px]">
+                        <span className="text-sm text-ink-600 truncate block">{(e as any).localidad ?? <span className="text-ink-300">—</span>}</span>
                       </td>
                     )}
                     {visibleCols.includes("estado") && (
