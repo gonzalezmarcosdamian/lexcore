@@ -549,6 +549,7 @@ function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token
 function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea: Tarea; token: string; expedientes: Expediente[]; onSaved: (t: Tarea) => void; onClose: () => void }) {
   const [titulo, setTitulo] = useState(tarea.titulo);
   const [fechaLimite, setFechaLimite] = useState(tarea.fecha_limite ?? "");
+  const [hora, setHora] = useState(tarea.hora ?? "");
   const [estado, setEstado] = useState(tarea.estado);
   const [expedienteId, setExpedienteId] = useState(tarea.expediente_id ?? "");
   const [saving, setSaving] = useState(false);
@@ -558,6 +559,7 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
     try {
       const body: Record<string, unknown> = { titulo, estado, expediente_id: expedienteId || null };
       if (fechaLimite) body.fecha_limite = fechaLimite; else body.fecha_limite = null;
+      body.hora = hora || null;
       const updated = await api.patch<Tarea>(`/tareas/${tarea.id}`, body, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
@@ -574,9 +576,15 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
             <label className="block text-xs font-medium text-ink-600 mb-1">Título</label>
             <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-            <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
+              <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
@@ -606,13 +614,14 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
 function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; token: string; onSaved: (u: Vencimiento) => void; onClose: () => void }) {
   const [descripcion, setDescripcion] = useState(v.descripcion);
   const [fecha, setFecha] = useState(v.fecha);
+  const [hora, setHora] = useState((v as any).hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, tipo }, token);
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo }, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
@@ -628,9 +637,15 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
             <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
             <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
+              <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
