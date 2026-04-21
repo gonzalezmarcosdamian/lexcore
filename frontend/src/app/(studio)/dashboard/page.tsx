@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea, TareaTipo } from "@/lib/api";
 import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -9,6 +9,7 @@ import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
+import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -68,6 +69,11 @@ export default function DashboardPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [expStats, setExpStats] = useState<{ activo: number; archivado: number; cerrado: number } | null>(null);
   const [studioConfigured, setStudioConfigured] = useState(false);
+  const now4 = new Date();
+  const [calMes, setCalMes] = useState(now4.getMonth() + 1);
+  const [calAnio, setCalAnio] = useState(now4.getFullYear());
+  const [inhabiles, setInhabiles] = useState<DiaInhabil[]>([]);
+  const [diaPickerFecha, setDiaPickerFecha] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -150,6 +156,38 @@ export default function DashboardPage() {
       setTareas((prev) => prev.filter((t) => t.id !== id));
     } catch {} finally { setDeletingT(null); }
   }
+
+  useEffect(() => {
+    if (!token) return;
+    const desde = `${calAnio}-${String(calMes).padStart(2, "0")}-01`;
+    const lastDay = new Date(calAnio, calMes, 0).getDate();
+    const hasta = `${calAnio}-${String(calMes).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    api.get<DiaInhabil[]>("/feriados", token, { desde, hasta }).then(setInhabiles).catch(() => {});
+  }, [token, calMes, calAnio]);
+
+  const eventosCalendario = useMemo<CalEvent[]>(() => [
+    ...proximos.map(v => ({
+      id: v.id,
+      tipo: "vencimiento" as const,
+      titulo: v.descripcion,
+      hora: v.hora,
+      cumplido: v.cumplido,
+      expediente_id: v.expediente_id,
+      fecha: v.fecha,
+      color: (v.cumplido ? "blue" : isUrgente(v.fecha) ? "red" : "purple") as CalEvent["color"],
+    })),
+    ...tareas.filter(t => t.fecha_limite).map(t => ({
+      id: t.id,
+      tipo: "tarea" as const,
+      titulo: t.titulo,
+      hora: t.hora,
+      estado: t.estado,
+      expediente_id: t.expediente_id,
+      fecha: t.fecha_limite!,
+      fecha_limite: t.fecha_limite!,
+      color: (t.estado === "en_curso" ? "blue" : t.fecha_limite! < today ? "red" : "amber") as CalEvent["color"],
+    })),
+  ], [proximos, tareas]);
 
   const { desde: pDesde, hasta: pHasta } = getDatesFromValue(periodoValue);
   const inRange = (f: string) => !pDesde || !pHasta ? true : f >= pDesde && f <= pHasta;
@@ -254,163 +292,76 @@ export default function DashboardPage() {
           {/* ── Google Calendar sync banner ── */}
           <CalendarSyncButton variant="banner" />
 
-          {/* ── Bloque principal: Tareas + Vencimientos ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-
-            {/* ─ Tareas ─ */}
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-4 border-b border-ink-50 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <h2 className="text-sm font-semibold text-ink-900">Tareas pendientes</h2>
-                  {tareasFiltradas.length > 0 && (
-                    <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{tareasFiltradas.length}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowNewTarea(true)} className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Nueva
-                  </button>
-                  <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+          {/* ── Agenda: calendario + urgentes ── */}
+          <div>
+            {/* Picker día */}
+            {diaPickerFecha && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
+                <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
+                  <p className="text-sm font-semibold text-ink-800 mb-1">
+                    {new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+                  </p>
+                  <p className="text-xs text-ink-400 mb-4">¿Qué querés agregar?</p>
+                  <div className="flex gap-3">
+                    <button onClick={() => { setShowNewTarea(true); setDiaPickerFecha(null); }}
+                      className="flex-1 flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl py-4 transition">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                      <span className="text-xs font-semibold text-blue-700">Tarea</span>
+                    </button>
+                    <button onClick={() => { setShowNewVenc(true); setDiaPickerFecha(null); }}
+                      className="flex-1 flex flex-col items-center gap-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl py-4 transition">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <span className="text-xs font-semibold text-purple-700">Vencimiento</span>
+                    </button>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {loadingTareas ? (
-                <div className="divide-y divide-ink-50">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="px-5 py-3.5 flex items-center gap-3 animate-pulse">
-                      <div className="w-5 h-5 bg-ink-100 rounded flex-shrink-0" />
-                      <div className="flex-1 space-y-1.5"><div className="h-3 bg-ink-100 rounded w-3/4" /><div className="h-2 bg-ink-50 rounded w-1/3" /></div>
-                    </div>
-                  ))}
-                </div>
-              ) : tareasFiltradas.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center px-6">
-                  <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center mb-3">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  </div>
-                  <p className="text-sm font-medium text-ink-600">Sin tareas pendientes</p>
-                  <Link href="/tareas" className="text-xs text-brand-600 mt-1 hover:underline">Cargar una →</Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-ink-50 overflow-y-auto max-h-96">
-                  {/* Vencidas / hoy */}
-                  {tareasHoy.length > 0 && (
-                    <>
-                      <div className="px-5 py-2 bg-red-50/60">
-                        <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Vencidas o para hoy</p>
-                      </div>
-                      {tareasHoy.map((t) => (
-                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
-                      ))}
-                    </>
-                  )}
-                  {/* Futuras */}
-                  {tareasFuturas.length > 0 && (
-                    <>
-                      {tareasHoy.length > 0 && (
-                        <div className="px-5 py-2 bg-ink-50/60">
-                          <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Próximas</p>
-                        </div>
-                      )}
-                      {tareasFuturas.map((t) => (
-                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
-                      ))}
-                    </>
-                  )}
-                  {/* Sin fecha */}
-                  {tareasSinFecha.length > 0 && (
-                    <>
-                      <div className="px-5 py-2 bg-ink-50/60">
-                        <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Sin fecha límite</p>
-                      </div>
-                      {tareasSinFecha.map((t) => (
-                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
+            {/* Header agenda */}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-ink-700">Agenda</h2>
+              <div className="flex gap-2">
+                <button onClick={() => setShowNewTarea(true)} className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
+                  + Tarea
+                </button>
+                <button onClick={() => setShowNewVenc(true)} className="flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
+                  + Vencimiento
+                </button>
+                <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center">Ver todo →</Link>
+              </div>
             </div>
 
-            {/* ─ Vencimientos ─ */}
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-4 border-b border-ink-50 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  <h2 className="text-sm font-semibold text-ink-900">Vencimientos</h2>
-                  {proximosFiltrados.length > 0 && (
-                    <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{proximosFiltrados.length}</span>
-                  )}
+            {/* Franja urgentes/hoy — solo si hay algo */}
+            {(vencimientosHoy.length > 0 || urgentes.length > 0 || tareasHoy.length > 0) && (
+              <div className="mb-3 bg-red-50 border border-red-100 rounded-2xl overflow-hidden">
+                <div className="px-4 py-2 border-b border-red-100">
+                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">⚡ Requieren atención ahora</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowNewVenc(true)} className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-                    Nuevo
-                  </button>
-                  <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                <div className="divide-y divide-red-100/60">
+                  {vencimientosHoy.map((v) => (
+                    <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
+                  ))}
+                  {urgentes.map((v) => (
+                    <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
+                  ))}
+                  {tareasHoy.map((t) => (
+                    <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
+                  ))}
                 </div>
               </div>
+            )}
 
-              {loading ? (
-                <div className="divide-y divide-ink-50">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="px-5 py-3.5 flex items-center gap-3 animate-pulse">
-                      <div className="w-14 h-6 bg-ink-100 rounded-full flex-shrink-0" />
-                      <div className="flex-1 space-y-1.5"><div className="h-3 bg-ink-100 rounded w-3/4" /><div className="h-2 bg-ink-50 rounded w-1/3" /></div>
-                    </div>
-                  ))}
-                </div>
-              ) : proximosFiltrados.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-10 text-center px-6">
-                  <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center mb-3">
-                    <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                  </div>
-                  <p className="text-sm font-medium text-ink-600">Sin vencimientos próximos</p>
-                  <Link href="/vencimientos/nuevo" className="text-xs text-brand-600 mt-1 hover:underline">Cargar uno →</Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-ink-50 overflow-y-auto max-h-96">
-                  {/* Hoy */}
-                  {vencimientosHoy.length > 0 && (
-                    <>
-                      <div className="px-5 py-2 bg-red-50/60">
-                        <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Hoy</p>
-                      </div>
-                      {vencimientosHoy.map((v) => (
-                        <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
-                      ))}
-                    </>
-                  )}
-                  {/* Urgentes */}
-                  {urgentes.length > 0 && (
-                    <>
-                      <div className="px-5 py-2 bg-amber-50/60">
-                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">⚡ Urgentes (menos de 48hs)</p>
-                      </div>
-                      {urgentes.map((v) => (
-                        <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
-                      ))}
-                    </>
-                  )}
-                  {/* Próximos */}
-                  {proximos30.length > 0 && (
-                    <>
-                      {(vencimientosHoy.length > 0 || urgentes.length > 0) && (
-                        <div className="px-5 py-2 bg-ink-50/60">
-                          <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Próximos</p>
-                        </div>
-                      )}
-                      {proximos30.slice(0, 12).map((v) => (
-                        <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
+            {/* Calendario mensual */}
+            <CalendarioMensual
+              anio={calAnio}
+              mes={calMes}
+              eventos={eventosCalendario}
+              inhabiles={inhabiles}
+              onPrevMes={() => { if (calMes === 1) { setCalMes(12); setCalAnio(a => a - 1); } else setCalMes(m => m - 1); }}
+              onNextMes={() => { if (calMes === 12) { setCalMes(1); setCalAnio(a => a + 1); } else setCalMes(m => m + 1); }}
+              onClickDia={(fecha) => setDiaPickerFecha(fecha)}
+            />
           </div>
 
           {/* ── KPIs contables ── */}
