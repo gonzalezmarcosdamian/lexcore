@@ -91,7 +91,9 @@ function VencimientoCardExpediente({ v, token, onToggle, onUpdated, onDeleted }:
         </div>
       ) : (
         <div className="flex items-center gap-0.5 flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition">
-          {!v.cumplido && (
+          {v.cumplido ? (
+            <button onClick={onToggle} className="text-xs border border-green-200 text-green-700 hover:bg-green-50 rounded-lg px-2.5 py-1.5 font-medium transition">↩ Deshacer</button>
+          ) : (
             <button onClick={onToggle} className="text-xs border border-ink-200 text-ink-700 hover:bg-white rounded-lg px-2.5 py-1.5 font-medium transition">Cumplido</button>
           )}
           <button onClick={() => setEditing(true)} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
@@ -455,6 +457,7 @@ export default function ExpedienteDetailPage() {
     if (!token) return;
     await api.patch(`/vencimientos/${vencId}`, { cumplido }, token);
     setVencimientos((prev) => prev.map((v) => v.id === vencId ? { ...v, cumplido } : v));
+    loadActividad();
   };
 
   if (loading) {
@@ -1061,9 +1064,10 @@ function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, de
                   </div>
                 )}
                 {item.tipo === "vencimiento" && meta.fecha != null && (
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-amber-600 font-medium">
                       📅 {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                      {meta.hora && <span className="ml-1 text-ink-500">· {String(meta.hora)}</span>}
                     </span>
                     {meta.tipo && <span className="text-xs text-ink-400 capitalize">{String(meta.tipo)}</span>}
                     {meta.cumplido && <span className="text-xs text-green-600 font-medium">✓ cumplido</span>}

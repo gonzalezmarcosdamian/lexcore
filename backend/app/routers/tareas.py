@@ -101,22 +101,18 @@ def actualizar_tarea(
     for field, value in cambios.items():
         setattr(tarea, field, value)
     tarea.updated_at = utcnow()
-    if tarea.expediente_id and not solo_estado:
+    if tarea.expediente_id:
         from app.models.expediente import Movimiento
-        texto = f"✏️ Tarea editada: {tarea.titulo}"
+        if solo_estado:
+            ESTADO_LABEL = {"pendiente": "↩️ Tarea reabierta", "en_curso": "▶️ Tarea en curso", "hecha": "✅ Tarea completada"}
+            texto = f"{ESTADO_LABEL.get(tarea.estado, 'Estado actualizado')}: {tarea.titulo}"
+        else:
+            texto = f"✏️ Tarea editada: {tarea.titulo}"
         db.add(Movimiento(
             tenant_id=tarea.tenant_id,
             expediente_id=tarea.expediente_id,
             user_id=current_user["sub"],
             texto=texto,
-        ))
-    elif tarea.expediente_id and solo_estado and tarea.estado == "hecha":
-        from app.models.expediente import Movimiento
-        db.add(Movimiento(
-            tenant_id=tarea.tenant_id,
-            expediente_id=tarea.expediente_id,
-            user_id=current_user["sub"],
-            texto=f"✅ Tarea completada: {tarea.titulo}",
         ))
     db.commit()
     db.refresh(tarea)
