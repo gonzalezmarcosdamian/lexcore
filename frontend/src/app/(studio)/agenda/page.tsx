@@ -188,7 +188,7 @@ function VencimientoCard({
           <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50 transition">No</button>
         </div>
       ) : (
-        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition ml-1">
+        <div className="flex items-center gap-0.5 flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition ml-1">
           <button onClick={onEdit} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
@@ -277,7 +277,7 @@ function TareaCard({
           <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50 transition">No</button>
         </div>
       ) : (
-        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition ml-1">
+        <div className="flex items-center gap-0.5 flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition ml-1">
           <button onClick={onEdit} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
           </button>
