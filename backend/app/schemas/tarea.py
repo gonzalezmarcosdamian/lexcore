@@ -12,6 +12,7 @@ class TareaCreate(BaseModel):
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
     fecha_limite: Optional[str] = None  # YYYY-MM-DD
+    hora: Optional[str] = None  # HH:MM
     estado: TareaEstado = TareaEstado.pendiente
 
     @field_validator("titulo")
@@ -27,6 +28,7 @@ class TareaUpdate(BaseModel):
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
     fecha_limite: Optional[str] = None
+    hora: Optional[str] = None
     estado: Optional[TareaEstado] = None
 
 
@@ -39,6 +41,7 @@ class TareaOut(BaseModel):
     responsable_id: Optional[str] = None
     responsable_nombre: Optional[str] = None  # enriquecido en router
     fecha_limite: Optional[str] = None
+    hora: Optional[str] = None
     estado: TareaEstado
     created_at: datetime
     updated_at: datetime

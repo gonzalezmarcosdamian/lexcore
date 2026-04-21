@@ -9,6 +9,7 @@ import { HonorariosTab } from "./honorarios-tab";
 import { DocumentosTab } from "./documentos-tab";
 import { TareasSection } from "./tareas-section";
 import { ResumenIASection } from "./resumen-ia-section";
+import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -836,6 +837,7 @@ export default function ExpedienteDetailPage() {
                           </div>
                           <p className="text-sm text-ink-800">{v.descripcion}</p>
                           <p className="text-xs text-ink-400 mt-0.5">{v.tipo}</p>
+                          {token && <AdjuntosInline vencimientoId={v.id} token={token} />}
                         </div>
                         {!v.cumplido && (
                           <button onClick={() => toggleVencCumplido(v.id, true)} className="border border-ink-200 text-ink-700 hover:bg-white rounded-xl px-3 py-1.5 text-xs font-medium transition flex-shrink-0">

@@ -25,6 +25,7 @@ class Tarea(TenantModel):
         String, ForeignKey("users.id"), nullable=True, index=True
     )
     fecha_limite: Mapped[str | None] = mapped_column(String(10), nullable=True)  # ISO date
+    hora: Mapped[str | None] = mapped_column(String(5), nullable=True)  # HH:MM
     estado: Mapped[TareaEstado] = mapped_column(
         Enum(TareaEstado), nullable=False, default=TareaEstado.pendiente
     )

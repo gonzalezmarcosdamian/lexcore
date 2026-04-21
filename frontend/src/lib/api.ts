@@ -280,6 +280,7 @@ export interface Tarea {
   responsable_id?: string | null;
   responsable_nombre?: string | null;
   fecha_limite?: string | null;
+  hora?: string | null;
   estado: TareaEstado;
   created_at: string;
   updated_at: string;
