@@ -413,6 +413,73 @@
 
 ## P1 — Importantes para MVP
 
+---
+
+> **Feedback usuario real — 2026-04-21 (Gonzalo Martin, estudio piloto)**
+> Las siguientes 4 historias vienen de feedback directo de un usuario usando el producto en producción.
+
+### EXP-LOC-001 · Localidad del expediente — `idea`
+- **Prioridad:** P1
+- **Fuente:** feedback usuario real 2026-04-21
+- **Como** abogado, **quiero** poder indicar la localidad donde está radicado cada expediente **para** saber rápidamente en qué jurisdicción territorial opera.
+- **Criterios de aceptación:**
+  - [ ] CA1: Campo `localidad` opcional (texto libre) en el expediente
+  - [ ] CA2: Visible en el detalle del expediente (header o sidebar de datos)
+  - [ ] CA3: Editable desde el formulario de edición del expediente
+  - [ ] CA4: Filtrable en el listado de expedientes (si hay suficientes datos)
+- **Notas técnicas:**
+  - Migración: `ALTER TABLE expedientes ADD COLUMN localidad VARCHAR`
+  - `ExpedienteCreate` y `ExpedienteUpdate` schemas — campo opcional
+  - UI: input text en formulario + display en detalle
+
+### MOV-EDIT-001 · Editar y eliminar movimientos del expediente — `idea`
+- **Prioridad:** P1
+- **Fuente:** feedback usuario real 2026-04-21
+- **Como** abogado, **quiero** poder editar la fecha y el texto de un movimiento, y eliminarlo si lo cargué mal **para** mantener la bitácora correcta.
+- **Criterios de aceptación:**
+  - [ ] CA1: Al editar un movimiento: puedo cambiar el texto y la fecha (date picker)
+  - [ ] CA2: Al eliminar: confirmación inline (no modal) antes de borrar
+  - [ ] CA3: Solo el autor del movimiento o un admin puede editarlo/eliminarlo
+  - [ ] CA4: La bitácora unificada se refresca automáticamente tras editar o eliminar
+- **Notas técnicas:**
+  - Agregar `PATCH /movimientos/{id}` y `DELETE /movimientos/{id}` al router
+  - `MovimientoUpdate` schema: `descripcion?: str`, `fecha?: date`
+  - UI: botones editar/eliminar aparecen al hover sobre el row en la bitácora
+
+### VCT-HORA-001 · Hora en vencimientos y audiencias — `idea`
+- **Prioridad:** P1
+- **Fuente:** feedback usuario real 2026-04-21
+- **Como** abogado, **quiero** poder cargar la hora de una audiencia o vencimiento además de la fecha **para** tener el horario exacto en mi agenda.
+- **Criterios de aceptación:**
+  - [ ] CA1: Campo hora opcional (`HH:MM`) en el formulario de nuevo/editar vencimiento
+  - [ ] CA2: Si se carga hora, se muestra en el listado de vencimientos y agenda junto a la fecha
+  - [ ] CA3: Al sincronizar con Google Calendar, se usa la hora real (no todo-el-día)
+  - [ ] CA4: Sin hora → el evento de Calendar sigue siendo de todo el día
+- **Notas técnicas:**
+  - Opción A: agregar columna `hora: time | None` — migración limpia pero requiere combinar en presentación
+  - Opción B (preferida): cambiar `fecha: date` → `fecha: datetime`, almacenar UTC, mostrar en AR timezone
+  - Requiere migración de datos existentes: `fecha::date → fecha::timestamp`
+  - Form: `<input type="time">` opcional; si no se llena, queda `NULL`
+
+### EXP-CLI-MULTI-001 · Múltiples clientes por expediente — `idea`
+- **Prioridad:** P1
+- **Fuente:** feedback usuario real 2026-04-21
+- **Como** abogado, **quiero** poder asociar más de un cliente a un expediente **para** reflejar casos donde represento a varias personas a la vez.
+- **Criterios de aceptación:**
+  - [ ] CA1: Un expediente puede tener N clientes (sin límite)
+  - [ ] CA2: En el detalle del expediente se listan todos los clientes con link a su ficha
+  - [ ] CA3: Al crear expediente se puede agregar cliente adicional (opcional — step 2)
+  - [ ] CA4: Desde el detalle se pueden agregar/quitar clientes sin perder el historial
+  - [ ] CA5: El campo `cliente_id` existente migra como "cliente principal" — retrocompatible
+- **Notas técnicas:**
+  - Tabla puente `expediente_clientes (expediente_id, cliente_id, rol: 'principal'|'secundario', created_at)`
+  - Migración retrocompatible: insertar `(expediente_id, cliente_id, 'principal')` desde datos actuales
+  - `GET /expedientes/{id}` — respuesta incluye lista `clientes: [ClienteBasico]`
+  - Complejidad: M — requiere refactor en varios lugares (detalle, búsqueda, reportes)
+  - **Dependencia:** resolver antes de agregar filtro por cliente en el listado
+
+---
+
 ### USR-001 · Invitar usuarios al estudio
 - **Estado:** `idea`
 - **Sprint target:** Sprint 03
