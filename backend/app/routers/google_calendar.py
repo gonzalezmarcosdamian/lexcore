@@ -12,6 +12,7 @@ Endpoints:
 import json
 import logging
 import os
+import requests as http_requests
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
@@ -72,10 +73,24 @@ def _get_credentials(user: User) -> Credentials:
 
 
 @router.get("/connect")
-def connect_google_calendar(current_user: CurrentUser):
+def connect_google_calendar(current_user: CurrentUser, db: DbSession):
     """Genera la URL de autorización OAuth2 para conectar Google Calendar."""
     if not settings.google_cal_client_id:
         raise HTTPException(status_code=501, detail="Google Calendar no configurado en este entorno")
+
+    # Revocar token existente para forzar que Google emita uno nuevo con calendar scope
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
+    if user and user.google_refresh_token:
+        try:
+            http_requests.post(
+                "https://oauth2.googleapis.com/revoke",
+                params={"token": user.google_refresh_token},
+                timeout=5,
+            )
+        except Exception:
+            pass
+        user.google_refresh_token = None
+        db.commit()
 
     flow = _build_flow()
     auth_url, state = flow.authorization_url(
