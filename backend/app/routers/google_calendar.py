@@ -80,9 +80,9 @@ def connect_google_calendar(current_user: CurrentUser):
     flow = _build_flow()
     auth_url, state = flow.authorization_url(
         access_type="offline",
-        include_granted_scopes="true",
+        include_granted_scopes="false",
         prompt="consent",
-        state=current_user["sub"],  # guardamos user_id como state para recuperarlo en callback
+        state=current_user["sub"],
     )
     return {"url": auth_url, "state": state}
 
