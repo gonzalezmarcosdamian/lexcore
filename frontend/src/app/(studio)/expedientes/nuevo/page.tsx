@@ -8,6 +8,42 @@ import { api, Cliente } from "@/lib/api";
 
 const FUEROS = ["Civil", "Laboral", "Penal", "Comercial", "Contencioso administrativo", "Familia", "Otro"];
 
+const LOCALIDADES = [
+  "Buenos Aires, CABA",
+  "La Plata, Buenos Aires",
+  "Mar del Plata, Buenos Aires",
+  "Quilmes, Buenos Aires",
+  "Lomas de Zamora, Buenos Aires",
+  "Morón, Buenos Aires",
+  "San Isidro, Buenos Aires",
+  "San Martín, Buenos Aires",
+  "Lanús, Buenos Aires",
+  "Bahía Blanca, Buenos Aires",
+  "Córdoba, Córdoba",
+  "Rosario, Santa Fe",
+  "Santa Fe, Santa Fe",
+  "Mendoza, Mendoza",
+  "Tucumán, Tucumán",
+  "Salta, Salta",
+  "Resistencia, Chaco",
+  "Corrientes, Corrientes",
+  "Posadas, Misiones",
+  "Neuquén, Neuquén",
+  "Río Gallegos, Santa Cruz",
+  "Ushuaia, Tierra del Fuego",
+  "Rawson, Chubut",
+  "Viedma, Río Negro",
+  "Santa Rosa, La Pampa",
+  "San Luis, San Luis",
+  "San Juan, San Juan",
+  "La Rioja, La Rioja",
+  "Catamarca, Catamarca",
+  "Santiago del Estero, Santiago del Estero",
+  "Jujuy, Jujuy",
+  "Formosa, Formosa",
+  "Paraná, Entre Ríos",
+];
+
 const inputCls = "w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition";
 const labelCls = "block text-sm font-medium text-ink-700 mb-1.5";
 
@@ -159,14 +195,14 @@ export default function NuevoExpedientePage() {
               </div>
 
               <div>
-                <label className={labelCls}>N° Expediente judicial</label>
+                <label className={labelCls}>N° interno del estudio</label>
                 <input
                   value={form.numero_judicial}
                   onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })}
                   className={inputCls}
-                  placeholder="12345/2026 — podés completarlo después"
+                  placeholder="Ej: 045/2026 — podés completarlo después"
                 />
-                <p className="text-xs text-ink-400 mt-1.5">El número asignado por el juzgado (opcional)</p>
+                <p className="text-xs text-ink-400 mt-1.5">Número propio del estudio, distinto al judicial (opcional)</p>
               </div>
 
               <div>
@@ -244,7 +280,12 @@ export default function NuevoExpedientePage() {
                     onChange={(e) => setForm({ ...form, localidad: e.target.value })}
                     className={inputCls}
                     placeholder="Buenos Aires, CABA…"
+                    list="localidades-list"
+                    autoComplete="off"
                   />
+                  <datalist id="localidades-list">
+                    {LOCALIDADES.map((l) => <option key={l} value={l} />)}
+                  </datalist>
                 </div>
               </div>
 

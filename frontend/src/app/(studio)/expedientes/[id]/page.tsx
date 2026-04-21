@@ -45,6 +45,17 @@ function SectionCollapsible({ title, count, badge, children, defaultOpen = false
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+const LOCALIDADES_ARG = [
+  "Buenos Aires, CABA","La Plata, Buenos Aires","Mar del Plata, Buenos Aires","Quilmes, Buenos Aires",
+  "Lomas de Zamora, Buenos Aires","Morón, Buenos Aires","San Isidro, Buenos Aires","San Martín, Buenos Aires",
+  "Lanús, Buenos Aires","Bahía Blanca, Buenos Aires","Córdoba, Córdoba","Rosario, Santa Fe",
+  "Santa Fe, Santa Fe","Mendoza, Mendoza","Tucumán, Tucumán","Salta, Salta","Resistencia, Chaco",
+  "Corrientes, Corrientes","Posadas, Misiones","Neuquén, Neuquén","Río Gallegos, Santa Cruz",
+  "Ushuaia, Tierra del Fuego","Rawson, Chubut","Viedma, Río Negro","Santa Rosa, La Pampa",
+  "San Luis, San Luis","San Juan, San Juan","La Rioja, La Rioja","Catamarca, Catamarca",
+  "Santiago del Estero, Santiago del Estero","Jujuy, Jujuy","Formosa, Formosa","Paraná, Entre Ríos",
+];
+
 const ESTADO_BADGE: Record<EstadoExpediente, string> = {
   activo: "bg-green-50 text-green-700 border-green-100",
   archivado: "bg-ink-100 text-ink-500 border-ink-200",
@@ -327,47 +338,60 @@ export default function ExpedienteDetailPage() {
 
       {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">{error}</div>}
 
-      {/* Formulario de edición (inline sobre el header) */}
+      {/* Modal de edición */}
       {editing && (
-        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5 max-w-2xl space-y-3">
-          <h3 className="text-sm font-semibold text-ink-700 mb-1">Editar expediente</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>N° Ref. interna</label>
-              <input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className={`${inputCls} font-mono`} placeholder="EXP-2026-0001" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setEditing(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-ink-100">
+              <h3 className="text-base font-semibold text-ink-900">Editar expediente</h3>
+              <button onClick={() => setEditing(false)} className="text-ink-400 hover:text-ink-600 transition">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-            <div>
-              <label className={labelCls}>Estado</label>
-              <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value as EstadoExpediente })} className={inputCls}>
-                <option value="activo">Activo</option>
-                <option value="archivado">Archivado</option>
-                <option value="cerrado">Cerrado</option>
-              </select>
+            <div className="p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>N° Ref. interna</label>
+                  <input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className={`${inputCls} font-mono`} placeholder="EXP-2026-0001" />
+                </div>
+                <div>
+                  <label className={labelCls}>Estado</label>
+                  <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value as EstadoExpediente })} className={inputCls}>
+                    <option value="activo">Activo</option>
+                    <option value="archivado">Archivado</option>
+                    <option value="cerrado">Cerrado</option>
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>N° interno del estudio</label>
+                  <input value={form.numero_judicial} onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })} className={inputCls} placeholder="Ej: 045/2026" />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Carátula</label>
+                  <input value={form.caratula} onChange={(e) => setForm({ ...form, caratula: e.target.value })} className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Fuero</label>
+                  <input value={form.fuero} onChange={(e) => setForm({ ...form, fuero: e.target.value })} className={inputCls} placeholder="Civil, Laboral…" />
+                </div>
+                <div>
+                  <label className={labelCls}>Juzgado</label>
+                  <input value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} className={inputCls} />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Localidad</label>
+                  <input value={form.localidad} onChange={(e) => setForm({ ...form, localidad: e.target.value })} className={inputCls} placeholder="Buenos Aires, CABA" list="localidades-edit-list" autoComplete="off" />
+                  <datalist id="localidades-edit-list">
+                    {LOCALIDADES_ARG.map((l) => <option key={l} value={l} />)}
+                  </datalist>
+                </div>
+              </div>
+              {error && <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">{error}</div>}
             </div>
-            <div className="col-span-2">
-              <label className={labelCls}>N° Expediente judicial</label>
-              <input value={form.numero_judicial} onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })} className={inputCls} placeholder="12345/2026" />
+            <div className="flex gap-3 px-5 pb-5">
+              <button onClick={() => setEditing(false)} className="flex-1 border border-ink-200 text-ink-600 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+              <button onClick={handleSaveInfo} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
             </div>
-            <div className="col-span-2">
-              <label className={labelCls}>Carátula</label>
-              <input value={form.caratula} onChange={(e) => setForm({ ...form, caratula: e.target.value })} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Fuero</label>
-              <input value={form.fuero} onChange={(e) => setForm({ ...form, fuero: e.target.value })} className={inputCls} placeholder="Civil, Laboral…" />
-            </div>
-            <div>
-              <label className={labelCls}>Juzgado</label>
-              <input value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} className={inputCls} />
-            </div>
-            <div className="col-span-2">
-              <label className={labelCls}>Localidad</label>
-              <input value={form.localidad} onChange={(e) => setForm({ ...form, localidad: e.target.value })} className={inputCls} placeholder="Buenos Aires, CABA" />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-1">
-            <button onClick={() => { setEditing(false); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-medium px-4 py-2 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
-            <button onClick={handleSaveInfo} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
           </div>
         </div>
       )}
@@ -382,7 +406,7 @@ export default function ExpedienteDetailPage() {
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-3">Datos</p>
             <FieldRow label="Ref. interna" value={expediente.numero} />
-            {expediente.numero_judicial && <FieldRow label="N° Judicial" value={expediente.numero_judicial} />}
+            {expediente.numero_judicial && <FieldRow label="N° Interno estudio" value={expediente.numero_judicial} />}
             <FieldRow label="Fuero" value={expediente.fuero} />
             <FieldRow label="Juzgado" value={expediente.juzgado} />
             {expediente.localidad && <FieldRow label="Localidad" value={expediente.localidad} />}
