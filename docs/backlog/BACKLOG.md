@@ -77,7 +77,7 @@
 - **Casos borde:** expediente nuevo sin movimientos
 
 ### VCT-004 · Sync directo con Google Calendar (agnóstico al método de login)
-- **Estado:** `idea`
+- **Estado:** `done` — 2026-04-20
 - **Sprint target:** Sprint 06
 - **Como** abogado (con cualquier método de login — email o Google), **quiero** conectar mi Google Calendar a LexCore y elegir en qué calendario sincronizar mis vencimientos **para** tener mi agenda judicial actualizada automáticamente sin cambiar cómo inicio sesión.
 - **Criterios de aceptación:**

@@ -51,6 +51,32 @@
 **Workaround actual:** `POST /v13/deployments` con `gitSource.type=github` + token personal.
 **Fix permanente pendiente:** Configurar Git Integration desde vercel.com/settings/git para auto-deploy en push a master.
 
+## 2026-04-20 (sesión 006 — Google Calendar + UX)
+
+### Variables de entorno en Vercel: usar `printf`, nunca `echo`
+**Decisión:** Toda variable seteada via CLI de Vercel debe usar `printf 'valor' | vercel env add KEY env`.
+**Razón:** `echo 'valor' | vercel env add ...` agrega `\n` al final del valor. Esto rompe silenciosamente cosas como `GOOGLE_CLIENT_SECRET` (error `invalid_client` al validar token OAuth) y `NEXTAUTH_URL` (redirección incorrecta).
+**Diagnóstico:** `vercel pull && cat .vercel/.env.production.local | cat -A` — los valores afectados terminan con `$` extra (=`\n`).
+**Fix:** `vercel env rm KEY production && printf 'valor' | vercel env add KEY production`
+
+### Google Calendar: scope `calendar` vs `calendar.events`
+**Decisión:** El scope de Google Calendar en el backend debe ser `https://www.googleapis.com/auth/calendar` (full), no `calendar.events`.
+**Razón:** El scope `calendar.events` solo permite CRUD de eventos en un calendario conocido. Para llamar `calendarList().list()` (listar todos los calendarios del usuario) se necesita el scope `calendar` completo.
+**Error observado:** `403 insufficientPermissions` al listar calendarios aunque el token era válido y el scope `events` había sido concedido.
+**Archivo clave:** `backend/app/routers/google_calendar.py` → `SCOPES`
+
+### Google Calendar: revocar token antes de pedir nuevo scope
+**Decisión:** Antes de iniciar el flujo OAuth para agregar un scope nuevo, revocar el refresh_token existente via `POST https://oauth2.googleapis.com/revoke`.
+**Razón:** Google no emite un nuevo refresh_token si ya existe uno vigente para el mismo `(client_id, user)`, incluso con `prompt=consent`. El token viejo conserva solo el scope original.
+**Implementación:** `_delete_existing_lexcore_events` + `user.google_refresh_token = None` → `db.commit()` antes de generar la URL OAuth.
+**Edge case:** Si la revocación falla silenciosamente, el usuario puede quedar sin token — pero el scope connect + `prompt=consent` fuerza que Google emita uno nuevo.
+
+### Google Calendar: deduplicación de eventos con extendedProperties
+**Decisión:** Todos los eventos creados por LexCore llevan `extendedProperties.private.lexcore_sync = "1"`. Antes de cada sync, se borran los eventos que tengan esa propiedad.
+**Razón:** Sin dedup, cada sync agrega eventos nuevos encima de los anteriores.
+**Limitación:** Eventos creados antes de implementar el tag no son detectados por el filtro. Requiere limpieza manual la primera vez.
+**API Google:** `service.events().list(calendarId=id, privateExtendedProperty="lexcore_sync=1")`
+
 ## 2026-04-20
 
 ### Multi-tenant con usuarios compartidos entre estudios

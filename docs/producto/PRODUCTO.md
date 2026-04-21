@@ -4,9 +4,9 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-16
+**Última actualización:** 2026-04-20
 **Sprint activo:** Sprint 10 — en curso
-**Versión:** 0.9.4
+**Versión:** 0.9.5
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -58,10 +58,12 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 **Endpoints:** `GET/POST /expedientes`, `GET/PATCH /expedientes/{id}`, `/movimientos`, `/abogados`
 **Páginas:** `/expedientes`, `/expedientes/nuevo`, `/expedientes/{id}` (tabs: info + movimientos)
 
-### Vencimientos ✓ (Sprint 03 — 2026-04-15)
+### Vencimientos ✓ (Sprint 03–10)
 - [x] VCT-001: CRUD de vencimientos con filtros (próximos N días, cumplido/pendiente)
 - [x] Alertas de urgencia: vencimientos a menos de 48hs se marcan como "Urgente"
-- [ ] VCT-002: Push a Google Calendar — **pendiente** (base lista, falta service de Calendar)
+- [x] VCT-004: Google Calendar sync — conectar desde /perfil, elegir calendario, sync vencimientos + tareas. Deduplicación via `extendedProperties.private.lexcore_sync=1`. Funciona para usuarios Google y email (2026-04-20)
+- [x] Editar y eliminar vencimientos directamente desde agenda e inicio (modal + confirmación inline) (2026-04-20)
+- [x] Rows muestran expediente número + cliente (link clickable) (2026-04-20)
 
 **Endpoints:** `GET/POST /vencimientos`, `GET/PATCH/DELETE /vencimientos/{id}`
 **Páginas:** `/vencimientos`, `/vencimientos/nuevo`
@@ -248,6 +250,8 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 - [x] Toggle de estado circular (pendiente → en_curso → hecha) con un clic
 - [x] Hechas colapsadas en `<details>` con strikethrough y check verde
 - [x] Migración: `ab7c536d2464`
+- [x] Editar y eliminar tareas desde Dashboard (modal + confirmación inline) (2026-04-20)
+- [x] Rows de tareas en Dashboard muestran expediente número + cliente (link clickable) (2026-04-20)
 
 #### US-02 · Vista Agenda Diaria/Semanal ✓ (2026-04-15)
 - [x] Página `/agenda` con selector Hoy / Esta semana / Este mes

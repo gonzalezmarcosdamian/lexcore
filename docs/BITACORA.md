@@ -4,6 +4,52 @@
 
 ---
 
+## Sesión 006 — 2026-04-20
+
+**Sprint:** Sprint 10
+
+### Qué se hizo
+
+**Fix: Google OAuth `OAuthCallback` en producción**
+- Causa raíz: `GOOGLE_CLIENT_SECRET` y `NEXTAUTH_URL` en Vercel tenían `\n` al final por haber sido seteadas con `echo` en lugar de `printf`
+- Fix: `vercel env rm` + re-add con `printf 'valor' | vercel env add KEY production`
+- Configuración final: `checks: ["state"]` (sin PKCE), cookies `sameSite: "none"`, logger v2 para diagnóstico
+
+**Fix: Google Calendar — scope insuficiente**
+- Error `403 insufficientPermissions` al listar calendarios
+- Causa: scope `calendar.events` no alcanza para `calendarList().list()` — se necesita `calendar` (full scope)
+- Fix: cambiar `SCOPES` en `backend/app/routers/google_calendar.py` a `["https://www.googleapis.com/auth/calendar"]`
+- Fix adicional: revocar token existente en `connect_google_calendar` via `POST oauth2.googleapis.com/revoke` para forzar nuevo refresh_token con el scope correcto
+
+**Fix: Google Calendar — eventos duplicados en sync repetido**
+- Causa: sync insertaba eventos sin borrar los anteriores
+- Fix: tag `extendedProperties.private.lexcore_sync=1` en todos los eventos insertados; antes de cada sync se borran los eventos con ese tag via `privateExtendedProperty` filter
+- Aclaración: eventos viejos sin el tag persisten — requiere limpieza manual la primera vez
+
+**Fix: `BASE_URL` incorrecto en Railway**
+- `BASE_URL` apuntaba a `https://lexcore.vercel.app` → corregido a `https://lexcore-kappa.vercel.app`
+- Fix: `railway variables set BASE_URL=https://lexcore-kappa.vercel.app`
+
+**UX: Botón cerrar sesión en /perfil**
+- Agregado botón "Cerrar sesión" en la página de perfil, sobre la sección WhatsApp
+
+**UX: Editar/eliminar tareas y vencimientos**
+- VencimientoRow: botones ✏️ y 🗑️ visibles al hover → editar abre modal con descripción/fecha/tipo; eliminar pide confirmación inline
+- TareaRow: mismo patrón → modal edita título/fecha_límite/estado
+- Rows muestran expediente número + cliente nombre (link clickable a `/expedientes/:id`)
+- Dashboard y Agenda (/vencimientos) actualizados con esta UI
+
+### Decisiones tomadas
+- Variables de entorno en Vercel deben setearse con `printf` (no `echo`) para evitar `\n` al final
+- Google Calendar scope debe ser `calendar` (no `calendar.events`) para acceder a `calendarList`
+- Primer sync post-fix requiere limpieza manual de eventos viejos en Google Calendar
+
+### Pendiente
+- Tests para los nuevos endpoints de edición/eliminación
+- Verificar que Railway deployment incluye el scope fix del backend
+
+---
+
 ## Sesión 005 — 2026-04-20
 
 **Sprint:** Sprint 10
