@@ -76,6 +76,36 @@
   - [ ] CA3: Los movimientos se muestran en orden cronológico inverso
 - **Casos borde:** expediente nuevo sin movimientos
 
+### Sprint 10 — COMPLETADO (2026-04-21)
+
+#### EXP-BIT-001 · Bitácora unificada con feed de actividad — `done`
+- Feed cronológico que agrega movimientos, honorarios, pagos, vencimientos, tareas y documentos
+- Retrocompatible: muestra historial de items creados antes de la feature
+- Callback `onCreated` en sub-componentes para auto-refresh
+- Fix: `Vencimiento` importado desde `app.models.expediente` (no módulo propio)
+- Fix: enums serializados con `.value`, Decimal con `float()`
+
+#### DOC-002 · Documentos con label, orden y descarga concatenada — `done`
+- Label editable inline via `PATCH /documentos/{id}`
+- Reordenamiento con botones ↑↓ (intercambia `orden`)
+- `GET /documentos/merged-pdf` — concatena PDFs con `pypdf`
+- Botón "Descargar todo" cuando hay 2+ PDFs
+- Migración `f5e21ed7929a`
+
+#### DOC-003 · Backend proxy para documentos Cloudinary — `done`
+- `GET /documentos/{id}/content?inline=bool` via `httpx` + `StreamingResponse`
+- Fix PDF preview (iframe, X-Frame-Options) y descarga con nombre correcto
+
+#### TRIAL-001 · Sistema de trial 30 días — `done`
+- `trial_ends_at` en modelo `Studio`, migración `2ceee8661236`
+- Banner de aviso ≤5 días restantes
+
+#### NOTIF-001 · Notificaciones diarias automáticas APScheduler — `done`
+- `BackgroundScheduler` CronTrigger 9am en lifespan FastAPI
+- Job recorre todos los tenants
+
+---
+
 ### VCT-004 · Sync directo con Google Calendar (agnóstico al método de login)
 - **Estado:** `done` — 2026-04-20
 - **Sprint target:** Sprint 06

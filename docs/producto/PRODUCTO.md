@@ -4,9 +4,9 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-20
+**Última actualización:** 2026-04-21
 **Sprint activo:** Sprint 10 — en curso
-**Versión:** 0.9.5
+**Versión:** 0.10.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -19,7 +19,7 @@
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable con widget financiero, conector Google Calendar, y módulo de tareas con vista global y en expediente.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada con feed de actividad completo, documentos con label+reordenamiento+descarga concatenada, sistema de trial, y notificaciones automáticas diarias.**
 
 ---
 
@@ -345,6 +345,48 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 ---
 
 ## Changelog
+
+### v0.10.0 — 2026-04-21
+
+**Sprint 10 — Bitácora unificada + Documentos avanzados + Trial + APScheduler**
+
+#### Bitácora unificada (feed de actividad)
+- `GET /expedientes/{id}/actividad` — agrega movimientos, honorarios, pagos, vencimientos, tareas y documentos, ordenados por `created_at DESC`
+- La bitácora es el protagonista del detalle de expediente — muestra todo el historial retrocompatible
+- Callback `onCreated` en sub-componentes → refresca bitácora automáticamente al crear cualquier ítem
+- Botón ↻ para refrescar manualmente; textarea con Enter para guardar movimiento manual
+
+#### Documentos avanzados
+- Campo `label` editable inline (click → input → Enter/Esc guarda via PATCH)
+- Campo `orden` — botones ↑↓ para reordenar el listado
+- Endpoint `GET /documentos/merged-pdf?expediente_id=...` — concatena PDFs en orden con `pypdf`
+- Botón "Descargar todo" visible cuando hay 2+ PDFs
+- Migración `f5e21ed7929a` (`label` nullable + `orden` integer con `server_default=0`)
+
+#### Backend proxy para documentos (fix PDF preview + descarga)
+- `GET /documentos/{id}/content?inline=bool` — FastAPI fetchea Cloudinary server-side con `httpx` y devuelve `StreamingResponse`
+- Elimina problemas de `X-Frame-Options` en iframe y nombres UUID en descarga
+- Frontend usa patrón `fetch → blob → URL.createObjectURL()` con `a.download = doc.nombre`
+
+#### Sistema de trial
+- Campo `trial_ends_at` en modelo `Studio` (default `now() + 30 días`)
+- Migración `2ceee8661236`
+- Banner de aviso en layout cuando quedan ≤5 días
+- `StudioMe` type en frontend incluye `trial_ends_at`
+
+#### Notificaciones automáticas diarias (APScheduler)
+- `BackgroundScheduler` con `CronTrigger(hour=9)` montado en el `lifespan` de FastAPI
+- Job `_job_notificar_urgentes()` recorre todos los tenants y envía emails de vencimientos urgentes
+- `apscheduler==3.10.4` en `requirements.txt`
+
+#### UX — Detalle de expediente
+- Secciones colapsables muestran badges de resumen (honorarios pendientes, próximo vencimiento, tareas pendientes, cantidad de PDFs)
+- "Resumen IA · Beta" movido al tope de la columna derecha, grisado con "Próximamente"
+- Tiempo de vida del expediente calculado por días calendario en ART (no milisegundos exactos)
+
+**Nuevas dependencias:** `apscheduler==3.10.4`, `pypdf==4.3.1`, `httpx` (ya era transitiva)
+**Migraciones:** `2ceee8661236` (trial_ends_at), `f5e21ed7929a` (label+orden en documentos)
+**Endpoints nuevos:** `GET /expedientes/{id}/actividad`, `GET /documentos/{id}/content`, `GET /documentos/merged-pdf`, `PATCH /documentos/{id}`
 
 ### v0.9.4 — 2026-04-16
 - Sprint 10: US-21 — Perfil del estudio y del usuario

@@ -4,6 +4,78 @@
 
 ---
 
+## Sesión 007 — 2026-04-21
+
+**Sprint:** Sprint 10
+
+### Qué se hizo
+
+**Fix: Timezone en calendario — "hoy a las 11 PM" mostraba UTC**
+- `toLocaleTimeString` en `calendar-sync-button.tsx` no recibía timezone → usaba UTC del servidor
+- Fix: `timeZone: "America/Argentina/Buenos_Aires"` en todas las llamadas a `toLocaleString`/`toLocaleTimeString`
+
+**Fix: PDF preview en blanco + descarga con nombre UUID raro**
+- Causa raíz: Cloudinary sirve `fl_attachment` + `X-Frame-Options: DENY` → iframe vacío, y el nombre del archivo era la UUID de Cloudinary
+- Fix: endpoint proxy en backend (`GET /documentos/{id}/content?inline=true/false`) — FastAPI hace el fetch server-side con httpx y devuelve `StreamingResponse` con el `Content-Disposition` correcto
+- Frontend: `fetch() → blob() → URL.createObjectURL()` para preview en iframe y descarga con `a.download = doc.nombre`
+- Dependencia nueva: `httpx` en `requirements.txt`
+
+**Feat: Bitácora unificada en detalle de expediente**
+- Endpoint nuevo: `GET /expedientes/{id}/actividad` — agrega movimientos, honorarios, pagos, vencimientos, tareas y documentos ordenados por `created_at DESC`
+- La bitácora reemplaza los movimientos manuales como protagonista de la columna derecha — muestra todo el historial del expediente
+- Entrada manual (textarea) con Enter para guardar; botón ↻ para refrescar
+- Callback `onCreated` en `HonorariosTab`, `TareasSection` y `DocumentosTab` → refresca bitácora automáticamente al crear cualquier ítem
+
+**Feat: Documentos con label y reordenamiento**
+- Campos nuevos en `Documento`: `label` (String(200), nullable) y `orden` (Integer, default 0)
+- Migración `f5e21ed7929a` — `server_default='0'` para filas existentes
+- Edición de label inline: click → input → Enter/Esc/botón guarda via `PATCH /documentos/{id}`
+- Reordenamiento ↑↓: botones que intercambian `orden` entre dos docs y patchean ambos
+- Endpoint `GET /documentos/merged-pdf?expediente_id=...` — concatena PDFs en orden con `pypdf`
+- Botón "Descargar todo" visible cuando hay 2+ PDFs
+
+**Feat: Secciones colapsables con badges de resumen**
+- Honorarios: muestra `$XXk ARS · $Xk pendiente`
+- Vencimientos: `N pendientes · próximo DD-mes`
+- Tareas: `N pendientes`
+- Documentos: `N PDFs`
+
+**Feat: APScheduler — notificaciones diarias automáticas**
+- `BackgroundScheduler` con `CronTrigger(hour=9)` en `lifespan` de FastAPI
+- Job `_job_notificar_urgentes()` recorre todos los tenants y envía email de vencimientos urgentes
+- `apscheduler==3.10.4` y `pypdf==4.3.1` en `requirements.txt`
+
+**Feat: Sistema de trial**
+- Campo `trial_ends_at` en modelo `Studio` (default `now() + 30 días`)
+- Migración `2ceee8661236`
+- Banner de aviso en layout cuando quedan ≤5 días
+- `StudioMe` type en frontend incluye `trial_ends_at`
+
+**Feat: Resumen IA movido al tope**
+- `SectionCollapsible` "Resumen IA · Beta" movido como primer elemento de la columna derecha, grisado con "Próximamente"
+
+**Fixes producción (Railway/Vercel)**
+- `ModuleNotFoundError: No module named 'app.models.vencimiento'` — `Vencimiento` vive en `app.models.expediente`, no en archivo propio. Corregido import en `actividad_expediente`
+- `honorarios-tab.tsx` con `onCreated` prop no estaba commiteado → Vercel build fallaba con TypeScript error
+- Enums de SQLAlchemy serializados con `.value` en lugar de `str()` (que daba `"Moneda.ARS"` en lugar de `"ARS"`)
+- `Decimal` de SQLAlchemy convertido a `float()` para JSON
+
+**Fix: "0 días" en tiempo de vida del expediente**
+- `tiempoVida()` usaba milisegundos exactos → expediente creado ayer = 0 días si pasaron <24hs
+- Fix: comparar fechas calendario en ART usando `toLocaleDateString("en-CA", { timeZone: TZ })`
+
+### Decisiones tomadas
+- Backend proxy para documentos (vs presigned URL directo): elimina todos los problemas CORS/X-Frame-Options sin cambiar el storage
+- `onCreated` callback pattern en sub-componentes: mínimo acoplamiento, la bitácora se refresca sola
+- Enums en `meta` de `ActividadItem`: siempre serializar con `.value` explícito, nunca `str()`
+
+### Pendiente
+- Verificar que `trial_ends_at` se setea correctamente en `auth.py` al crear estudio nuevo
+- Tests para endpoints de documentos (proxy, merged-pdf, PATCH label/orden)
+- Verificar APScheduler en Railway (necesita `--build` para que `apscheduler` esté instalado)
+
+---
+
 ## Sesión 006 — 2026-04-20
 
 **Sprint:** Sprint 10

@@ -116,6 +116,37 @@
 **Razón:** Un expediente que recién nace siempre está activo. Elegir el estado al crear era ruido innecesario en el formulario.
 **Impacto:** `ExpedienteUpdate` sí permite cambiar el estado (para archivar o cerrar más adelante).
 
+## 2026-04-21
+
+### Backend proxy para documentos Cloudinary
+**Decisión:** `GET /documentos/{id}/content?inline=bool` fetchea Cloudinary server-side con httpx y devuelve `StreamingResponse`.
+**Razón:** Cloudinary sirve recursos "authenticated" con `X-Frame-Options: DENY` y `fl_attachment` — el browser no puede hacer iframe ni fetch cross-origin. El proxy elimina todas estas restricciones sin cambiar el storage.
+**Patrón frontend:** `fetch(proxy_url, {headers: {Authorization}}) → blob() → URL.createObjectURL()` — garantiza nombre correcto en descarga y compatibilidad con iframe.
+**Dependencia:** `httpx` en requirements.txt (async HTTP client para Python).
+**Archivo clave:** `backend/app/routers/documentos.py` → `stream_documento`
+
+### Enums SQLAlchemy en Dict[str, Any]: usar `.value`, nunca `str()`
+**Decisión:** Al meter un enum de SQLAlchemy (`Moneda.ARS`, `TareaEstado.pendiente`) en un dict genérico, usar siempre `.value`.
+**Razón:** `str(Moneda.ARS)` devuelve `"Moneda.ARS"`, no `"ARS"`. Pydantic serializa el dict como está — si el valor es `"Moneda.ARS"`, eso es lo que llega al cliente.
+**Síntoma:** Frontend recibe `"moneda": "Moneda.ARS"` en lugar de `"ARS"` — rompe la UI silenciosamente.
+**Regla:** En schemas Pydantic tipados, los enums se serializan solos. En `Dict[str, Any]`, la serialización es manual.
+
+### `Vencimiento` vive en `app.models.expediente`, no en módulo propio
+**Decisión:** `Vencimiento` está definido en `backend/app/models/expediente.py` junto con `Movimiento` y `ExpedienteAbogado`.
+**Razón:** Se modeló así en el sprint inicial. No tiene archivo propio.
+**Impacto:** Cualquier import `from app.models.vencimiento import Vencimiento` falla con `ModuleNotFoundError`. Importar desde `app.models.expediente`.
+**Regla:** Antes de hacer lazy imports en routers, verificar en qué archivo vive el modelo.
+
+### `onCreated` callback para refrescar estado padre desde sub-componentes
+**Decisión:** Pasar `onCreated?: () => void` a componentes hijo que crean items (`HonorariosTab`, `TareasSection`, `DocumentosTab`).
+**Razón:** El feed de actividad (bitácora) vive en el componente padre. Los hijos no tienen acceso al estado padre. Sin el callback, crear un honorario no actualiza la bitácora.
+**Alternativa descartada:** Context/Zustand — overhead innecesario para un feed local.
+**Patrón:** `onCreated?.()` inmediatamente después del `await api.post(...)` exitoso.
+
+### Tiempo de vida del expediente: comparar fechas calendario, no milisegundos
+**Decisión:** `tiempoVida()` usa `toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" })` para obtener `"YYYY-MM-DD"` en ART y compara fechas enteras.
+**Razón:** Comparar milisegundos exactos hace que un expediente creado ayer a las 23:00 ART muestre "0 días" hasta pasadas las 23:00 de hoy. El usuario espera "1 día" desde el día siguiente calendario.
+
 ### pydantic[email] obligatorio
 **Decisión:** Usar `pydantic[email]` en requirements.txt, no `pydantic` solo.
 **Razón:** `EmailStr` de Pydantic requiere `email-validator` instalado. Sin el extra, el backend falla al arrancar.
