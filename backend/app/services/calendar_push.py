@@ -54,19 +54,34 @@ def _make_event_id(prefix: str, object_id: str) -> str:
     return raw[:1024].lower()
 
 
-def push_vencimiento(db, vencimiento, user_id: str) -> bool:
-    """Crea o actualiza el evento de un vencimiento en el calendario del usuario."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        return False
-    service, cal_id = _get_service(user)
-    if not service:
-        return False
+def _push_event_to_user(service, cal_id: str, event: dict, label: str) -> None:
+    event_id = event["id"]
+    try:
+        service.events().update(calendarId=cal_id, eventId=event_id, body=event).execute()
+    except HttpError as e:
+        if e.status_code == 404:
+            try:
+                service.events().insert(calendarId=cal_id, body=event).execute()
+            except HttpError as e2:
+                logger.warning(f"calendar_push {label} insert error: {e2}")
+        else:
+            logger.warning(f"calendar_push {label} update error: {e}")
 
+
+def _usuarios_con_cal(db, tenant_id: str):
+    return db.query(User).filter(
+        User.tenant_id == tenant_id,
+        User.google_refresh_token.isnot(None),
+        User.google_calendar_id.isnot(None),
+    ).all()
+
+
+def push_vencimiento(db, vencimiento, user_id: str) -> bool:
+    """Crea o actualiza el evento de un vencimiento en el calendario de todos los usuarios del tenant."""
     event_id = _make_event_id("vcto", vencimiento.id)
     fecha = vencimiento.fecha
 
-    event = {
+    event: dict = {
         "id": event_id,
         "summary": f"📅 {vencimiento.descripcion}",
         "description": f"Tipo: {vencimiento.tipo}\nExpediente: {vencimiento.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
@@ -79,61 +94,45 @@ def push_vencimiento(db, vencimiento, user_id: str) -> bool:
         "extendedProperties": {"private": {LEXCORE_TAG: "1"}},
     }
     if vencimiento.hora:
-        # Si hay hora, usar dateTime en lugar de date
         tz = "America/Argentina/Buenos_Aires"
         dt = f"{fecha}T{vencimiento.hora}:00"
         event["start"] = {"dateTime": dt, "timeZone": tz}
         event["end"] = {"dateTime": dt, "timeZone": tz}
 
-    try:
-        service.events().update(calendarId=cal_id, eventId=event_id, body=event).execute()
-        return True
-    except HttpError as e:
-        if e.status_code == 404:
-            try:
-                service.events().insert(calendarId=cal_id, body=event).execute()
-                return True
-            except HttpError as e2:
-                logger.warning(f"calendar_push vencimiento insert error: {e2}")
-        else:
-            logger.warning(f"calendar_push vencimiento update error: {e}")
-    return False
+    for user in _usuarios_con_cal(db, vencimiento.tenant_id):
+        service, cal_id = _get_service(user)
+        if service:
+            _push_event_to_user(service, cal_id, event, "vencimiento")
+    return True
 
 
-def delete_vencimiento(db, vencimiento_id: str, user_id: str) -> bool:
-    """Elimina el evento del vencimiento del calendario del usuario."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        return False
-    service, cal_id = _get_service(user)
-    if not service:
-        return False
-
+def delete_vencimiento(db, vencimiento_id: str, tenant_id: str) -> None:
+    """Elimina el evento del vencimiento del calendario de todos los usuarios del tenant."""
+    usuarios = db.query(User).filter(
+        User.tenant_id == tenant_id,
+        User.google_refresh_token.isnot(None),
+        User.google_calendar_id.isnot(None),
+    ).all()
     event_id = _make_event_id("vcto", vencimiento_id)
-    try:
-        service.events().delete(calendarId=cal_id, eventId=event_id).execute()
-        return True
-    except HttpError as e:
-        if e.status_code != 404:
-            logger.warning(f"calendar_push delete vencimiento error: {e}")
-        return False
+    for user in usuarios:
+        service, cal_id = _get_service(user)
+        if not service:
+            continue
+        try:
+            service.events().delete(calendarId=cal_id, eventId=event_id).execute()
+        except HttpError as e:
+            if e.status_code != 404:
+                logger.warning(f"calendar_push delete vencimiento user={user.id}: {e}")
 
 
 def push_tarea(db, tarea, user_id: str) -> bool:
-    """Crea o actualiza el evento de una tarea en el calendario del usuario."""
+    """Crea o actualiza el evento de una tarea en el calendario de todos los usuarios del tenant."""
     if not tarea.fecha_limite:
         return False
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        return False
-    service, cal_id = _get_service(user)
-    if not service:
-        return False
-
     event_id = _make_event_id("tarea", tarea.id)
     fecha = tarea.fecha_limite
 
-    event = {
+    event: dict = {
         "id": event_id,
         "summary": f"✅ {tarea.titulo}",
         "description": f"Tarea\nExpediente: {tarea.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
@@ -144,38 +143,36 @@ def push_tarea(db, tarea, user_id: str) -> bool:
         ]},
         "extendedProperties": {"private": {LEXCORE_TAG: "1"}},
     }
-    try:
-        service.events().update(calendarId=cal_id, eventId=event_id, body=event).execute()
-        return True
-    except HttpError as e:
-        if e.status_code == 404:
-            try:
-                service.events().insert(calendarId=cal_id, body=event).execute()
-                return True
-            except HttpError as e2:
-                logger.warning(f"calendar_push tarea insert error: {e2}")
-        else:
-            logger.warning(f"calendar_push tarea update error: {e}")
-    return False
+    if tarea.hora:
+        tz = "America/Argentina/Buenos_Aires"
+        dt = f"{fecha}T{tarea.hora}:00"
+        event["start"] = {"dateTime": dt, "timeZone": tz}
+        event["end"] = {"dateTime": dt, "timeZone": tz}
+
+    for user in _usuarios_con_cal(db, tarea.tenant_id):
+        service, cal_id = _get_service(user)
+        if service:
+            _push_event_to_user(service, cal_id, event, "tarea")
+    return True
 
 
-def delete_tarea(db, tarea_id: str, user_id: str) -> bool:
-    """Elimina el evento de la tarea del calendario del usuario."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        return False
-    service, cal_id = _get_service(user)
-    if not service:
-        return False
-
+def delete_tarea(db, tarea_id: str, tenant_id: str) -> None:
+    """Elimina el evento de la tarea del calendario de todos los usuarios del tenant."""
+    usuarios = db.query(User).filter(
+        User.tenant_id == tenant_id,
+        User.google_refresh_token.isnot(None),
+        User.google_calendar_id.isnot(None),
+    ).all()
     event_id = _make_event_id("tarea", tarea_id)
-    try:
-        service.events().delete(calendarId=cal_id, eventId=event_id).execute()
-        return True
-    except HttpError as e:
-        if e.status_code != 404:
-            logger.warning(f"calendar_push delete tarea error: {e}")
-        return False
+    for user in usuarios:
+        service, cal_id = _get_service(user)
+        if not service:
+            continue
+        try:
+            service.events().delete(calendarId=cal_id, eventId=event_id).execute()
+        except HttpError as e:
+            if e.status_code != 404:
+                logger.warning(f"calendar_push delete tarea user={user.id}: {e}")
 
 
 def push_all_for_studio(db, tenant_id: str, user_id: str):

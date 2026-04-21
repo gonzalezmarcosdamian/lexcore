@@ -7,6 +7,7 @@ import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente, Cliente } 
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
+import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 
 function inRange(fecha: string, desde: string, hasta: string): boolean {
   return fecha >= desde && fecha <= hasta;
@@ -349,6 +350,11 @@ export default function AgendaPage() {
   const [loading, setLoading] = useState(true);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [inhabiles, setInhabiles] = useState<DiaInhabil[]>([]);
+  const [vistaCalendario, setVistaCalendario] = useState(true);
+  const now3 = new Date();
+  const [calMes, setCalMes] = useState(now3.getMonth() + 1);
+  const [calAnio, setCalAnio] = useState(now3.getFullYear());
 
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
@@ -385,6 +391,15 @@ export default function AgendaPage() {
     api.get<Expediente[]>("/expedientes", token).then(setExpedientes).catch(() => {});
     api.get<Cliente[]>("/clientes", token).then(setClientes).catch(() => {});
   }, [token]);
+
+  // Cargar feriados del mes visible en calendario
+  useEffect(() => {
+    if (!token) return;
+    const desde = `${calAnio}-${String(calMes).padStart(2, "0")}-01`;
+    const lastDay = new Date(calAnio, calMes, 0).getDate();
+    const hasta = `${calAnio}-${String(calMes).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    api.get<DiaInhabil[]>("/feriados", token, { desde, hasta }).then(setInhabiles).catch(() => {});
+  }, [token, calMes, calAnio]);
 
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === "visible") fetchData(); };
@@ -486,6 +501,44 @@ export default function AgendaPage() {
   const urgentes = vFiltradas.filter(v => !v.cumplido && esUrgente(v.fecha)).length;
   const empty = vFiltradas.length === 0 && tFiltradas.length === 0;
 
+  // Eventos para el calendario — DEBE ir antes del return
+  const eventosCalendario = useMemo(() => [
+    ...vencimientos.map(v => ({
+      id: v.id,
+      tipo: "vencimiento" as const,
+      titulo: v.descripcion,
+      hora: v.hora,
+      cumplido: v.cumplido,
+      expediente_id: v.expediente_id,
+      fecha: v.fecha,
+      color: (v.cumplido ? "blue" : esUrgente(v.fecha) ? "red" : "purple") as CalEvent["color"],
+    })),
+    ...tareas.filter(t => t.fecha_limite).map(t => ({
+      id: t.id,
+      tipo: "tarea" as const,
+      titulo: t.titulo,
+      hora: t.hora,
+      estado: t.estado,
+      expediente_id: t.expediente_id,
+      fecha: t.fecha_limite!,
+      fecha_limite: t.fecha_limite!,
+      color: (t.estado === "en_curso" ? "blue" : esVencida(t.fecha_limite!) ? "red" : "amber") as CalEvent["color"],
+    })),
+  ], [vencimientos, tareas]);
+
+  const handlePrevMes = () => {
+    if (calMes === 1) { setCalMes(12); setCalAnio(a => a - 1); }
+    else setCalMes(m => m - 1);
+  };
+  const handleNextMes = () => {
+    if (calMes === 12) { setCalMes(1); setCalAnio(a => a + 1); }
+    else setCalMes(m => m + 1);
+  };
+  const handleClickDia = (fecha: string) => {
+    setTareaForm(f => ({ ...f, fecha_limite: fecha }));
+    setShowTareaModal(true);
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
       {editingV && token && (
@@ -552,9 +605,24 @@ export default function AgendaPage() {
             {urgentes > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap justify-end">
+          {/* Toggle lista/calendario */}
+          <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
+            <button
+              onClick={() => setVistaCalendario(true)}
+              className={`px-3 py-1.5 transition ${vistaCalendario ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
+            >
+              📅 Calendario
+            </button>
+            <button
+              onClick={() => setVistaCalendario(false)}
+              className={`px-3 py-1.5 transition ${!vistaCalendario ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
+            >
+              ☰ Lista
+            </button>
+          </div>
           <button
-            onClick={() => { setShowTareaModal(true); setTareaError(""); }}
+            onClick={() => { setTareaForm(f => ({ ...f, fecha_limite: "" })); setShowTareaModal(true); setTareaError(""); }}
             className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition"
           >
             + Tarea
@@ -569,18 +637,32 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
+      {/* Vista Calendario */}
+      {vistaCalendario && (
+        <CalendarioMensual
+          anio={calAnio}
+          mes={calMes}
+          eventos={eventosCalendario}
+          inhabiles={inhabiles}
+          onPrevMes={handlePrevMes}
+          onNextMes={handleNextMes}
+          onClickDia={handleClickDia}
+        />
+      )}
 
-      <div className="flex items-center gap-4 text-xs text-ink-500">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-purple-400 flex-shrink-0" />
-          Vencimientos procesales
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-blue-400 flex-shrink-0" />
-          Tareas internas
-        </span>
-      </div>
+      {/* Vista Lista */}
+      {!vistaCalendario && (<>
+        <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
+        <div className="flex items-center gap-4 text-xs text-ink-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-purple-400 flex-shrink-0" />
+            Vencimientos procesales
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded bg-blue-400 flex-shrink-0" />
+            Tareas internas
+          </span>
+        </div>
 
       {loading && (
         <div className="grid lg:grid-cols-2 gap-6">
@@ -703,6 +785,7 @@ export default function AgendaPage() {
           </div>
         </>
       )}
+      </>)}
 
       {/* Modal: Nueva tarea */}
       {showTareaModal && (

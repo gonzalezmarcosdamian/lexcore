@@ -11,7 +11,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.core.config import settings
 from app.core.database import SessionLocal
-from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte, admin
+from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte, admin, feriados
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
 
 logger = logging.getLogger(__name__)
@@ -131,6 +131,7 @@ app.include_router(calendar_sync_router)
 app.include_router(whatsapp.router)
 app.include_router(soporte.router)
 app.include_router(admin.router)
+app.include_router(feriados.router)
 
 
 @app.get("/health")

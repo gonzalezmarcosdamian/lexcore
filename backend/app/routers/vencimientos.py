@@ -166,6 +166,7 @@ def eliminar_vencimiento(
     if not venc:
         raise HTTPException(status_code=404, detail="Vencimiento no encontrado")
     venc_id = venc.id
+    tenant_id = venc.tenant_id
     db.delete(venc)
     db.commit()
-    delete_vencimiento(db, venc_id, current_user["sub"])
+    delete_vencimiento(db, venc_id, tenant_id)

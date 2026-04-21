@@ -112,4 +112,4 @@ def eliminar_tarea(tarea_id: str, db: DbSession, current_user: CurrentUser):
     tarea_id_backup = tarea.id
     db.delete(tarea)
     db.commit()
-    delete_tarea(db, tarea_id_backup, current_user["sub"])
+    delete_tarea(db, tarea_id_backup, tenant_id)
