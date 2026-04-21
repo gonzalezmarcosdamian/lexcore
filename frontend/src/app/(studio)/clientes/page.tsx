@@ -76,16 +76,16 @@ export default function ClientesPage() {
         <h1 className="text-2xl font-bold text-ink-900">Clientes</h1>
         <div className="flex items-center gap-2">
           <PageHelp
-            title="Gestión de Clientes"
-            description="Administrá las personas físicas y jurídicas del estudio"
+            title="Clientes"
+            description="Todo expediente necesita un cliente. Podés ser persona física (individuo) o jurídica (empresa/sociedad)."
             items={[
-              { icon: "👤", title: "Persona física", description: "Clientes individuales. Podés guardar nombre, DNI, email y teléfono." },
-              { icon: "🏢", title: "Persona jurídica", description: "Empresas y sociedades. Usá el CUIT como identificador principal." },
-              { icon: "🔍", title: "Búsqueda en tiempo real", description: "Filtrá por nombre, CUIT/DNI mientras escribís. Los resultados se actualizan automáticamente." },
-              { icon: "📁", title: "Archivar cliente", description: "Archivá clientes inactivos sin perder su historial. Usá 'Ver archivados' para encontrarlos." },
-              { icon: "📋", title: "Expedientes del cliente", description: "Desde el perfil del cliente podés ver todos sus expedientes asociados." },
+              { icon: "👤", title: "Persona física", description: "Individuos identificados por DNI. Campos clave: nombre completo, DNI, email y teléfono de contacto." },
+              { icon: "🏢", title: "Persona jurídica", description: "Empresas, sociedades, cooperativas. Identificadas por CUIT. El nombre de fantasía va en el campo 'nombre'." },
+              { icon: "🔍", title: "Búsqueda por nombre o CUIT/DNI", description: "El buscador filtra en tiempo real por nombre completo o por número de documento. Útil para encontrar clientes rápido al crear expedientes." },
+              { icon: "📋", title: "Expedientes del cliente", description: "En el perfil de cada cliente ves todos sus expedientes: activos, archivados y cerrados. Ideal para ver el historial completo de la relación." },
+              { icon: "📁", title: "Archivar vs eliminar", description: "Archivar oculta al cliente de la lista activa pero conserva todo su historial. Solo podés eliminar un cliente sin expedientes asociados." },
             ]}
-            tip="Hacé clic en cualquier cliente para ver su perfil completo con expedientes y datos de contacto."
+            tip="Creá el cliente antes de crear el expediente — el formulario de nuevo expediente requiere seleccionar un cliente existente."
           />
           <Link
             href="/clientes/nuevo"

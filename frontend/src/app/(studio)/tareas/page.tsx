@@ -138,7 +138,7 @@ function TareasEmptyState({ hayFiltros }: { hayFiltros: boolean }) {
         <>
           <p className="text-base font-semibold text-ink-800 mb-1">Sin tareas todavía</p>
           <p className="text-sm text-ink-400 max-w-xs mb-6">
-            Las tareas se crean desde el detalle de cada expediente. Abrí un expediente y usá la sección <strong>Tareas</strong> para empezar.
+            Las tareas se crean desde el detalle de cada expediente o con el botón <strong>+ Nueva tarea</strong> de arriba. Cada tarea tiene un responsable, fecha límite y estado.
           </p>
           <div className="flex gap-2 flex-wrap justify-center">
             <Link

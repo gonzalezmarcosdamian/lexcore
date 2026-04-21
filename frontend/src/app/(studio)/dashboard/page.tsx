@@ -180,13 +180,15 @@ export default function DashboardPage() {
         </div>
         <PageHelp
           title="Dashboard"
-          description="Vista general del estado del estudio en tiempo real"
+          description="Vista general del estado del estudio en tiempo real. Todo lo que necesitás ver al arrancar el día está acá."
           items={[
-            { icon: "✅", title: "Tareas pendientes", description: "Todas tus tareas sin completar. Las vencidas aparecen primero." },
-            { icon: "📅", title: "Vencimientos", description: "Plazos procesales. Los urgentes (< 48hs) se destacan en rojo." },
-            { icon: "💰", title: "Honorarios pendientes", description: "Saldo total a cobrar en ARS y USD." },
+            { icon: "✅", title: "Tareas pendientes", description: "Tus tareas sin completar, ordenadas por fecha límite. Las vencidas aparecen primero en rojo. Podés cambiar el estado directamente desde acá." },
+            { icon: "📅", title: "Vencimientos", description: "Plazos procesales de los próximos 365 días. Los urgentes (< 48hs) se destacan en rojo y generan el badge de alerta en el header." },
+            { icon: "💰", title: "Honorarios pendientes", description: "Total a cobrar en ARS y USD, sumando todos los expedientes activos con saldo pendiente." },
+            { icon: "📊", title: "Selector de período", description: "Filtrá los KPIs financieros (ingresos, egresos, honorarios cobrados) por mes, trimestre, semestre o año." },
+            { icon: "📈", title: "Gráfico de egresos", description: "Evolución mensual de los gastos del estudio dentro del período seleccionado." },
           ]}
-          tip="Marcá tareas y vencimientos como completados directamente desde el dashboard."
+          tip="El dashboard no reemplaza la Agenda: los KPIs son financieros, mientras que Vencimientos y Tareas son operativos."
         />
       </div>
 
