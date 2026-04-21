@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, field_validator
 
-from app.models.tarea import TareaEstado
+from app.models.tarea import TareaEstado, TareaTipo
 
 
 class TareaCreate(BaseModel):
@@ -11,6 +11,7 @@ class TareaCreate(BaseModel):
     titulo: str
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
+    tipo: TareaTipo = TareaTipo.judicial
     fecha_limite: Optional[str] = None  # YYYY-MM-DD
     hora: Optional[str] = None  # HH:MM
     estado: TareaEstado = TareaEstado.pendiente
@@ -27,6 +28,7 @@ class TareaUpdate(BaseModel):
     titulo: Optional[str] = None
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
+    tipo: Optional[TareaTipo] = None
     fecha_limite: Optional[str] = None
     hora: Optional[str] = None
     estado: Optional[TareaEstado] = None
@@ -40,6 +42,7 @@ class TareaOut(BaseModel):
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
     responsable_nombre: Optional[str] = None  # enriquecido en router
+    tipo: TareaTipo = TareaTipo.judicial
     fecha_limite: Optional[str] = None
     hora: Optional[str] = None
     estado: TareaEstado

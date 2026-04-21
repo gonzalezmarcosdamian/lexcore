@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea } from "@/lib/api";
+import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea, TareaTipo } from "@/lib/api";
 import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PageHelp } from "@/components/ui/page-help";
@@ -51,6 +51,8 @@ export default function DashboardPage() {
   const [deletingT, setDeletingT] = useState<string | null>(null);
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
+  const [showNewTarea, setShowNewTarea] = useState(false);
+  const [showNewVenc, setShowNewVenc] = useState(false);
   const [expLookup, setExpLookup] = useState<Record<string, Expediente>>({});
   const now = new Date();
   const [periodoValue, setPeriodoValue] = useState<PeriodoValue>({
@@ -165,6 +167,8 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-20 lg:pb-6">
       {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
+      {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
+      {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
 
       {/* Header */}
@@ -262,7 +266,13 @@ export default function DashboardPage() {
                     <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{tareasFiltradas.length}</span>
                   )}
                 </div>
-                <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowNewTarea(true)} className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    Nueva
+                  </button>
+                  <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                </div>
               </div>
 
               {loadingTareas ? (
@@ -333,7 +343,13 @@ export default function DashboardPage() {
                     <span className="text-xs bg-ink-100 text-ink-500 rounded-full px-2 py-0.5 font-medium">{proximosFiltrados.length}</span>
                   )}
                 </div>
-                <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowNewVenc(true)} className="flex items-center gap-1 text-xs bg-brand-600 hover:bg-brand-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    Nuevo
+                  </button>
+                  <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+                </div>
               </div>
 
               {loading ? (
@@ -477,6 +493,146 @@ export default function DashboardPage() {
 }
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
+
+const inputCls = "w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400";
+
+function NewTareaModal({ token, expedientes, onCreated, onClose }: { token: string; expedientes: Expediente[]; onCreated: (t: Tarea) => void; onClose: () => void }) {
+  const [titulo, setTitulo] = useState("");
+  const [tipo, setTipo] = useState<TareaTipo>("judicial");
+  const [expedienteId, setExpedienteId] = useState("");
+  const [fechaLimite, setFechaLimite] = useState("");
+  const [hora, setHora] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    if (!titulo.trim()) { setErr("El título es obligatorio"); return; }
+    setSaving(true); setErr("");
+    try {
+      const body: Record<string, unknown> = { titulo: titulo.trim(), tipo, estado: "pendiente" };
+      if (expedienteId) body.expediente_id = expedienteId;
+      if (fechaLimite) body.fecha_limite = fechaLimite;
+      if (hora) body.hora = hora;
+      const created = await api.post<Tarea>("/tareas", body, token);
+      onCreated(created);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-ink-900">Nueva tarea</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Título *</label>
+            <input autoFocus value={titulo} onChange={e => setTitulo(e.target.value)} onKeyDown={e => e.key === "Enter" && save()} className={inputCls} placeholder="Ej: Presentar escrito, comprar toner…" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={tipo} onChange={e => setTipo(e.target.value as TareaTipo)} className={inputCls}>
+              <option value="judicial">⚖️ Judicial</option>
+              <option value="extrajudicial">🤝 Extrajudicial</option>
+              <option value="administrativa">🏢 Administrativa</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
+            <select value={expedienteId} onChange={e => setExpedienteId(e.target.value)} className={inputCls}>
+              <option value="">— Sin expediente —</option>
+              {expedientes.map(ex => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
+              <input type="date" value={fechaLimite} onChange={e => setFechaLimite(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={hora} onChange={e => setHora(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Crear tarea"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token: string; expedientes: Expediente[]; onCreated: (v: Vencimiento) => void; onClose: () => void }) {
+  const [descripcion, setDescripcion] = useState("");
+  const [tipo, setTipo] = useState("vencimiento");
+  const [fecha, setFecha] = useState("");
+  const [hora, setHora] = useState("");
+  const [expedienteId, setExpedienteId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    if (!descripcion.trim()) { setErr("La descripción es obligatoria"); return; }
+    if (!fecha) { setErr("La fecha es obligatoria"); return; }
+    if (!expedienteId) { setErr("Seleccioná un expediente"); return; }
+    setSaving(true); setErr("");
+    try {
+      const body: Record<string, unknown> = { descripcion: descripcion.trim(), tipo, fecha, expediente_id: expedienteId };
+      if (hora) body.hora = hora;
+      const created = await api.post<Vencimiento>("/vencimientos", body, token);
+      onCreated(created);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-ink-900">Nuevo vencimiento</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción *</label>
+            <input autoFocus value={descripcion} onChange={e => setDescripcion(e.target.value)} className={inputCls} placeholder="Ej: Audiencia de vista de causa" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={tipo} onChange={e => setTipo(e.target.value)} className={inputCls}>
+              <option value="vencimiento">Vencimiento</option>
+              <option value="audiencia">Audiencia</option>
+              <option value="presentacion">Presentación</option>
+              <option value="pericia">Pericia</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Expediente *</label>
+            <select value={expedienteId} onChange={e => setExpedienteId(e.target.value)} className={inputCls}>
+              <option value="">— Seleccioná —</option>
+              {expedientes.map(ex => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
+              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={hora} onChange={e => setHora(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Crear vencimiento"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea: Tarea; token: string; expedientes: Expediente[]; onSaved: (t: Tarea) => void; onClose: () => void }) {
   const [titulo, setTitulo] = useState(tarea.titulo);

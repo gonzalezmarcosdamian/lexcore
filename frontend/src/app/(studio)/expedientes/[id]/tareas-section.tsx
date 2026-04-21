@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { api, Tarea, TareaEstado, StudioUser } from "@/lib/api";
+import { api, Tarea, TareaEstado, TareaTipo, StudioUser } from "@/lib/api";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 
 const today = new Date().toISOString().split("T")[0];
@@ -35,7 +35,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
   const [saveError, setSaveError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const EMPTY = { titulo: "", descripcion: "", responsable_id: "", fecha_limite: "", hora: "", estado: "pendiente" as TareaEstado };
+  const EMPTY = { titulo: "", descripcion: "", responsable_id: "", tipo: "judicial" as TareaTipo, fecha_limite: "", hora: "", estado: "pendiente" as TareaEstado };
   const [form, setForm] = useState(EMPTY);
 
   const load = () =>
@@ -57,6 +57,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
       const payload = {
         titulo: form.titulo,
         expediente_id: expedienteId,
+        tipo: form.tipo,
         estado: form.estado,
         responsable_id: form.responsable_id || undefined,
         fecha_limite: form.fecha_limite || undefined,
@@ -129,6 +130,14 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
             <input required value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} className={inputCls} placeholder="Ej: Presentar escrito de contestación" autoFocus />
           </div>
           <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value as TareaTipo })} className={inputCls}>
+              <option value="judicial">⚖️ Judicial</option>
+              <option value="extrajudicial">🤝 Extrajudicial</option>
+              <option value="administrativa">🏢 Administrativa</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Responsable</label>
             <select value={form.responsable_id} onChange={e => setForm({ ...form, responsable_id: e.target.value })} className={inputCls}>
               <option value="">Sin asignar</option>
@@ -186,6 +195,11 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
                     <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border ${ESTADO_CONFIG[t.estado].cls}`}>
                       {ESTADO_CONFIG[t.estado].label}
                     </span>
+                    {t.tipo && t.tipo !== "judicial" && (
+                      <span className="text-xs px-1.5 py-0.5 rounded border bg-ink-50 text-ink-500 border-ink-100">
+                        {t.tipo === "administrativa" ? "🏢 Admin" : "🤝 Extrajudicial"}
+                      </span>
+                    )}
                     {dias && (
                       <span className={`text-xs font-medium ${vencida ? "text-red-600" : dias === "Hoy" || dias === "Mañana" ? "text-amber-600" : "text-ink-400"}`}>
                         {dias}{t.hora && ` · ${t.hora}`}
@@ -199,7 +213,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
                   <AdjuntosInline tareaId={t.id} token={token} />
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
-                  <button onClick={() => { setForm({ titulo: t.titulo, descripcion: t.descripcion ?? "", responsable_id: t.responsable_id ?? "", fecha_limite: t.fecha_limite ?? "", hora: t.hora ?? "", estado: t.estado }); setEditingId(t.id); setShowForm(true); }} className="text-ink-400 hover:text-ink-700 p-1 rounded transition">
+                  <button onClick={() => { setForm({ titulo: t.titulo, descripcion: t.descripcion ?? "", responsable_id: t.responsable_id ?? "", tipo: t.tipo ?? "judicial", fecha_limite: t.fecha_limite ?? "", hora: t.hora ?? "", estado: t.estado }); setEditingId(t.id); setShowForm(true); }} className="text-ink-400 hover:text-ink-700 p-1 rounded transition">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                   </button>
                   <button onClick={() => eliminar(t.id)} className="text-ink-400 hover:text-red-500 p-1 rounded transition">

@@ -271,6 +271,8 @@ export interface IngresoResumen {
 
 export type TareaEstado = "pendiente" | "en_curso" | "hecha";
 
+export type TareaTipo = "judicial" | "extrajudicial" | "administrativa";
+
 export interface Tarea {
   id: string;
   tenant_id: string;
@@ -279,6 +281,7 @@ export interface Tarea {
   descripcion?: string | null;
   responsable_id?: string | null;
   responsable_nombre?: string | null;
+  tipo: TareaTipo;
   fecha_limite?: string | null;
   hora?: string | null;
   estado: TareaEstado;

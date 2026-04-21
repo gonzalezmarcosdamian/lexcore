@@ -12,6 +12,12 @@ class TareaEstado(str, enum.Enum):
     hecha = "hecha"
 
 
+class TareaTipo(str, enum.Enum):
+    judicial = "judicial"          # ligada a un expediente
+    extrajudicial = "extrajudicial"  # gestión externa sin expediente
+    administrativa = "administrativa"  # interna del estudio (ej: comprar toner)
+
+
 class Tarea(TenantModel):
     """Tareas vinculadas a un expediente, con responsable y fecha límite."""
     __tablename__ = "tareas"
@@ -24,6 +30,7 @@ class Tarea(TenantModel):
     responsable_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("users.id"), nullable=True, index=True
     )
+    tipo: Mapped[TareaTipo] = mapped_column(Enum(TareaTipo), nullable=False, default=TareaTipo.judicial)
     fecha_limite: Mapped[str | None] = mapped_column(String(10), nullable=True)  # ISO date
     hora: Mapped[str | None] = mapped_column(String(5), nullable=True)  # HH:MM
     estado: Mapped[TareaEstado] = mapped_column(
