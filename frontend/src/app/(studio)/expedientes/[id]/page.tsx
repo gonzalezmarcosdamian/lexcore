@@ -113,6 +113,57 @@ function FieldRow({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+function ClienteRow({ id, nombre, isPrimary, disponibles, onReplace, onRemove }: {
+  id: string; nombre: string; isPrimary: boolean;
+  disponibles: Cliente[];
+  onReplace?: (nuevoId: string) => Promise<void>;
+  onRemove?: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = disponibles.filter((c) => c.id !== id && (!search || c.nombre.toLowerCase().includes(search.toLowerCase())));
+  return (
+    <div className="py-1">
+      {editing ? (
+        <div className="relative">
+          <input value={search} onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => { setOpen(false); setEditing(false); setSearch(""); }, 150)}
+            className="w-full bg-white border border-brand-300 rounded-xl px-3 py-1.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 transition"
+            placeholder="Cambiar cliente…" autoFocus autoComplete="off"
+          />
+          {open && filtered.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-40 overflow-y-auto">
+              {filtered.map((c) => (
+                <button key={c.id} type="button"
+                  onMouseDown={async () => { await onReplace?.(c.id); setEditing(false); setSearch(""); }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-ink-50 transition text-ink-800"
+                >{c.nombre}</button>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2 group">
+          <Link href={`/clientes/${id}`} className="text-sm text-ink-800 hover:text-brand-600 transition truncate">{nombre}</Link>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+            {isPrimary && onReplace && (
+              <button onClick={() => setEditing(true)} className="text-ink-300 hover:text-brand-500 transition" title="Cambiar">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M9 11l6-6 3 3-6 6H9v-3z" /></svg>
+              </button>
+            )}
+            {!isPrimary && onRemove && (
+              <button onClick={onRemove} className="text-ink-300 hover:text-red-500 transition" title="Quitar">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const inputCls = "w-full bg-white border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition";
 const labelCls = "block text-xs font-medium text-ink-500 mb-1";
 
@@ -505,24 +556,41 @@ export default function ExpedienteDetailPage() {
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">Clientes</p>
-              <button onClick={() => setAddingCliente((o) => !o)} className="text-xs text-brand-600 hover:text-brand-700 font-medium transition">+ Agregar</button>
+              <button onClick={() => { setAddingCliente((o) => !o); setClienteSearch(""); }} className="text-xs text-brand-600 hover:text-brand-700 font-medium transition">+ Agregar</button>
             </div>
             <div className="space-y-1">
-              {expediente.clientes_extra.length === 0 && !expediente.cliente_nombre && (
+              {!expediente.cliente_nombre && expediente.clientes_extra.length === 0 && (
                 <p className="text-xs text-ink-400">Sin clientes asignados</p>
               )}
-              {expediente.clientes_extra.length > 0 ? expediente.clientes_extra.map((c) => (
-                <div key={c.id} className="flex items-center justify-between gap-2 py-1">
-                  <Link href={`/clientes/${c.id}`} className="text-sm text-ink-800 hover:text-brand-600 transition truncate">{c.nombre}</Link>
-                  <button onClick={() => handleRemoveCliente(c.id)} className="text-ink-300 hover:text-red-500 transition flex-shrink-0" title="Quitar">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                </div>
-              )) : expediente.cliente_nombre ? (
-                <div className="flex items-center justify-between gap-2 py-1">
-                  <Link href={`/clientes/${expediente.cliente_id}`} className="text-sm text-ink-800 hover:text-brand-600 transition truncate">{expediente.cliente_nombre}</Link>
-                </div>
-              ) : null}
+              {/* Cliente principal */}
+              {expediente.cliente_nombre && (
+                <ClienteRow
+                  id={expediente.cliente_id!}
+                  nombre={expediente.cliente_nombre}
+                  isPrimary
+                  disponibles={clientesDisponibles}
+                  onReplace={async (nuevoId) => {
+                    if (!token) return;
+                    const updated = await api.patch<Expediente>(`/expedientes/${id}`, { cliente_id: nuevoId }, token);
+                    setExpediente(updated);
+                  }}
+                  onRemove={undefined}
+                />
+              )}
+              {/* Clientes adicionales (junction), excluyendo el principal */}
+              {expediente.clientes_extra
+                .filter((c) => c.id !== expediente.cliente_id)
+                .map((c) => (
+                  <ClienteRow
+                    key={c.id}
+                    id={c.id}
+                    nombre={c.nombre}
+                    isPrimary={false}
+                    disponibles={[]}
+                    onReplace={undefined}
+                    onRemove={() => handleRemoveCliente(c.id)}
+                  />
+                ))}
             </div>
             {addingCliente && (
               <div className="mt-3 relative">
@@ -532,9 +600,7 @@ export default function ExpedienteDetailPage() {
                   onFocus={() => setClienteOpen(true)}
                   onBlur={() => setTimeout(() => setClienteOpen(false), 150)}
                   className="w-full bg-white border border-ink-200 rounded-xl px-3 py-2 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"
-                  placeholder="Buscar cliente…"
-                  autoFocus
-                  autoComplete="off"
+                  placeholder="Buscar cliente…" autoFocus autoComplete="off"
                 />
                 {clienteOpen && (
                   <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-ink-200 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto">

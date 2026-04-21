@@ -205,6 +205,7 @@ def crear_movimiento(
         expediente_id=expediente_id,
         user_id=current_user["sub"],
         texto=body.texto,
+        fecha_manual=body.fecha_manual,
     )
     db.add(mov)
     invalidar_resumen(db, expediente_id, current_user["studio_id"])

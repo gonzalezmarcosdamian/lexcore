@@ -70,11 +70,156 @@ class TestMovimientos:
         r = client.get(f"/expedientes/{eid}/movimientos", headers=auth_a)
         assert len(r.json()) == 2
 
+    def test_movimiento_con_fecha_manual(self, client, auth_a):
+        eid = create_expediente(client, auth_a).json()["id"]
+        r = client.post(f"/expedientes/{eid}/movimientos",
+                        json={"texto": "Audiencia", "fecha_manual": "2025-03-15"}, headers=auth_a)
+        assert r.status_code == 201
+        assert r.json()["fecha_manual"] == "2025-03-15"
+
+    def test_editar_movimiento_texto(self, client, auth_a):
+        eid = create_expediente(client, auth_a).json()["id"]
+        mid = client.post(f"/expedientes/{eid}/movimientos",
+                          json={"texto": "Original"}, headers=auth_a).json()["id"]
+        r = client.patch(f"/expedientes/{eid}/movimientos/{mid}",
+                         json={"texto": "Editado"}, headers=auth_a)
+        assert r.status_code == 200
+        assert r.json()["texto"] == "Editado"
+
+    def test_editar_movimiento_fecha_manual(self, client, auth_a):
+        eid = create_expediente(client, auth_a).json()["id"]
+        mid = client.post(f"/expedientes/{eid}/movimientos",
+                          json={"texto": "Mov"}, headers=auth_a).json()["id"]
+        r = client.patch(f"/expedientes/{eid}/movimientos/{mid}",
+                         json={"fecha_manual": "2025-06-01"}, headers=auth_a)
+        assert r.status_code == 200
+        assert r.json()["fecha_manual"] == "2025-06-01"
+        assert r.json()["texto"] == "Mov"  # no se tocó el texto
+
+    def test_editar_movimiento_ajeno_404(self, client, auth_a, auth_b):
+        eid = create_expediente(client, auth_a).json()["id"]
+        mid = client.post(f"/expedientes/{eid}/movimientos",
+                          json={"texto": "Mov"}, headers=auth_a).json()["id"]
+        r = client.patch(f"/expedientes/{eid}/movimientos/{mid}",
+                         json={"texto": "hack"}, headers=auth_b)
+        assert r.status_code == 404
+
+    def test_eliminar_movimiento(self, client, auth_a):
+        eid = create_expediente(client, auth_a).json()["id"]
+        mid = client.post(f"/expedientes/{eid}/movimientos",
+                          json={"texto": "Borrar esto"}, headers=auth_a).json()["id"]
+        r = client.delete(f"/expedientes/{eid}/movimientos/{mid}", headers=auth_a)
+        assert r.status_code == 204
+        # ya no aparece en la lista
+        movs = client.get(f"/expedientes/{eid}/movimientos", headers=auth_a).json()
+        assert all(m["id"] != mid for m in movs)
+
+    def test_eliminar_movimiento_ajeno_404(self, client, auth_a, auth_b):
+        eid = create_expediente(client, auth_a).json()["id"]
+        mid = client.post(f"/expedientes/{eid}/movimientos",
+                          json={"texto": "Mov"}, headers=auth_a).json()["id"]
+        r = client.delete(f"/expedientes/{eid}/movimientos/{mid}", headers=auth_b)
+        assert r.status_code == 404
+
     def test_movimiento_sin_acceso_a_expediente_ajeno(self, client, auth_a, auth_b):
         eid = create_expediente(client, auth_a).json()["id"]
         r = client.post(f"/expedientes/{eid}/movimientos",
                         json={"texto": "hack"}, headers=auth_b)
         assert r.status_code == 404
+
+
+class TestExpedienteClientes:
+    def _crear_cliente(self, client, headers, nombre="Cliente Test"):
+        return client.post("/clientes", json={"nombre": nombre, "tipo": "fisica"}, headers=headers).json()
+
+    def test_crear_expediente_con_cliente_ids(self, client, auth_a):
+        c = self._crear_cliente(client, auth_a)
+        r = create_expediente(client, auth_a)
+        # patch via clientes endpoint
+        eid = r.json()["id"]
+        r2 = client.post(f"/expedientes/{eid}/clientes",
+                         json={"cliente_id": c["id"]}, headers=auth_a)
+        assert r2.status_code in (200, 201)
+        data = r2.json()
+        assert any(ec["id"] == c["id"] for ec in data["clientes_extra"])
+
+    def test_agregar_cliente_a_expediente(self, client, auth_a):
+        c = self._crear_cliente(client, auth_a)
+        eid = create_expediente(client, auth_a).json()["id"]
+        r = client.post(f"/expedientes/{eid}/clientes",
+                        json={"cliente_id": c["id"]}, headers=auth_a)
+        assert r.status_code == 201
+        assert any(ec["id"] == c["id"] for ec in r.json()["clientes_extra"])
+
+    def test_no_duplicar_cliente(self, client, auth_a):
+        c = self._crear_cliente(client, auth_a)
+        eid = create_expediente(client, auth_a).json()["id"]
+        client.post(f"/expedientes/{eid}/clientes", json={"cliente_id": c["id"]}, headers=auth_a)
+        r = client.post(f"/expedientes/{eid}/clientes",
+                        json={"cliente_id": c["id"]}, headers=auth_a)
+        assert r.status_code == 400
+
+    def test_agregar_multiples_clientes(self, client, auth_a):
+        c1 = self._crear_cliente(client, auth_a, "Cliente 1")
+        c2 = self._crear_cliente(client, auth_a, "Cliente 2")
+        eid = create_expediente(client, auth_a).json()["id"]
+        client.post(f"/expedientes/{eid}/clientes", json={"cliente_id": c1["id"]}, headers=auth_a)
+        r = client.post(f"/expedientes/{eid}/clientes",
+                        json={"cliente_id": c2["id"]}, headers=auth_a)
+        assert r.status_code == 201
+        ids = [ec["id"] for ec in r.json()["clientes_extra"]]
+        assert c1["id"] in ids and c2["id"] in ids
+
+    def test_quitar_cliente(self, client, auth_a):
+        c = self._crear_cliente(client, auth_a)
+        eid = create_expediente(client, auth_a).json()["id"]
+        client.post(f"/expedientes/{eid}/clientes", json={"cliente_id": c["id"]}, headers=auth_a)
+        r = client.delete(f"/expedientes/{eid}/clientes/{c['id']}", headers=auth_a)
+        assert r.status_code == 204
+
+    def test_quitar_cliente_inexistente_404(self, client, auth_a):
+        eid = create_expediente(client, auth_a).json()["id"]
+        r = client.delete(f"/expedientes/{eid}/clientes/no-existe", headers=auth_a)
+        assert r.status_code == 404
+
+    def test_aislamiento_tenant_agregar_cliente(self, client, auth_a, auth_b):
+        """Tenant B no puede agregar clientes al expediente de Tenant A."""
+        c_b = self._crear_cliente(client, auth_b, "Cliente B")
+        eid_a = create_expediente(client, auth_a).json()["id"]
+        r = client.post(f"/expedientes/{eid_a}/clientes",
+                        json={"cliente_id": c_b["id"]}, headers=auth_b)
+        assert r.status_code == 404  # expediente no encontrado para B
+
+    def test_cliente_ajeno_no_agregable(self, client, auth_a, auth_b):
+        """No se puede agregar un cliente de otro tenant."""
+        c_b = self._crear_cliente(client, auth_b, "Cliente B")
+        eid_a = create_expediente(client, auth_a).json()["id"]
+        r = client.post(f"/expedientes/{eid_a}/clientes",
+                        json={"cliente_id": c_b["id"]}, headers=auth_a)
+        assert r.status_code == 404  # cliente no encontrado en tenant A
+
+
+class TestExpedienteNuevosCampos:
+    def test_crear_con_numero_judicial_y_localidad(self, client, auth_a):
+        r = client.post("/expedientes", json={
+            "caratula": "Test c/ Test",
+            "numero_judicial": "045/2026",
+            "localidad": "Córdoba, Córdoba",
+        }, headers=auth_a)
+        assert r.status_code == 201
+        data = r.json()
+        assert data["numero_judicial"] == "045/2026"
+        assert data["localidad"] == "Córdoba, Córdoba"
+
+    def test_actualizar_numero_judicial_y_localidad(self, client, auth_a):
+        eid = create_expediente(client, auth_a).json()["id"]
+        r = client.patch(f"/expedientes/{eid}", json={
+            "numero_judicial": "999/2026",
+            "localidad": "Rosario, Santa Fe",
+        }, headers=auth_a)
+        assert r.status_code == 200
+        assert r.json()["numero_judicial"] == "999/2026"
+        assert r.json()["localidad"] == "Rosario, Santa Fe"
 
 
 class TestAbogados:
