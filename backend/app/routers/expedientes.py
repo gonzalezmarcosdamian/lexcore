@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import (
-    Expediente, ExpedienteAbogado, Movimiento, RolEnExpediente
+    Expediente, ExpedienteAbogado, Movimiento, Vencimiento, RolEnExpediente
 )
 from app.models.user import User
 from app.models.cliente import Cliente
@@ -253,7 +253,6 @@ def quitar_abogado(
 def actividad_expediente(expediente_id: str, db: DbSession, current_user: CurrentUser):
     """Feed cronológico unificado del expediente."""
     from app.models.honorario import Honorario, PagoHonorario
-    from app.models.vencimiento import Vencimiento
     from app.models.tarea import Tarea
     from app.models.documento import Documento
 
@@ -274,14 +273,14 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=h.id, tipo="honorario", subtipo="creado",
             descripcion=f"Honorario: {h.concepto}",
-            meta={"monto": float(h.monto_acordado), "moneda": str(h.moneda)},
+            meta={"monto": float(h.monto_acordado), "moneda": h.moneda.value},
             created_at=h.created_at,
         ))
         for p in h.pagos:
             items.append(ActividadItem(
                 id=p.id, tipo="pago", subtipo=str(p.tipo),
                 descripcion=f"Pago registrado — {p.tipo}: {p.moneda} {p.importe:,.0f}",
-                meta={"importe": float(p.importe), "moneda": str(p.moneda), "tipo": str(p.tipo)},
+                meta={"importe": float(p.importe), "moneda": p.moneda.value, "tipo": str(p.tipo)},
                 created_at=p.created_at,
             ))
 
