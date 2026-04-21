@@ -193,8 +193,9 @@
   - [x] CA3: Tareas vencidas se marcan visualmente como urgentes (fondo rojo, texto "Vencida")
   - [ ] CA4: Test de aislamiento tenant — **DEUDA TÉCNICA**: falta `test_tareas.py`. Confirmado por QA.
 
-### US-AI-01 · Resumen IA de expediente — `refined`
-- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** 09
+### US-AI-01 · Resumen IA de expediente — `blocked`
+- **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar hasta tener base de usuarios activos. Revisar post-MVP.
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** indefinido
 - **Refinado por:** FA Agent (2026-04-15)
 - **Decisión técnica:** generar una vez, guardar en DB, regenerar solo cuando hay cambios relevantes. Costo de tokens mínimo y predecible.
 - **Como** abogado, **quiero** ver un resumen del estado actual del expediente generado por IA **para** entender el contexto del caso en segundos sin leer todos los movimientos.
@@ -301,7 +302,7 @@
 
 ### US-12 · Generador de cabecera de escrito — `blocked`
 - **Prioridad:** P1 | **Esfuerzo:** M (5pts) | **Sprint target:** indefinido
-- **🚫 BLOQUEADO (2026-04-16):** Decisión PO pendiente sobre formato de salida (Word DOCX vs PDF). No planificar hasta resolución.
+- **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar. Post-MVP.
 - **Como** abogado, **quiero** generar la cabecera de un escrito automáticamente desde el expediente **para** ahorrar 5 minutos en cada presentación.
 - **Criterios de aceptación:**
   - [ ] CA1: Desde el expediente, botón "Generar escrito" abre modal con cabecera precompletada (carátula, número, juzgado, secretaría, fecha, abogado responsable)
@@ -310,7 +311,7 @@
 
 ### US-13 · Portal de cliente — vista de solo lectura — `blocked`
 - **Prioridad:** P1 | **Esfuerzo:** L (8pts) | **Sprint target:** indefinido
-- **🚫 BLOQUEADO (2026-04-16):** Reemplazado por canal WhatsApp (WHATSAPP-001/002). El cliente consulta estado por WhatsApp, no por portal web. Revisar post-MVP si hay demanda de portal separado.
+- **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar. Post-MVP.
 - **Como** cliente de un estudio, **quiero** ver el estado de mi expediente y los próximos vencimientos **para** no tener que llamar al abogado para saber en qué va el caso.
 - **Criterios de aceptación:**
   - [ ] CA1: Invitación por email al cliente con acceso exclusivo a sus expedientes
@@ -334,8 +335,9 @@
   - [ ] CA2: Búsqueda retorna en <200ms para datasets de 10.000+ registros
   - [ ] CA3: Migración Alembic limpia y reversible
 
-### US-16 · Registro de tiempo facturable (timesheets) — `idea`
-- **Prioridad:** P2 | **Esfuerzo:** L (8pts) | **Sprint target:** backlog
+### US-16 · Registro de tiempo facturable (timesheets) — `blocked`
+- **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar. Post-MVP.
+- **Prioridad:** P2 | **Esfuerzo:** L (8pts) | **Sprint target:** indefinido
 - **Como** abogado que factura por hora, **quiero** registrar horas trabajadas por expediente **para** tener base real para la facturación de honorarios.
 - **Criterios de aceptación:**
   - [ ] CA1: Registrar entrada de tiempo: expediente, abogado, fecha, horas, descripción
@@ -376,10 +378,9 @@
 - **Casos borde:** Upload de logo — validar tipo (PNG/JPG) y peso (<2MB). Avatar de iniciales como fallback si no hay logo.
 - **Notas UX:** Avatar con iniciales siempre visible en el header. Menú de usuario abre `/perfil`. Logo en sidebar top-left.
 
-### US-20 · Swap Auth JWT → Supabase con MFA — `idea`
-- **Prioridad:** P2 | **Esfuerzo:** XL (13pts) | **Sprint target:** backlog
-- **Como** usuario, **quiero** MFA y auth gestionado por Supabase **para** tener seguridad enterprise sin gestión propia de tokens.
-- **Nota técnica:** El swap está diseñado para ser transparente (mismo contrato de JWT). No urgente hasta salida a producción real.
+### US-20 · Swap Auth JWT → Supabase con MFA — `blocked`
+- **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar. Post-MVP.
+- **Prioridad:** P2 | **Esfuerzo:** XL (13pts) | **Sprint target:** indefinido
 
 ---
 
@@ -836,7 +837,8 @@ El `[?]` es un botón circular fijo `fixed bottom-6 right-6 z-50` con tooltip "A
 ### MON-01 · Trial 30 días + modo lectura — `blocked`
 - **🚫 BLOQUEADO (2026-04-16):** Sin usuarios reales aún. No tiene sentido implementar un límite de trial sin clientes. Revisar cuando haya primeros estudios en producción.
 
-### WHATSAPP-001 · Bot de WhatsApp para clientes y abogados
+### WHATSAPP-001 · Bot de WhatsApp para clientes y abogados — `blocked`
+- **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar. Post-MVP.
 - **Quién lo tiene:** Veredicta (único competidor con esto — diferenciador fuerte en el mercado AR).
 - **Qué hace:** Canal bidireccional WhatsApp integrado al estudio: clientes consultan estado de sus causas, abogados cargan movimientos y vencimientos por mensaje.
 - **Qué LexCore puede hacer mejor:** Veredicta lo tiene como módulo externo. LexCore lo integra directo al expediente — sin salir de la app, los datos quedan en el mismo sistema.
