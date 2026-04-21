@@ -5,6 +5,7 @@ from app.core.deps import CurrentUser, DbSession
 from app.models.expediente import Expediente, Vencimiento
 from app.models.base import utcnow
 from app.services.resumen_invalidar import invalidar_resumen
+from app.services.calendar_push import push_vencimiento, delete_vencimiento
 from app.schemas.vencimiento import VencimientoCreate, VencimientoOut, VencimientoUpdate
 
 router = APIRouter(prefix="/vencimientos", tags=["vencimientos"])
@@ -60,8 +61,7 @@ def crear_vencimiento(
     invalidar_resumen(db, body.expediente_id, tenant_id)
     db.commit()
     db.refresh(venc)
-
-    # TODO: Sprint 03 — push Google Calendar events aquí
+    push_vencimiento(db, venc, current_user["sub"])
     return venc
 
 
@@ -98,6 +98,7 @@ def actualizar_vencimiento(
     venc.updated_at = utcnow()
     db.commit()
     db.refresh(venc)
+    push_vencimiento(db, venc, current_user["sub"])
     return venc
 
 
@@ -164,5 +165,7 @@ def eliminar_vencimiento(
     ).first()
     if not venc:
         raise HTTPException(status_code=404, detail="Vencimiento no encontrado")
+    venc_id = venc.id
     db.delete(venc)
     db.commit()
+    delete_vencimiento(db, venc_id, current_user["sub"])

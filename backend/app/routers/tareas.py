@@ -12,6 +12,7 @@ from app.models.tarea import Tarea, TareaEstado
 from app.models.user import User
 from app.models.base import utcnow
 from app.services.resumen_invalidar import invalidar_resumen
+from app.services.calendar_push import push_tarea, delete_tarea
 from app.schemas.tarea import TareaCreate, TareaOut, TareaUpdate
 
 router = APIRouter(prefix="/tareas", tags=["tareas"])
@@ -78,6 +79,7 @@ def crear_tarea(body: TareaCreate, db: DbSession, current_user: CurrentUser):
         invalidar_resumen(db, body.expediente_id, tenant_id)
     db.commit()
     db.refresh(tarea)
+    push_tarea(db, tarea, current_user["sub"])
     return _enriquecer(db, tarea)
 
 
@@ -95,6 +97,7 @@ def actualizar_tarea(
     tarea.updated_at = utcnow()
     db.commit()
     db.refresh(tarea)
+    push_tarea(db, tarea, current_user["sub"])
     return _enriquecer(db, tarea)
 
 
@@ -102,5 +105,7 @@ def actualizar_tarea(
 def eliminar_tarea(tarea_id: str, db: DbSession, current_user: CurrentUser):
     tenant_id = current_user["studio_id"]
     tarea = _get_tarea_or_404(db, tarea_id, tenant_id)
+    tarea_id_backup = tarea.id
     db.delete(tarea)
     db.commit()
+    delete_tarea(db, tarea_id_backup, current_user["sub"])
