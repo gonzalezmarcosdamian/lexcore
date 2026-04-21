@@ -418,6 +418,27 @@
 > **Feedback usuario real — 2026-04-21 (Gonzalo Martin, estudio piloto)**
 > Las siguientes 4 historias vienen de feedback directo de un usuario usando el producto en producción.
 
+### EXP-NUM-001 · Número de expediente judicial manual + número de orden interno — `idea`
+- **Prioridad:** P1 ⭐ (feedback usuario real, crítico para identificación judicial)
+- **Fuente:** feedback usuarios reales 2026-04-21 (Gonzalo Martin + Chipi)
+- **Contexto:** El sistema actual autogenera `EXP-2026-XXXX` como identificador interno. Los abogados necesitan registrar el número oficial asignado por el juzgado (ej: `12345/2026` o `CAF 87654/2025`), que es el que usan en todos sus escritos.
+- **Como** abogado, **quiero** poder ingresar el número de expediente judicial al crear o editar un expediente, y que el sistema conserve también su propio número interno **para** individualizarlo como lo hace la justicia y tenerlo fácilmente localizable.
+- **Criterios de aceptación:**
+  - [ ] CA1: Al crear expediente — campo opcional `numero_judicial` (texto libre, ej: "12345/2026")
+  - [ ] CA2: El `numero_judicial` debe ser único por estudio (validación con error claro si se repite)
+  - [ ] CA3: El número interno autogenerado `EXP-2026-XXXX` se conserva como "Número interno" — es el ID del sistema
+  - [ ] CA4: En el detalle del expediente se muestran ambos: "N° Judicial: 12345/2026" + "N° Interno: EXP-2026-0001"
+  - [ ] CA5: En el listado, se puede buscar por número judicial o número interno
+  - [ ] CA6: Al editar el expediente, el número judicial es editable (el interno es siempre de solo lectura)
+- **Notas técnicas:**
+  - Renombrar campo actual `numero` → `numero_interno` (autogenerado, inmutable)
+  - Agregar `numero_judicial: str | None` — campo editable, único por `(studio_id, numero_judicial)`
+  - Migración: `ALTER TABLE expedientes ADD COLUMN numero_judicial VARCHAR UNIQUE` (unique parcial por tenant via constraint)
+  - `ExpedienteCreate` y `ExpedienteUpdate` aceptan `numero_judicial`
+  - Búsqueda: `GET /search` y `/expedientes?q=` buscan en ambos campos
+  - UI paso 1 de creación: agregar campo "Número de expediente (judicial)" con hint "Ej: 12345/2026 — podés completarlo después"
+  - **Decisión de nombre en UI:** "N° Expediente" para el judicial, "Ref. interna" para el autogenerado
+
 ### EXP-LOC-001 · Localidad del expediente — `idea`
 - **Prioridad:** P1
 - **Fuente:** feedback usuario real 2026-04-21
