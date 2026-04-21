@@ -13,9 +13,10 @@ class TareaEstado(str, enum.Enum):
 
 
 class TareaTipo(str, enum.Enum):
-    judicial = "judicial"          # ligada a un expediente
-    extrajudicial = "extrajudicial"  # gestión externa sin expediente
-    administrativa = "administrativa"  # interna del estudio (ej: comprar toner)
+    judicial = "judicial"
+    extrajudicial = "extrajudicial"
+    administrativa = "administrativa"
+    operativa = "operativa"
 
 
 class Tarea(TenantModel):

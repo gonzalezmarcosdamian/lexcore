@@ -135,6 +135,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
               <option value="judicial">⚖️ Judicial</option>
               <option value="extrajudicial">🤝 Extrajudicial</option>
               <option value="administrativa">🏢 Administrativa</option>
+              <option value="operativa">🔧 Operativa</option>
             </select>
           </div>
           <div>

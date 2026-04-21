@@ -271,7 +271,7 @@ export interface IngresoResumen {
 
 export type TareaEstado = "pendiente" | "en_curso" | "hecha";
 
-export type TareaTipo = "judicial" | "extrajudicial" | "administrativa";
+export type TareaTipo = "judicial" | "extrajudicial" | "administrativa" | "operativa";
 
 export interface Tarea {
   id: string;
