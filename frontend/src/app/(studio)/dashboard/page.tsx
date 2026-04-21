@@ -698,7 +698,7 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: 
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
               vencida ? "bg-red-100 text-red-600" : esHoy ? "bg-amber-100 text-amber-700" : "bg-ink-100 text-ink-500"
             }`}>
-              {vencida ? `venció ${formatFecha(tarea.fecha_limite)}` : formatFechaLarga(tarea.fecha_limite)}
+              {vencida ? `venció ${formatFecha(tarea.fecha_limite)}` : formatFechaLarga(tarea.fecha_limite)}{tarea.hora ? ` · ${tarea.hora}` : ""}
             </span>
           )}
           <div className="flex items-center gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 transition flex-shrink-0">
@@ -927,7 +927,7 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, marking, deletin
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
             urg || vencida ? "bg-red-100 text-red-700" : warning ? "bg-yellow-100 text-yellow-700" : "bg-ink-100 text-ink-500"
           }`}>
-            {formatFecha(v.fecha)}
+            {formatFecha(v.fecha)}{v.hora ? ` · ${v.hora}` : ""}
           </span>
           <div className="flex items-center gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 transition flex-shrink-0">
             <button onClick={() => onEdit(v)} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
