@@ -419,8 +419,16 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             created_at=t.created_at,
         ))
 
-    # Documentos
-    for d in db.query(Documento).filter(Documento.expediente_id == expediente_id, Documento.tenant_id == tenant_id).all():
+    # Documentos (del expediente + los adjuntos a sus tareas/vencimientos)
+    tarea_ids = [t.id for t in db.query(Tarea.id).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()]
+    vcto_ids = [v.id for v in db.query(Vencimiento.id).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all()]
+    from sqlalchemy import or_
+    doc_filter = [Documento.expediente_id == expediente_id]
+    if tarea_ids:
+        doc_filter.append(Documento.tarea_id.in_(tarea_ids))
+    if vcto_ids:
+        doc_filter.append(Documento.vencimiento_id.in_(vcto_ids))
+    for d in db.query(Documento).filter(Documento.tenant_id == tenant_id, or_(*doc_filter)).all():
         nombre_display = d.label or d.nombre
         items.append(ActividadItem(
             id=d.id, tipo="documento", subtipo="subido",
