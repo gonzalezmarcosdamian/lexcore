@@ -25,7 +25,7 @@ function diasRestantes(fecha: string | null | undefined): string | null {
   return `${diff} días`;
 }
 
-export function TareasSection({ expedienteId, token }: { expedienteId: string; token: string }) {
+export function TareasSection({ expedienteId, token, onCreated }: { expedienteId: string; token: string; onCreated?: () => void }) {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [miembros, setMiembros] = useState<StudioUser[]>([]);
@@ -67,6 +67,7 @@ export function TareasSection({ expedienteId, token }: { expedienteId: string; t
       } else {
         const created = await api.post<Tarea>("/tareas", payload, token);
         setTareas(prev => [created, ...prev]);
+        onCreated?.();
       }
       setShowForm(false);
       setEditingId(null);

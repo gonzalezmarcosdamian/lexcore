@@ -71,9 +71,13 @@ const ROL_BADGE: Record<RolEnExpediente, string> = {
   supervision: "bg-purple-50 text-purple-700 border-purple-100",
 };
 
+const TZ = "America/Argentina/Buenos_Aires";
+
 function tiempoVida(created_at: string): string {
-  const ms = Date.now() - new Date(created_at).getTime();
-  const dias = Math.floor(ms / (1000 * 60 * 60 * 24));
+  const toDateStr = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: TZ });
+  const now = new Date();
+  const created = new Date(created_at);
+  const dias = Math.round((new Date(toDateStr(now)).getTime() - new Date(toDateStr(created)).getTime()) / (1000 * 60 * 60 * 24));
   if (dias < 30) return `${dias} día${dias !== 1 ? "s" : ""}`;
   const meses = Math.floor(dias / 30);
   if (meses < 12) return `${meses} mes${meses !== 1 ? "es" : ""}`;
@@ -149,8 +153,10 @@ export default function ExpedienteDetailPage() {
 
   const loadActividad = useCallback(async () => {
     if (!token) return;
-    const items = await api.get<ActividadItem[]>(`/expedientes/${id}/actividad`, token);
-    setActividad(items);
+    try {
+      const items = await api.get<ActividadItem[]>(`/expedientes/${id}/actividad`, token);
+      setActividad(items);
+    } catch { /* endpoint puede no existir en versiones viejas */ }
   }, [token, id]);
 
   const loadVencimientos = useCallback(async () => {
@@ -442,9 +448,20 @@ export default function ExpedienteDetailPage() {
 
           {/* ── BITÁCORA (protagonista) ── */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-ink-50">
-              <h2 className="text-sm font-semibold text-ink-700">Bitácora</h2>
-              <p className="text-xs text-ink-400 mt-0.5">Historial completo del expediente</p>
+            <div className="px-5 py-3.5 border-b border-ink-50 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-ink-700">Bitácora</h2>
+                <p className="text-xs text-ink-400 mt-0.5">Historial completo del expediente</p>
+              </div>
+              <button
+                onClick={loadActividad}
+                title="Actualizar bitácora"
+                className="text-ink-400 hover:text-brand-600 transition p-1.5 rounded-lg hover:bg-ink-50"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
             </div>
             <div className="p-4 space-y-4">
               {/* Entrada manual */}
@@ -489,7 +506,7 @@ export default function ExpedienteDetailPage() {
               </span>
             ) : undefined}
           >
-            {token && <div className="p-4"><HonorariosTab expedienteId={id} token={token} /></div>}
+            {token && <div className="p-4"><HonorariosTab expedienteId={id} token={token} onCreated={loadActividad} /></div>}
           </SectionCollapsible>
 
           {/* Vencimientos */}
@@ -550,7 +567,7 @@ export default function ExpedienteDetailPage() {
               <span className="text-xs text-brand-600 font-medium">{pendientasTareas} pendiente{pendientasTareas !== 1 ? "s" : ""}</span>
             ) : tareas.length > 0 ? <span className="text-xs text-green-600 font-medium">todas hechas</span> : undefined}
           >
-            {token && <div className="p-4"><TareasSection expedienteId={id} token={token} /></div>}
+            {token && <div className="p-4"><TareasSection expedienteId={id} token={token} onCreated={loadActividad} /></div>}
           </SectionCollapsible>
 
           {/* Documentos */}
@@ -562,7 +579,7 @@ export default function ExpedienteDetailPage() {
               <span className="text-xs text-ink-400">{documentos.filter(d => d.content_type === "application/pdf").length} PDF{documentos.filter(d => d.content_type === "application/pdf").length !== 1 ? "s" : ""}</span>
             ) : undefined}
           >
-            {token && <div className="p-4"><DocumentosTab expedienteId={id} token={token} /></div>}
+            {token && <div className="p-4"><DocumentosTab expedienteId={id} token={token} onCreated={loadActividad} /></div>}
           </SectionCollapsible>
 
           {/* Resumen IA */}

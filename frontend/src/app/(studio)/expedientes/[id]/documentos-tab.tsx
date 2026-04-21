@@ -28,7 +28,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-interface Props { expedienteId: string; token: string; }
+interface Props { expedienteId: string; token: string; onCreated?: () => void; }
 
 function PreviewModal({ doc, token, onClose }: { doc: Documento; token: string; onClose: () => void }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
@@ -98,7 +98,7 @@ function PreviewModal({ doc, token, onClose }: { doc: Documento; token: string; 
   );
 }
 
-export function DocumentosTab({ expedienteId, token }: Props) {
+export function DocumentosTab({ expedienteId, token, onCreated }: Props) {
   const [docs, setDocs] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -146,6 +146,7 @@ export function DocumentosTab({ expedienteId, token }: Props) {
     }
     setUploading(false);
     if (inputRef.current) inputRef.current.value = "";
+    onCreated?.();
   }
 
   async function handleDownload(doc: Documento) {
