@@ -1,11 +1,76 @@
 import re
+import logging
+from contextlib import asynccontextmanager
+from datetime import date, timedelta
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from app.core.config import settings
+from app.core.database import SessionLocal
 from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte, admin
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
+
+logger = logging.getLogger(__name__)
+
+
+def _job_notificar_urgentes():
+    """Runs daily at 9am — sends urgency emails for all tenants."""
+    from app.models.vencimiento import Vencimiento
+    from app.models.user import User
+    from app.models.expediente import Expediente
+    from app.services.email import send_vencimiento_urgente_email
+
+    db = SessionLocal()
+    try:
+        hoy = date.today().isoformat()
+        limite = (date.today() + timedelta(hours=48)).strftime("%Y-%m-%d")
+
+        urgentes = db.query(Vencimiento).filter(
+            Vencimiento.cumplido == False,  # noqa: E712
+            Vencimiento.fecha >= hoy,
+            Vencimiento.fecha <= limite,
+        ).all()
+
+        if not urgentes:
+            return
+
+        tenant_ids = list({v.tenant_id for v in urgentes})
+        for tenant_id in tenant_ids:
+            tenant_urgentes = [v for v in urgentes if v.tenant_id == tenant_id]
+            miembros = db.query(User).filter(User.tenant_id == tenant_id).all()
+            emails = [u.email for u in miembros if u.email]
+            if not emails:
+                continue
+            for v in tenant_urgentes:
+                exp = db.query(Expediente).filter(Expediente.id == v.expediente_id).first()
+                caratula = exp.caratula if exp else "Expediente"
+                send_vencimiento_urgente_email(
+                    to_emails=emails,
+                    descripcion=v.descripcion,
+                    fecha=v.fecha,
+                    tipo=v.tipo or "vencimiento",
+                    caratula=caratula,
+                    expediente_id=v.expediente_id,
+                )
+    except Exception:
+        logger.exception("Error en job notificar_urgentes")
+    finally:
+        db.close()
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(_job_notificar_urgentes, CronTrigger(hour=9, minute=0))
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    scheduler.start()
+    yield
+    scheduler.shutdown(wait=False)
 
 _ALLOWED_ORIGINS = re.compile(
     r"^(http://localhost:(3000|3001)|https://[a-z0-9\-]+\.vercel\.app)$"
@@ -15,6 +80,7 @@ app = FastAPI(
     title="LexCore API",
     version="0.4.0",
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
+    lifespan=lifespan,
 )
 
 

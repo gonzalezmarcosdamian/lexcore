@@ -42,17 +42,18 @@ def upload_file(file_bytes: bytes, tenant_id: str, expediente_id: str, filename:
     return result["secure_url"], result["public_id"]
 
 
-def generate_download_url(file_key: str, filename: str) -> str:
+def generate_download_url(file_key: str, filename: str, force_attachment: bool = True) -> str:
     _configure()
     import cloudinary.utils
-    url, _ = cloudinary.utils.cloudinary_url(
-        file_key,
+    kwargs: dict = dict(
         resource_type="raw",
         type="authenticated",
         sign_url=True,
         expires_at=int(time.time()) + SIGNED_URL_EXPIRY,
-        attachment=filename,
     )
+    if force_attachment:
+        kwargs["attachment"] = filename
+    url, _ = cloudinary.utils.cloudinary_url(file_key, **kwargs)
     return url
 
 

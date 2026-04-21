@@ -1,10 +1,14 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
+
+
+def _trial_ends_at() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(days=30)
 
 
 class Studio(Base):
@@ -18,6 +22,9 @@ class Studio(Base):
     slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    trial_ends_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=_trial_ends_at
     )
 
     # Perfil del estudio

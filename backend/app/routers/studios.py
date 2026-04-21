@@ -7,6 +7,7 @@ POST  /studios/me/whatsapp     — configurar WhatsApp Business
 DELETE /studios/me/whatsapp    — desconectar WhatsApp
 """
 import base64
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -27,6 +28,7 @@ class StudioOut(BaseModel):
     email_contacto: str | None = None
     whatsapp_phone_id: str | None = None
     whatsapp_active: bool = False
+    trial_ends_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 

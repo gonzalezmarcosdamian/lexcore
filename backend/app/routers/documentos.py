@@ -1,6 +1,9 @@
+import urllib.parse
 from typing import List
 
+import httpx
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import StreamingResponse
 
 from app.core.deps import CurrentUser, DbSession
 from app.models.documento import Documento
@@ -81,7 +84,7 @@ def listar_documentos(expediente_id: str, db: DbSession, current_user: CurrentUs
 
 
 @router.get("/{documento_id}/download-url", response_model=DownloadUrlResponse)
-def get_download_url(documento_id: str, db: DbSession, current_user: CurrentUser):
+def get_download_url(documento_id: str, db: DbSession, current_user: CurrentUser, attachment: bool = True):
     tenant_id = current_user["studio_id"]
     doc = db.query(Documento).filter(
         Documento.id == documento_id,
@@ -90,10 +93,40 @@ def get_download_url(documento_id: str, db: DbSession, current_user: CurrentUser
     if not doc:
         raise HTTPException(status_code=404, detail="Documento no encontrado")
     try:
-        url = generate_download_url(file_key=doc.file_key, filename=doc.nombre)
+        url = generate_download_url(file_key=doc.file_key, filename=doc.nombre, force_attachment=attachment)
     except StorageNotConfigured as e:
         raise HTTPException(status_code=503, detail=str(e))
     return DownloadUrlResponse(download_url=url)
+
+
+@router.get("/{documento_id}/content")
+async def stream_documento(documento_id: str, db: DbSession, current_user: CurrentUser, inline: bool = True):
+    """Proxy endpoint: fetches from Cloudinary server-side, streams back to browser.
+    Avoids CORS and X-Frame-Options issues. inline=True for preview, False for download."""
+    tenant_id = current_user["studio_id"]
+    doc = db.query(Documento).filter(
+        Documento.id == documento_id,
+        Documento.tenant_id == tenant_id,
+    ).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    try:
+        signed_url = generate_download_url(file_key=doc.file_key, filename=doc.nombre, force_attachment=False)
+    except StorageNotConfigured as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+    async def _stream():
+        async with httpx.AsyncClient() as client:
+            async with client.stream("GET", signed_url) as resp:
+                async for chunk in resp.aiter_bytes(chunk_size=65536):
+                    yield chunk
+
+    disposition = "inline" if inline else f"attachment; filename*=UTF-8''{urllib.parse.quote(doc.nombre)}"
+    return StreamingResponse(
+        _stream(),
+        media_type=doc.content_type,
+        headers={"Content-Disposition": disposition},
+    )
 
 
 @router.delete("/{documento_id}", status_code=status.HTTP_204_NO_CONTENT)
