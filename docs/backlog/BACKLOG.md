@@ -1070,6 +1070,137 @@ S3_BUCKET_NAME=lexcore-docs
 
 ---
 
+## Auditoría Técnica — 2026-04-21
+
+> **Fuente:** Tech Lead review del codebase. Items ordenados por riesgo e impacto.
+
+### 🔴 Crítico — Resolver antes de escalar
+
+#### PERF-001 · N+1 en `/expedientes/{id}/actividad` — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** M
+- **Problema:** 5 queries secuenciales + N queries adicionales para `h.pagos` (uno por honorario). Con 30 honorarios = 30 queries inline. Request >5s en producción con datos reales.
+- **Fix:** `selectinload(Honorario.pagos)` + índices compuestos `(expediente_id, tenant_id)` en cada tabla.
+
+#### PERF-002 · N+1 en listado de expedientes — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** M
+- **Problema:** `_enriquecer_abogados()` en `expedientes.py` ejecuta 2 queries por expediente (users + cliente). 50 expedientes = 100+ queries adicionales.
+- **Fix:** `joinedload` o `selectinload` en la query principal. Una sola query con JOIN.
+
+#### PERF-003 · Sin paginación en listados — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** S
+- **Problema:** `listar_expedientes` devuelve `.all()` sin límite. Frontend renderiza todo. Con 10k expedientes → crash de navegador + timeout de API.
+- **Fix:** `limit/offset` en backend + frontend con scroll infinito o paginación clásica. Máximo 100 por página.
+
+#### PERF-004 · Índices compuestos faltantes — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** S
+- **Problema:** Todos los modelos tienen índices individuales en `tenant_id` y FK, pero las queries siempre filtran por `(expediente_id, tenant_id)` o `(tenant_id, estado)`. PostgreSQL no puede combinar índices eficientemente.
+- **Fix:** Migración Alembic con `op.create_index('ix_X_expid_tenantid', 'X', ['expediente_id', 'tenant_id'])` para Honorario, Vencimiento, Tarea, Documento, Movimiento.
+
+#### SCALE-001 · APScheduler en proceso — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** L
+- **Problema:** Job scheduler corre en el mismo proceso de FastAPI. Si Railway hace rolling deploy o restart mid-job, los emails se cortan sin retry. Sin persistencia de jobs.
+- **Fix:** Migrar a Celery + Redis (Railway tiene Redis add-on) o usar Railway Cron Jobs separados.
+
+#### PERF-005 · PDF merge en memoria RAM — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** S
+- **Problema:** `merged-pdf` endpoint carga todos los PDFs en RAM con `pypdf.PdfWriter`. 10 PDFs × 10MB = 100MB por request. Railway tiene límite de RAM.
+- **Fix:** Usar archivos temporales en `/tmp` + streaming. Agregar límite de PDFs (ej: máx 20 docs por merge).
+
+### 🟡 Medio — Antes del primer cliente pago
+
+#### OBS-001 · Logging insuficiente en jobs y PDF merge — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** XS
+- **Problema:** `_job_notificar_urgentes` no loguea cuántos emails envió/falló. `merged-pdf` usa `except Exception: continue` silencioso. Imposible debuggear en prod.
+- **Fix:** Agregar `logger.info(f"Job: {n_emails} enviados, {n_errores} errores")`. Loguear doc.id en cada fallo de merge.
+
+#### OBS-002 · Sin correlation IDs — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** S
+- **Problema:** No hay `X-Request-ID` en respuestas ni en logs. Imposible trazar un request en producción.
+- **Fix:** Middleware que genera `uuid4` por request y lo agrega a headers + contexto de logging.
+
+#### SEC-007 · `google_refresh_token` en texto plano — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** S
+- **Problema:** Política de Google OAuth exige tokens cifrados en reposo. Brecha de DB expone acceso completo al Google Calendar de cada abogado.
+- **Fix:** Cifrar con AES-256 antes de persistir (`cryptography` library). Clave en variable de entorno.
+
+#### PERF-006 · `useCallback` faltante en page.tsx — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** XS
+- **Problema:** `loadActividad`, `loadVencimientos`, `loadSummaryData` se recrean en cada render → el `useEffect` con deps se re-dispara en loop.
+- **Fix:** Envolver las tres funciones en `useCallback([id, token])`. Ya tienen `useCallback` pero verificar deps.
+
+#### PERF-007 · Resumen de honorarios recalcula todo en cada request — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** M
+- **Problema:** `resumen_honorarios` itera todos los honorarios + todos sus pagos del tenant en cada GET. Con 5000 honorarios es O(n×m).
+- **Fix:** Cache en Redis con TTL 5min, o columnas materializadas `total_pagado` + `saldo_pendiente` en `Honorario` (ya existen como `@property` — mover a DB).
+
+### 🟢 Bajo — Deuda técnica a largo plazo
+
+#### SEC-008 · Validación explícita de tenant en proxy de documentos — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** XS
+- **Problema:** `stream_documento` confía en que el JWT es válido pero no aserta explícitamente `current_user["studio_id"] == doc.tenant_id`.
+- **Fix:** Agregar `if current_user["studio_id"] != doc.tenant_id: raise HTTPException(403)`.
+
+#### SEC-009 · `decode_token` devuelve `{}` en lugar de raise — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** XS
+- **Problema:** `auth.py:decode_token` captura `JWTError` y devuelve `{}`. El caller accede a `payload["studio_id"]` y explota con `KeyError` en lugar de un `401` claro.
+- **Fix:** Raise `HTTPException(401)` en el except del decode.
+
+---
+
+## Auditoría Legal — 2026-04-21
+
+> **Fuente:** Revisión de riesgo legal para SaaS con datos personales y procesales en Argentina.
+> **Disclaimer:** Esto es análisis de riesgo, no asesoramiento legal formal. Consultar abogado para implementar.
+
+### 🔴 Urgente — Requerido para operar legalmente
+
+#### LEGAL-001 · Política de Privacidad — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** S (redactar + página)
+- **Obligación:** Ley 25.326 (Protección de Datos Personales). Ausencia es infracción sancionable por la AAIP.
+- **Qué debe incluir:** qué datos se recopilan (nombre, DNI, CUIT, email, teléfono de clientes del estudio), finalidad, quién es el responsable (LexCore), **transferencias a terceros** (OpenAI USA, Cloudinary USA, Railway USA — todas internacionales), derechos ARCO, contacto DPO.
+- **Implementación:** Página `/privacidad`, link en footer y en registro. Backend no cambia.
+
+#### LEGAL-002 · Términos y Condiciones — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** S (redactar + página)
+- **Qué debe incluir sí o sí:**
+  - Rol de LexCore como **encargado de tratamiento** (no responsable) de los datos de los clientes del estudio
+  - Limitación de responsabilidad por pérdida de datos (tope: 3 meses de suscripción)
+  - El estudio garantiza que tiene consentimiento para cargar datos de sus clientes
+  - SLA: exclusión expresa de garantía de uptime (o SLA real si se compromete)
+  - Jurisdicción: CABA, ley argentina
+- **Implementación:** Página `/terminos`, aceptación obligatoria en registro (checkbox).
+
+#### LEGAL-003 · Opt-in explícito para Resumen IA — `idea`
+- **Prioridad:** P0 | **Esfuerzo:** S
+- **Riesgo:** Enviar contenido de expedientes a OpenAI (servidores USA) sin avisar puede configurar violación del secreto profesional del abogado (art. 10 Ley 23.187 CABA) y de la Ley 25.326 (transferencia internacional sin consentimiento).
+- **Fix:**
+  1. Modal de opt-in al activar por primera vez la función de IA, con texto claro: "Al usar Resumen IA, el contenido del expediente se envía a servidores de OpenAI en Estados Unidos para su procesamiento."
+  2. Agregar en T&C que el estudio asume responsabilidad por habilitar esta función.
+  3. El opt-in se guarda en DB por estudio (`studio.ia_opt_in: bool`).
+- **Estado actual:** La feature existe sin ningún aviso. Riesgo activo.
+
+### 🟡 Importante — Antes del primer cliente pago
+
+#### LEGAL-004 · Cifrar `google_refresh_token` en DB — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** S
+- **Riesgo:** Google exige en sus políticas OAuth que los tokens se almacenen cifrados. Brecha de DB expone acceso al Google Calendar de cada abogado. También viola la política del API.
+- **Fix:** AES-256 con `cryptography` library. Clave en `ENCRYPTION_KEY` env var. Ver también SEC-007 arriba.
+- *(Duplicado técnico — la historia técnica y legal convergen en el mismo fix)*
+
+#### LEGAL-005 · Cláusula de transferencia internacional en T&C — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** XS (agregar sección a T&C)
+- **Riesgo:** LexCore transfiere datos a 3 servicios externos USA: OpenAI (resúmenes), Cloudinary (documentos), Railway (infraestructura). La Ley 25.326 exige informar esto explícitamente.
+- **Fix:** Sección en T&C y Política de Privacidad: "Sus datos pueden ser procesados por proveedores de infraestructura ubicados fuera de Argentina. Los proveedores actuales son: [lista con link a sus políticas]".
+
+### 🟢 Bajo riesgo — Librerías y licencias
+
+#### LEGAL-006 · Verificación de licencias — `done`
+- **Resultado:** Todas las dependencias (FastAPI MIT, SQLAlchemy MIT, Next.js MIT, Tailwind MIT, Shadcn MIT, pypdf BSD-2, APScheduler MIT, Cloudinary SDK propietario-comercial-ok) **permiten uso comercial sin restricciones**.
+- **Código generado con IA (Claude):** Los ToS de Anthropic establecen que el output pertenece al usuario. Sin restricciones de uso comercial.
+- **Conclusión:** No hay riesgo de licenciamiento con el stack actual.
+
+---
+
 ## Historial completadas
 
 | ID | Historia | Sprint | Fecha |
