@@ -137,6 +137,9 @@ def crear_plantilla(data: PlantillaCreate, db: DbSession, current_user: CurrentU
     db.add(plantilla)
     db.commit()
     db.refresh(plantilla)
+    # Generar instancia del mes actual inmediatamente
+    hoy = date.today()
+    _auto_generar_recurrentes(db, tenant_id, hoy.month, hoy.year)
     return plantilla
 
 
