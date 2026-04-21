@@ -775,6 +775,10 @@ function AgendaWidget({
 
   const DIAS_LABEL = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
   const hayUrgentes = vencimientosHoy.length > 0 || urgentes.length > 0 || tareasHoy.length > 0;
+  const [diaSeleccionado, setDiaSeleccionado] = useState<string>(todayStr);
+
+  const eventosDelDia = eventosPorFecha[diaSeleccionado] ?? [];
+  const esHoySeleccionado = diaSeleccionado === todayStr;
 
   return (
     <div className="space-y-3">
@@ -804,65 +808,79 @@ function AgendaWidget({
         <div className="grid grid-cols-7 gap-1">
           {diasSemana.map((fecha, i) => {
             const esHoy = fecha === todayStr;
+            const esSel = fecha === diaSeleccionado;
             const evs = eventosPorFecha[fecha] ?? [];
             const esInhabil = inhabileSet.has(fecha);
-            const tieneUrgente = evs.some(e => e.color === "red");
             const dia = parseInt(fecha.slice(8));
 
             return (
-              <Link key={fecha} href={`/agenda`}
-                className={`flex flex-col items-center gap-1 py-2 rounded-xl transition cursor-pointer hover:bg-brand-50/50 ${esHoy ? "bg-brand-50 ring-1 ring-brand-300" : ""}`}
+              <button key={fecha} onClick={() => setDiaSeleccionado(fecha)}
+                className={`flex flex-col items-center gap-1 py-2 rounded-xl transition w-full ${
+                  esSel ? "bg-brand-600 ring-2 ring-brand-400" :
+                  esHoy ? "bg-brand-50 ring-1 ring-brand-200" :
+                  "hover:bg-ink-50"
+                }`}
               >
-                <span className={`text-[10px] font-semibold uppercase ${esHoy ? "text-brand-600" : "text-ink-400"}`}>{DIAS_LABEL[i]}</span>
-                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${esHoy ? "bg-brand-600 text-white" : esInhabil ? "text-red-400" : "text-ink-700"}`}>{dia}</span>
-                {/* Dots de eventos */}
+                <span className={`text-[10px] font-semibold uppercase ${esSel ? "text-white/80" : esHoy ? "text-brand-600" : "text-ink-400"}`}>{DIAS_LABEL[i]}</span>
+                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${esSel ? "bg-white/20 text-white" : esHoy ? "bg-brand-600 text-white" : esInhabil ? "text-red-400" : "text-ink-700"}`}>{dia}</span>
                 <div className="flex gap-0.5 h-2 items-center">
                   {evs.length === 0
                     ? <span className="w-1 h-1 rounded-full bg-transparent" />
                     : evs.slice(0, 3).map((e, j) => (
-                      <span key={j} className={`w-1.5 h-1.5 rounded-full ${
+                      <span key={j} className={`w-1.5 h-1.5 rounded-full ${esSel ? "bg-white/60" :
                         e.color === "red" ? "bg-red-400" :
                         e.color === "purple" ? "bg-purple-400" :
                         e.color === "blue" ? "bg-blue-400" : "bg-amber-400"
                       }`} />
                     ))
                   }
-                  {evs.length > 3 && <span className="text-[8px] text-ink-400 font-bold">+</span>}
+                  {evs.length > 3 && <span className={`text-[8px] font-bold ${esSel ? "text-white/70" : "text-ink-400"}`}>+</span>}
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Widget Hoy / Urgentes */}
-      {hayUrgentes ? (
-        <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-red-100 flex items-center justify-between">
-            <span className="text-xs font-bold text-red-600">⚡ Requieren atención hoy</span>
-            <span className="text-xs text-ink-400">{vencimientosHoy.length + urgentes.length + tareasHoy.length} ítems</span>
+      {/* Resumen del día seleccionado */}
+      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-ink-50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {esHoySeleccionado && <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">HOY</span>}
+            <span className="text-xs font-semibold text-ink-700">
+              {new Date(diaSeleccionado + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+            {eventosDelDia.some(e => e.color === "red") && (
+              <span className="text-[10px] font-bold text-red-500">⚡ Urgente</span>
+            )}
           </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-ink-400">{eventosDelDia.length} evento{eventosDelDia.length !== 1 ? "s" : ""}</span>
+            <Link href="/agenda" className="text-xs text-brand-600 hover:underline font-medium">Ver en agenda →</Link>
+          </div>
+        </div>
+
+        {eventosDelDia.length === 0 ? (
+          <div className="px-5 py-5 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <p className="text-sm text-ink-500">Sin eventos para este día</p>
+          </div>
+        ) : (
           <div className="divide-y divide-ink-50 max-h-64 overflow-y-auto">
-            {[...vencimientosHoy, ...urgentes].map(v => (
-              <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={onCumplido} onEdit={onEditV} onDelete={onDeleteV} marking={marking} deleting={deletingV} />
-            ))}
-            {tareasHoy.map(t => (
-              <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={onHecha} onEdit={onEditT} onDelete={onDeleteT} marking={markingTarea} deleting={deletingT} />
-            ))}
+            {eventosDelDia.map(ev => {
+              if (ev.tipo === "vencimiento") {
+                const v = { id: ev.id, descripcion: ev.titulo, fecha: (ev as any).fecha, tipo: "", cumplido: ev.cumplido ?? false, expediente_id: ev.expediente_id ?? "", hora: ev.hora } as Vencimiento;
+                return <VencimientoRow key={ev.id} v={v} exp={expLookup[ev.expediente_id ?? ""]} onCumplido={onCumplido} onEdit={onEditV} onDelete={onDeleteV} marking={marking} deleting={deletingV} />;
+              } else {
+                const t = { id: ev.id, titulo: ev.titulo, estado: (ev.estado ?? "pendiente") as Tarea["estado"], fecha_limite: (ev as any).fecha_limite, expediente_id: ev.expediente_id, hora: ev.hora } as Tarea;
+                return <TareaRow key={ev.id} tarea={t} exp={expLookup[ev.expediente_id ?? ""]} onHecha={onHecha} onEdit={onEditT} onDelete={onDeleteT} marking={markingTarea} deleting={deletingT} />;
+              }
+            })}
           </div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm px-5 py-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-ink-800">Todo al día</p>
-            <p className="text-xs text-ink-400">Sin vencimientos urgentes ni tareas para hoy</p>
-          </div>
-          <Link href="/agenda" className="ml-auto text-xs text-brand-600 hover:underline font-medium flex-shrink-0">Ver agenda →</Link>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
