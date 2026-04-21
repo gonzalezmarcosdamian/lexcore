@@ -32,6 +32,12 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      // JWT expirado — forzar re-login en lugar de mostrar pantalla vacía
+      const { signOut } = await import("next-auth/react");
+      signOut({ callbackUrl: "/login" });
+      throw new Error("Sesión expirada");
+    }
     const error = await res.json().catch(() => ({ detail: "Error desconocido" }));
     throw new Error(error.detail ?? "Error del servidor");
   }
