@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, Tarea, TareaEstado, StudioUser } from "@/lib/api";
+import { PageHelp } from "@/components/ui/page-help";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -228,6 +229,18 @@ export default function TareasPage() {
           <h1 className="text-2xl font-bold text-ink-900 tracking-tight">Tareas</h1>
           <p className="text-sm text-ink-400 mt-0.5">Todas las tareas activas del estudio</p>
         </div>
+        <PageHelp
+          title="Tareas"
+          description="Las tareas son trabajo interno del estudio: redactar un escrito, llamar a un cliente, preparar una audiencia. Distintas de los vencimientos, que son plazos procesales."
+          items={[
+            { icon: "🟡", title: "Pendiente", description: "Tarea creada pero no iniciada. Aparece en el dashboard." },
+            { icon: "🔵", title: "En curso", description: "El responsable ya la empezó. Clic en el círculo para avanzar el estado." },
+            { icon: "✅", title: "Hecha", description: "Completada. Desaparece del dashboard pero queda en el historial." },
+            { icon: "👤", title: "Responsable", description: "Miembro del equipo asignado a la tarea. Solo el responsable y el admin pueden marcarla como hecha." },
+            { icon: "⚠️", title: "Diferencia con vencimientos", description: "Vencimiento = plazo procesal externo (audiencia, presentación). Tarea = trabajo interno del estudio. Ambos conviven en el expediente." },
+          ]}
+          tip="Las tareas con fecha límite vencida aparecen marcadas en rojo. Podés filtrar por responsable para ver solo las tuyas."
+        />
       </div>
 
       {/* Stats pills */}

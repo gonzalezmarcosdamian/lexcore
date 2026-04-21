@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { PageHelp } from "@/components/ui/page-help";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -388,7 +389,22 @@ function PerfilPageInner() {
     <div className="max-w-2xl mx-auto space-y-4 pb-20 lg:pb-8">
 
       {/* ── Header de perfil ── */}
-      <div className="flex items-center gap-4 pt-1">
+      <div className="flex items-start justify-between gap-4 pt-1 mb-2">
+        <div className="flex-1" />
+        <PageHelp
+          title="Mi perfil y configuración"
+          description="Desde acá gestionás tu cuenta personal y los datos del estudio que ven tus clientes y el equipo."
+          items={[
+            { icon: "👤", title: "Datos personales", description: "Tu nombre, email y contraseña. El email no se puede cambiar si usás Google para ingresar." },
+            { icon: "🏛️", title: "Datos del estudio", description: "Nombre, dirección y email de contacto. El email de contacto es requerido — se usa para notificaciones a clientes." },
+            { icon: "📅", title: "Google Calendar", description: "Conectá tu cuenta de Google para sincronizar vencimientos automáticamente en tu calendario. Cada cambio en LexCore se refleja allí." },
+            { icon: "💬", title: "WhatsApp Business", description: "Opcional. Si tenés número de WhatsApp del estudio podés configurarlo para que aparezca en las notificaciones a clientes." },
+            { icon: "🔒", title: "Cambio de contraseña", description: "Solo disponible si usás acceso con email y contraseña. Los usuarios de Google gestionan su contraseña desde Google." },
+          ]}
+          tip="El email de contacto del estudio es lo que reciben tus clientes cuando les enviás notificaciones desde LexCore."
+        />
+      </div>
+      <div className="flex items-center gap-4">
         <div className={`w-14 h-14 rounded-2xl ${avatarColor} flex items-center justify-center flex-shrink-0 shadow-sm`}>
           <span className="text-xl font-bold text-white">{initials}</span>
         </div>

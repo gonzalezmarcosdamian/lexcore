@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, Expediente, EstadoExpediente } from "@/lib/api";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
+import { PageHelp } from "@/components/ui/page-help";
 
 const ESTADO_LABELS: Record<EstadoExpediente, string> = {
   activo: "Activo",
@@ -258,6 +259,18 @@ export default function ExpedientesPage() {
               </svg>
             </button>
             <h1 className="text-2xl font-bold text-ink-900">Expedientes</h1>
+            <PageHelp
+              title="Expedientes"
+              description="Cada expediente representa un caso: judicial o extrajudicial. Desde acá gestionás todo el ciclo de vida."
+              items={[
+                { icon: "📁", title: "Estados", description: "Activo (en trámite), Archivado (sin movimiento reciente), Cerrado (finalizado). Podés cambiarlos desde el detalle." },
+                { icon: "👥", title: "Equipo del caso", description: "Cada expediente tiene abogados asignados. El responsable lidera; los colaboradores participan; supervisión solo monitorea." },
+                { icon: "📋", title: "Carátula y fuero", description: "Carátula es el nombre oficial del expediente (ej: 'García c/ Municipalidad'). Fuero es la jurisdicción (civil, laboral, penal, etc.)." },
+                { icon: "📜", title: "Bitácora", description: "Registro automático de todos los movimientos: honorarios, vencimientos, tareas, documentos y movimientos procesales registrados." },
+                { icon: "⚖️", title: "Número de expediente", description: "El sistema genera automáticamente el número (EXP-AÑO-NNNN). Podés agregar el número judicial externo como referencia." },
+              ]}
+              tip="Usá los filtros de la barra lateral para encontrar expedientes por estado, abogado o fecha de creación."
+            />
             {!loading && (
               <span className="text-sm text-ink-400 bg-ink-100 px-2.5 py-0.5 rounded-full font-medium">
                 {sorted.length}
