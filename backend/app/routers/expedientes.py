@@ -414,8 +414,8 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
     for t in db.query(Tarea).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all():
         items.append(ActividadItem(
             id=t.id, tipo="tarea", subtipo="creada",
-            descripcion=f"Tarea: {t.titulo}",
-            meta={"estado": str(t.estado), "fecha_limite": str(t.fecha_limite) if t.fecha_limite else None},
+            descripcion=t.titulo,
+            meta={"estado": t.estado.value, "fecha_limite": str(t.fecha_limite) if t.fecha_limite else None, "tipo": t.tipo.value if t.tipo else "judicial"},
             created_at=t.created_at,
         ))
 
@@ -428,12 +428,21 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         doc_filter.append(Documento.tarea_id.in_(tarea_ids))
     if vcto_ids:
         doc_filter.append(Documento.vencimiento_id.in_(vcto_ids))
+    # Mapa tarea_id -> titulo para contexto de adjuntos
+    tarea_map = {t.id: t.titulo for t in db.query(Tarea).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()}
+    vcto_map = {v.id: v.descripcion for v in db.query(Vencimiento).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all()}
+
     for d in db.query(Documento).filter(Documento.tenant_id == tenant_id, or_(*doc_filter)).all():
         nombre_display = d.label or d.nombre
+        adjunto_en = None
+        if d.tarea_id and d.tarea_id in tarea_map:
+            adjunto_en = f"Tarea: {tarea_map[d.tarea_id]}"
+        elif d.vencimiento_id and d.vencimiento_id in vcto_map:
+            adjunto_en = f"Vencimiento: {vcto_map[d.vencimiento_id]}"
         items.append(ActividadItem(
             id=d.id, tipo="documento", subtipo="subido",
-            descripcion=f"Documento: {nombre_display}",
-            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type},
+            descripcion=nombre_display,
+            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type, "adjunto_en": adjunto_en},
             created_at=d.created_at,
         ))
 

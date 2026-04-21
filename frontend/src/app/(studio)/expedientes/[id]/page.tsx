@@ -910,7 +910,7 @@ interface ActividadRowProps {
 
 function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, deletingMovId, onEditStart, onEditSave, onEditCancel, onEditChange, onFechaChange, onDeleteConfirm, onDeleteCancel, onDelete }: ActividadRowProps) {
   const cfg = ACTIVIDAD_CONFIG[item.tipo] ?? { color: "text-ink-600", bg: "bg-ink-100", icon: "•" };
-  const meta = item.meta as Record<string, unknown>;
+  const meta = item.meta as Record<string, string | number | boolean | null | undefined>;
   const isEditing = editingMovId === item.id;
   const isDeleting = deletingMovId === item.id;
   const isMovimiento = item.tipo === "movimiento";
@@ -951,7 +951,72 @@ function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, de
         ) : (
           <>
             <div className="flex items-start justify-between gap-2">
-              <p className="text-sm text-ink-800 flex-1">{item.descripcion}</p>
+              <div className="flex-1 min-w-0">
+                {/* Etiqueta de tipo */}
+                {item.tipo !== "movimiento" && (
+                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wide mb-1 ${
+                    item.tipo === "tarea" ? "text-purple-500" :
+                    item.tipo === "vencimiento" ? "text-amber-500" :
+                    item.tipo === "documento" ? "text-ink-400" :
+                    item.tipo === "honorario" ? "text-emerald-500" :
+                    item.tipo === "pago" ? "text-green-500" : "text-ink-400"
+                  }`}>
+                    {item.tipo === "tarea" ? "Tarea" :
+                     item.tipo === "vencimiento" ? "Vencimiento" :
+                     item.tipo === "documento" ? "Documento adjunto" :
+                     item.tipo === "honorario" ? "Honorario" :
+                     item.tipo === "pago" ? "Pago" : item.tipo}
+                  </span>
+                )}
+                <p className="text-sm text-ink-900 font-medium leading-snug">{item.descripcion}</p>
+
+                {/* Detalles por tipo */}
+                {item.tipo === "tarea" && (
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {meta.tipo && (
+                      <span className="text-[10px] text-ink-500">
+                        {meta.tipo === "judicial" ? "⚖️" : meta.tipo === "extrajudicial" ? "🤝" : meta.tipo === "administrativa" ? "🏢" : "🔧"} {String(meta.tipo)}
+                      </span>
+                    )}
+                    {meta.estado != null && (() => {
+                      const e = String(meta.estado);
+                      const cls = e === "hecha" ? "bg-green-100 text-green-700" : e === "en_curso" ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
+                      const label = e === "hecha" ? "✓ Hecha" : e === "en_curso" ? "En curso" : "Pendiente";
+                      return <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${cls}`}>{label}</span>;
+                    })()}
+                    {meta.fecha_limite && <span className="text-xs text-ink-400">· vence {new Date(String(meta.fecha_limite) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>}
+                  </div>
+                )}
+                {item.tipo === "vencimiento" && meta.fecha != null && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-amber-600 font-medium">
+                      📅 {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </span>
+                    {meta.tipo && <span className="text-xs text-ink-400 capitalize">{String(meta.tipo)}</span>}
+                    {meta.cumplido && <span className="text-xs text-green-600 font-medium">✓ cumplido</span>}
+                  </div>
+                )}
+                {item.tipo === "documento" && (
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {meta.adjunto_en && (
+                      <span className="text-xs text-ink-500 bg-ink-100 px-1.5 py-0.5 rounded">📎 {String(meta.adjunto_en)}</span>
+                    )}
+                    {meta.size_bytes && (
+                      <span className="text-xs text-ink-400">
+                        {Number(meta.size_bytes) < 1024 * 1024
+                          ? `${Math.round(Number(meta.size_bytes) / 1024)} KB`
+                          : `${(Number(meta.size_bytes) / (1024 * 1024)).toFixed(1)} MB`}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {item.tipo === "honorario" && meta.monto != null && (
+                  <p className="text-xs text-emerald-600 font-medium mt-1">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR")}</p>
+                )}
+                {item.tipo === "pago" && meta.importe != null && (
+                  <p className="text-xs text-green-600 font-medium mt-1">{String(meta.moneda)} {Number(meta.importe).toLocaleString("es-AR")} · {String(meta.tipo)}</p>
+                )}
+              </div>
               {isMovimiento && (
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
                   <button onClick={() => onEditStart?.(item.id, item.descripcion, (meta.fecha_manual as string) ?? null)}
@@ -965,18 +1030,6 @@ function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, de
                 </div>
               )}
             </div>
-            {item.tipo === "honorario" && meta.monto != null && (
-              <p className="text-xs text-emerald-600 font-medium mt-0.5">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR")}</p>
-            )}
-            {item.tipo === "vencimiento" && meta.fecha != null && (
-              <p className="text-xs text-amber-600 font-medium mt-0.5">
-                {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
-                {meta.cumplido ? " · ✓ cumplido" : ""}
-              </p>
-            )}
-            {item.tipo === "tarea" && meta.estado != null && (
-              <p className="text-xs text-ink-400 mt-0.5 capitalize">{String(meta.estado).replace("_", " ")}</p>
-            )}
             <p className="text-xs text-ink-400 mt-1.5">
               {new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
             </p>
