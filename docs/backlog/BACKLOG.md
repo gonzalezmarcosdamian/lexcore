@@ -76,6 +76,33 @@
   - [ ] CA3: Los movimientos se muestran en orden cronológico inverso
 - **Casos borde:** expediente nuevo sin movimientos
 
+### Sprint 11 — COMPLETADO (2026-04-21)
+
+#### US-21 · Perfil completo del estudio — `done`
+- "Mi plan" dinámico con `trial_ends_at` real, días restantes, badge warning ≤5 días, estado vencido
+- Logo del estudio visible en sidebar (reemplaza balanza si `logo_url` está seteado)
+- CTA "Contactanos" mailto en sección Mi plan
+
+#### US-01 CA4 · Tests tareas aislamiento tenant — `done`
+- `test_tareas.py` — 8 tests: CRUD (5) + tenant isolation (3)
+- 404 en lugar de 403 para no revelar existencia de recursos ajenos
+
+#### US-15 · Índices full-text PostgreSQL — `done` (sprint anterior)
+#### UX-006 · Pre-selección expediente en formularios — `done` (ya estaba implementado)
+#### US-10 · Expediente en 2 pasos mobile-first — `done` (ya estaba implementado)
+#### US-14 · Preview de documentos in-app — `done` (ya estaba implementado)
+
+#### LEGAL-001 · Política de Privacidad — `done`
+- `/privacidad` — conforme Ley 25.326, 8 secciones
+- Links en footer login y en /perfil
+
+#### LEGAL-002 · Términos y Condiciones — `done`
+- `/terminos` — 9 secciones, jurisdicción CABA
+- Checkbox obligatorio en registro (bloquea submit)
+- Links en footer login y en /perfil
+
+---
+
 ### Sprint 10 — COMPLETADO (2026-04-21)
 
 #### EXP-BIT-001 · Bitácora unificada con feed de actividad — `done`
@@ -428,8 +455,9 @@
 
 ## P2 — Nice-to-have MVP
 
-### UX-006 · Pre-selección de expediente en formularios de creación
-- **Estado:** `idea`
+### UX-006 · Pre-selección de expediente en formularios de creación — `done`
+- **Completada:** 2026-04-21 (ya estaba implementado — verificado en sprint 11)
+- **Estado:** `done`
 - **Sprint target:** Sprint 06
 - **Como** abogado, **quiero** que al crear un vencimiento, honorario o movimiento desde el detalle de un expediente, ese expediente ya esté seleccionado en el formulario **para** no tener que buscarlo manualmente y evitar errores de asignación.
 - **Criterios de aceptación:**

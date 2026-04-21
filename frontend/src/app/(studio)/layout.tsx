@@ -218,6 +218,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
   const notifRef = useRef<HTMLDivElement>(null);
   const [studioConfigured, setStudioConfigured] = useState<boolean | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  const [studioLogoUrl, setStudioLogoUrl] = useState<string | null>(null);
   const [studioForm, setStudioForm] = useState({ name: "", email_contacto: "" });
   const [studioSaving, setStudioSaving] = useState(false);
   const [studioError, setStudioError] = useState("");
@@ -228,6 +229,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
     api.get<StudioMe>("/studios/me", token)
       .then((s) => {
         setStudioConfigured(!!s.email_contacto);
+        setStudioLogoUrl(s.logo_url ?? null);
         // Pre-cargar formulario con datos existentes o defaults de la sesión
         setStudioForm({
           name: s.name || "",
@@ -295,11 +297,15 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
       <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 bg-ink-900 z-20">
         {/* Logo */}
         <div className="h-16 flex items-center gap-3 px-5 flex-shrink-0">
-          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-            </svg>
-          </div>
+          {studioLogoUrl ? (
+            <img src={studioLogoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+              </svg>
+            </div>
+          )}
           <span className="text-white font-bold text-lg tracking-tight">LexCore</span>
         </div>
 

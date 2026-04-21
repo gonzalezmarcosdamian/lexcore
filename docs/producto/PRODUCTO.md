@@ -5,8 +5,8 @@
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
 **Última actualización:** 2026-04-21
-**Sprint activo:** Sprint 10 — en curso
-**Versión:** 0.10.0
+**Sprint activo:** Sprint 11 — completado
+**Versión:** 0.11.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -345,6 +345,44 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 ---
 
 ## Changelog
+
+### v0.11.0 — 2026-04-21
+
+**Sprint 11 — Perfil completo, legal, ayudas contextuales, tests tareas**
+
+#### US-21 · Perfil completo del estudio
+- Sección "Mi plan" dinámica: muestra `trial_ends_at` real, días restantes con badge (rojo ≤5 días), estado vencido, CTA "Contactanos" mailto
+- Sidebar muestra `logo_url` del estudio si está subido, fallback al ícono de balanza
+- `trial_ends_at` añadido a `StudioData` interface en perfil/page.tsx
+
+#### US-01 CA4 · Tests de aislamiento tenant — Tareas
+- `backend/app/tests/test_tareas.py` — 8 tests: CRUD completo (5) + aislamiento multi-tenant (3)
+- `TestTareasAislamientoTenant`: studio B no ve, no puede editar, no puede eliminar tareas de studio A
+- Retorna 404 (no 403) para no revelar existencia de recursos de otro tenant
+
+#### US-15 · Full-text search PostgreSQL ✓ (aplicado sesión anterior)
+#### UX-006 · Pre-selección expediente en formularios ✓ (ya implementado, marcado done)
+
+#### LEGAL-001 · Política de Privacidad
+- Página `/privacidad` — conforme Ley 25.326, secciones: responsable, datos recolectados, finalidad, seguridad, aislamiento tenant, derechos, cookies, cambios
+- Links en login footer y en `/perfil`
+
+#### LEGAL-002 · Términos y Condiciones
+- Página `/terminos` — secciones: servicio, cuenta, trial, uso aceptable, propiedad datos, disponibilidad, responsabilidad, jurisdicción CABA
+- Checkbox de aceptación obligatorio en formulario de registro (bloquea submit)
+- Links en login footer y en `/perfil`
+
+#### Mejoras de UX — Ayudas contextuales
+- PageHelp mejorado en: Tareas, Expedientes, Perfil, Gastos, Equipo, Vencimientos, Clientes
+- FTU dashboard: paso 1 "Configurá tu estudio" detecta `email_contacto` como criterio de completitud
+- "Cargar una →" link en empty state de Tareas en dashboard (consistencia con Vencimientos)
+- Gastos: z-index fix modal plantilla (`z-[60]`), selector "Último día del mes", auto-generación al crear plantilla
+
+#### Onboarding / trial fixes
+- `trial_ends_at` seteado explícitamente en `/auth/register` y `/auth/setup-studio`
+- Banner de trial en layout ya operativo con datos reales
+
+---
 
 ### v0.10.0 — 2026-04-21
 

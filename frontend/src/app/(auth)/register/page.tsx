@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [form, setForm] = useState({
     studio_name: "",
@@ -110,9 +111,25 @@ export default function RegisterPage() {
           </div>
         )}
 
+        <label className="flex items-start gap-2.5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="mt-0.5 rounded border-ink-300 text-brand-600 focus:ring-brand-400"
+          />
+          <span className="text-xs text-ink-600 leading-relaxed">
+            Leí y acepto los{" "}
+            <Link href="/terminos" target="_blank" className="text-brand-600 hover:underline font-medium">Términos y Condiciones</Link>
+            {" "}y la{" "}
+            <Link href="/privacidad" target="_blank" className="text-brand-600 hover:underline font-medium">Política de Privacidad</Link>
+            {" "}de LexCore.
+          </span>
+        </label>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !acceptedTerms}
           className="w-full bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-3 text-sm font-semibold transition-all shadow-sm hover:shadow-md disabled:opacity-50"
         >
           {loading ? (

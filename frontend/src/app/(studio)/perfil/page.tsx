@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
 
@@ -28,6 +29,7 @@ interface StudioData {
   email_contacto?: string | null;
   whatsapp_phone_id?: string | null;
   whatsapp_active?: boolean;
+  trial_ends_at?: string | null;
 }
 
 interface CalendarItem {
@@ -620,18 +622,56 @@ function PerfilPageInner() {
         defaultOpen={false}
         icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>}
       >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-ink-900">Plan Trial</span>
-              <span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-full font-medium">30 días gratis</span>
+        {(() => {
+          const trialDays = studio?.trial_ends_at
+            ? Math.ceil((new Date(studio.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            : null;
+          const isExpired = trialDays !== null && trialDays <= 0;
+          const isWarning = trialDays !== null && trialDays <= 5 && trialDays > 0;
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-ink-900">Plan Trial</span>
+                    {trialDays !== null && !isExpired && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+                        isWarning
+                          ? "bg-red-50 text-red-700 border-red-100"
+                          : "bg-amber-50 text-amber-700 border-amber-100"
+                      }`}>
+                        {trialDays === 1 ? "1 día restante" : `${trialDays} días restantes`}
+                      </span>
+                    )}
+                    {isExpired && (
+                      <span className="text-xs bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">
+                        Vencido
+                      </span>
+                    )}
+                  </div>
+                  {studio?.trial_ends_at && (
+                    <p className="text-xs text-ink-400 mt-1">
+                      {isExpired
+                        ? "Tu período de prueba ha vencido. Contactanos para continuar."
+                        : isWarning
+                        ? "Tu trial está por vencer. Contactanos para continuar con acceso completo."
+                        : `Acceso completo hasta el ${new Date(studio.trial_ends_at).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}.`}
+                    </p>
+                  )}
+                  {!studio?.trial_ends_at && (
+                    <p className="text-xs text-ink-400 mt-1">Acceso completo. Planes pago próximamente.</p>
+                  )}
+                </div>
+                <a
+                  href="mailto:hola@lexcore.app?subject=Quiero%20continuar%20con%20LexCore"
+                  className="text-sm border border-brand-200 text-brand-600 hover:bg-brand-50 px-4 py-2 rounded-xl transition flex-shrink-0 ml-4"
+                >
+                  Contactanos
+                </a>
+              </div>
             </div>
-            <p className="text-xs text-ink-400 mt-1">Acceso completo. Planes pago próximamente.</p>
-          </div>
-          <button disabled className="text-sm border border-ink-200 text-ink-400 px-4 py-2 rounded-xl cursor-not-allowed opacity-60">
-            Ver planes
-          </button>
-        </div>
+          );
+        })()}
       </SectionCard>
 
       {/* ── Google Calendar ── */}
@@ -749,6 +789,11 @@ function PerfilPageInner() {
           </div>
           <span className="text-[10px] font-medium text-ink-400 bg-ink-100 px-2 py-0.5 rounded-full">Próximamente</span>
         </div>
+      </div>
+
+      <div className="flex justify-center gap-4 text-xs text-ink-400 pt-2">
+        <Link href="/privacidad" target="_blank" className="hover:text-brand-600 transition">Política de Privacidad</Link>
+        <Link href="/terminos" target="_blank" className="hover:text-brand-600 transition">Términos y Condiciones</Link>
       </div>
     </div>
   );

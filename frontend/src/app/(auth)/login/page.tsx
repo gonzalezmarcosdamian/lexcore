@@ -127,6 +127,10 @@ function LoginPageInner() {
           Registrá tu estudio
         </Link>
       </p>
+      <div className="flex justify-center gap-4 text-xs text-ink-400 mt-2">
+        <Link href="/privacidad" className="hover:text-brand-600 transition">Privacidad</Link>
+        <Link href="/terminos" className="hover:text-brand-600 transition">Términos</Link>
+      </div>
     </div>
   );
 }
