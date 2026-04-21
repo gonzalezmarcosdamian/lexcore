@@ -156,7 +156,7 @@ export default function ExpedienteDetailPage() {
     try {
       const items = await api.get<ActividadItem[]>(`/expedientes/${id}/actividad`, token);
       setActividad(items);
-    } catch { /* endpoint puede no existir en versiones viejas */ }
+    } catch (e) { console.error("[bitácora]", e); }
   }, [token, id]);
 
   const loadVencimientos = useCallback(async () => {

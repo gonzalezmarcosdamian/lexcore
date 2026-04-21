@@ -274,14 +274,14 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=h.id, tipo="honorario", subtipo="creado",
             descripcion=f"Honorario: {h.concepto}",
-            meta={"monto": h.monto_acordado, "moneda": h.moneda},
+            meta={"monto": float(h.monto_acordado), "moneda": str(h.moneda)},
             created_at=h.created_at,
         ))
         for p in h.pagos:
             items.append(ActividadItem(
-                id=p.id, tipo="pago", subtipo=p.tipo,
+                id=p.id, tipo="pago", subtipo=str(p.tipo),
                 descripcion=f"Pago registrado — {p.tipo}: {p.moneda} {p.importe:,.0f}",
-                meta={"importe": p.importe, "moneda": p.moneda, "tipo": p.tipo},
+                meta={"importe": float(p.importe), "moneda": str(p.moneda), "tipo": str(p.tipo)},
                 created_at=p.created_at,
             ))
 
@@ -290,7 +290,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=v.id, tipo="vencimiento", subtipo="creado",
             descripcion=f"Vencimiento: {v.descripcion}",
-            meta={"fecha": v.fecha, "tipo": v.tipo, "cumplido": v.cumplido},
+            meta={"fecha": str(v.fecha), "tipo": str(v.tipo), "cumplido": bool(v.cumplido)},
             created_at=v.created_at,
         ))
 
@@ -299,7 +299,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=t.id, tipo="tarea", subtipo="creada",
             descripcion=f"Tarea: {t.titulo}",
-            meta={"estado": t.estado, "fecha_limite": t.fecha_limite},
+            meta={"estado": str(t.estado), "fecha_limite": str(t.fecha_limite) if t.fecha_limite else None},
             created_at=t.created_at,
         ))
 
