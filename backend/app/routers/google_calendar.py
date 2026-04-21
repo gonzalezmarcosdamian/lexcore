@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth/google-calendar", tags=["google-calendar"])
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 def _build_flow(state: Optional[str] = None) -> Flow:
@@ -126,7 +126,12 @@ def google_calendar_callback(
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    user.google_refresh_token = credentials.refresh_token or user.google_refresh_token
+    logger.info("Calendar callback - refresh_token present: %s, scopes: %s", bool(credentials.refresh_token), credentials.scopes)
+    if credentials.refresh_token:
+        user.google_refresh_token = credentials.refresh_token
+    elif not user.google_refresh_token:
+        logger.error("Calendar callback - NO refresh_token y usuario sin token previo")
+        raise HTTPException(status_code=400, detail="Google no devolvió refresh_token. Intentá revocar acceso desde myaccount.google.com/permissions y reconectar.")
     db.commit()
 
     # Redirigir al frontend con flag de éxito
