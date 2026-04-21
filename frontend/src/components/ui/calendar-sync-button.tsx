@@ -34,18 +34,21 @@ function saveLastSync(data: LastSync) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
 }
 
+const TZ = "America/Argentina/Buenos_Aires";
+
 function formatLastSync(ts: number): string {
   const now = Date.now();
   const diff = now - ts;
   const mins = Math.floor(diff / 60000);
   const hrs = Math.floor(diff / 3600000);
   const d = new Date(ts);
-  const hhmm = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+  const hhmm = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
 
   if (mins < 1) return "hace un momento";
   if (mins < 60) return `hace ${mins} min`;
   if (hrs < 24) return `hoy a las ${hhmm}`;
-  return `ayer a las ${hhmm}`;
+  if (hrs < 48) return `ayer a las ${hhmm}`;
+  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "short", timeZone: TZ }) + ` a las ${hhmm}`;
 }
 
 const CalIcon = () => (

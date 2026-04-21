@@ -84,12 +84,13 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
   const [titulo, setTitulo] = useState(t.titulo);
   const [fechaLimite, setFechaLimite] = useState(t.fecha_limite ?? "");
   const [estado, setEstado] = useState(t.estado);
+  const [expedienteId, setExpedienteId] = useState(t.expediente_id ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { titulo, estado };
+      const body: Record<string, unknown> = { titulo, estado, expediente_id: expedienteId || null };
       body.fecha_limite = fechaLimite || null;
       const updated = await api.patch<Tarea>(`/tareas/${t.id}`, body, token);
       onSaved(updated);
@@ -116,6 +117,13 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
             <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="pendiente">Pendiente</option>
               <option value="en_curso">En curso</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
+            <select value={expedienteId} onChange={(e) => setExpedienteId(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="">— Sin expediente —</option>
+              {expedientes.map((ex) => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
             </select>
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}
@@ -342,6 +350,11 @@ export default function AgendaPage() {
   const [savingTarea, setSavingTarea] = useState(false);
   const [tareaError, setTareaError] = useState("");
 
+  const [showVencimientoModal, setShowVencimientoModal] = useState(false);
+  const [vencimientoForm, setVencimientoForm] = useState({ descripcion: "", fecha: "", tipo: "vencimiento", expediente_id: "" });
+  const [savingVencimiento, setSavingVencimiento] = useState(false);
+  const [vencimientoError, setVencimientoError] = useState("");
+
   const fetchData = useCallback(() => {
     if (!token) return;
     setLoading(true);
@@ -414,6 +427,28 @@ export default function AgendaPage() {
     }
   };
 
+  const handleCrearVencimiento = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
+    setSavingVencimiento(true);
+    setVencimientoError("");
+    try {
+      const created = await api.post<Vencimiento>("/vencimientos", {
+        descripcion: vencimientoForm.descripcion,
+        fecha: vencimientoForm.fecha,
+        tipo: vencimientoForm.tipo,
+        expediente_id: vencimientoForm.expediente_id || undefined,
+      }, token);
+      setVencimientos(prev => [...prev, created]);
+      setShowVencimientoModal(false);
+      setVencimientoForm({ descripcion: "", fecha: "", tipo: "vencimiento", expediente_id: "" });
+    } catch (err: unknown) {
+      setVencimientoError(err instanceof Error ? err.message : "Error al crear vencimiento");
+    } finally {
+      setSavingVencimiento(false);
+    }
+  };
+
   const toggleTarea = async (t: Tarea) => {
     if (!token) return;
     const next = ESTADO_CICLO[t.estado];
@@ -444,6 +479,48 @@ export default function AgendaPage() {
         <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
       )}
 
+      {/* Modal Nuevo Vencimiento */}
+      {showVencimientoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-semibold text-ink-900">Nuevo vencimiento</h2>
+              <button onClick={() => setShowVencimientoModal(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+            </div>
+            <form onSubmit={handleCrearVencimiento} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Descripción *</label>
+                <input required value={vencimientoForm.descripcion} onChange={(e) => setVencimientoForm(f => ({ ...f, descripcion: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Ej: Presentar memorial" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
+                <input required type="date" value={vencimientoForm.fecha} onChange={(e) => setVencimientoForm(f => ({ ...f, fecha: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+                <select value={vencimientoForm.tipo} onChange={(e) => setVencimientoForm(f => ({ ...f, tipo: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+                  <option value="vencimiento">Vencimiento</option>
+                  <option value="audiencia">Audiencia</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
+                <select value={vencimientoForm.expediente_id} onChange={(e) => setVencimientoForm(f => ({ ...f, expediente_id: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
+                  <option value="">— Sin expediente —</option>
+                  {expedientes.map((ex) => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
+                </select>
+              </div>
+              {vencimientoError && <p className="text-xs text-red-500">{vencimientoError}</p>}
+              <div className="flex gap-3 mt-6">
+                <button type="button" onClick={() => setShowVencimientoModal(false)} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+                <button type="submit" disabled={savingVencimiento} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{savingVencimiento ? "Guardando…" : "Guardar"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -460,9 +537,12 @@ export default function AgendaPage() {
           >
             + Tarea
           </button>
-          <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition">
+          <button
+            onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }}
+            className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition"
+          >
             + Vencimiento
-          </Link>
+          </button>
           <CalendarSyncButton variant="compact" />
         </div>
       </div>
@@ -497,9 +577,9 @@ export default function AgendaPage() {
             )}
           </p>
           <div className="flex gap-2 justify-center">
-            <Link href="/vencimientos/nuevo" className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
+            <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
               + Vencimiento
-            </Link>
+            </button>
             <Link href="/expedientes" className="text-xs border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-lg font-medium transition">
               Ver expedientes
             </Link>
@@ -517,7 +597,7 @@ export default function AgendaPage() {
               {vFiltradas.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-xs text-ink-400">Sin vencimientos en este período</p>
-                  <Link href="/vencimientos/nuevo" className="text-xs text-purple-600 hover:underline mt-1 block">+ Agregar vencimiento</Link>
+                  <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs text-purple-600 hover:underline mt-1 block">+ Agregar vencimiento</button>
                 </div>
               ) : (
                 <div className="space-y-6">

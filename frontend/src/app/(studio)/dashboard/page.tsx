@@ -159,7 +159,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
-      {editingT && token && <EditTareaModal tarea={editingT} token={token} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
+      {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
       <SplashScreen />
 
@@ -472,16 +472,17 @@ export default function DashboardPage() {
 
 // ── Sub-componentes ───────────────────────────────────────────────────────────
 
-function EditTareaModal({ tarea, token, onSaved, onClose }: { tarea: Tarea; token: string; onSaved: (t: Tarea) => void; onClose: () => void }) {
+function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea: Tarea; token: string; expedientes: Expediente[]; onSaved: (t: Tarea) => void; onClose: () => void }) {
   const [titulo, setTitulo] = useState(tarea.titulo);
   const [fechaLimite, setFechaLimite] = useState(tarea.fecha_limite ?? "");
   const [estado, setEstado] = useState(tarea.estado);
+  const [expedienteId, setExpedienteId] = useState(tarea.expediente_id ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { titulo, estado };
+      const body: Record<string, unknown> = { titulo, estado, expediente_id: expedienteId || null };
       if (fechaLimite) body.fecha_limite = fechaLimite; else body.fecha_limite = null;
       const updated = await api.patch<Tarea>(`/tareas/${tarea.id}`, body, token);
       onSaved(updated);
@@ -508,6 +509,13 @@ function EditTareaModal({ tarea, token, onSaved, onClose }: { tarea: Tarea; toke
             <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="pendiente">Pendiente</option>
               <option value="en_curso">En curso</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
+            <select value={expedienteId} onChange={(e) => setExpedienteId(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="">— Sin expediente —</option>
+              {expedientes.map((ex) => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
             </select>
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}

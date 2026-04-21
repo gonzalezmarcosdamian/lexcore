@@ -265,6 +265,19 @@ export interface Tarea {
   updated_at: string;
 }
 
+export interface StudioMe {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url?: string | null;
+  direccion?: string | null;
+  telefono?: string | null;
+  email_contacto?: string | null;
+  whatsapp_phone_id?: string | null;
+  whatsapp_active: boolean;
+  trial_ends_at?: string | null;
+}
+
 export interface Invitacion {
   id: string;
   tenant_id: string;

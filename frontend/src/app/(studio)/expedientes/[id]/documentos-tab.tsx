@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, Documento } from "@/lib/api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const ICON: Record<string, string> = {
   "application/pdf": "📄",
@@ -38,18 +38,22 @@ interface Props {
 }
 
 function PreviewModal({ doc, token, onClose }: { doc: Documento; token: string; onClose: () => void }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const isImage = doc.content_type.startsWith("image/");
   const isPdf = doc.content_type === "application/pdf";
 
   useEffect(() => {
-    api.get<{ download_url: string; expires_in_seconds: number }>(
-      `/documentos/${doc.id}/download-url`, token
-    ).then(({ download_url }) => setUrl(download_url))
+    fetch(`${API_URL}/documentos/${doc.id}/content?inline=true`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.blob())
+      .then(blob => setBlobUrl(URL.createObjectURL(blob)))
       .catch(() => onClose())
       .finally(() => setLoading(false));
-  }, [doc.id, token, onClose]);
+    return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id, token]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -67,14 +71,18 @@ function PreviewModal({ doc, token, onClose }: { doc: Documento; token: string; 
         <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100 flex-shrink-0">
           <p className="text-sm font-medium text-ink-900 truncate flex-1 mr-4">{doc.nombre}</p>
           <div className="flex items-center gap-2">
-            {url && (
-              <a
-                href={url}
-                download={doc.nombre}
+            {blobUrl && (
+              <button
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = blobUrl;
+                  a.download = doc.nombre;
+                  a.click();
+                }}
                 className="text-xs text-brand-600 hover:text-brand-700 font-medium border border-brand-200 hover:border-brand-300 hover:bg-brand-50 px-2.5 py-1 rounded-lg transition-all"
               >
                 Descargar
-              </a>
+              </button>
             )}
             <button onClick={onClose} className="text-ink-400 hover:text-ink-700 transition p-1 rounded-lg hover:bg-ink-100">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -88,21 +96,20 @@ function PreviewModal({ doc, token, onClose }: { doc: Documento; token: string; 
         <div className="flex-1 overflow-auto bg-ink-50 min-h-[400px] flex items-center justify-center">
           {loading ? (
             <div className="w-8 h-8 border-2 border-ink-200 border-t-brand-500 rounded-full animate-spin" />
-          ) : !url ? null : isPdf ? (
-            <iframe src={url} className="w-full h-full min-h-[500px]" title={doc.nombre} />
+          ) : !blobUrl ? null : isPdf ? (
+            <iframe src={blobUrl} className="w-full h-full min-h-[500px]" title={doc.nombre} />
           ) : isImage ? (
-            <img src={url} alt={doc.nombre} className="max-w-full max-h-full object-contain p-4" />
+            <img src={blobUrl} alt={doc.nombre} className="max-w-full max-h-full object-contain p-4" />
           ) : (
             <div className="text-center p-8">
               <p className="text-4xl mb-3">📎</p>
               <p className="text-sm text-ink-600 mb-4">Vista previa no disponible para este tipo de archivo</p>
-              <a
-                href={url}
-                download={doc.nombre}
+              <button
+                onClick={() => { const a = document.createElement("a"); a.href = blobUrl; a.download = doc.nombre; a.click(); }}
                 className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
               >
                 Descargar archivo
-              </a>
+              </button>
             </div>
           )}
         </div>
@@ -143,7 +150,7 @@ export function DocumentosTab({ expedienteId, token }: Props) {
         formData.append("descripcion", "");
         formData.append("file", file);
 
-        const res = await fetch(`${API}/documentos/upload`, {
+        const res = await fetch(`${API_URL}/documentos/upload`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: formData,
@@ -164,16 +171,19 @@ export function DocumentosTab({ expedienteId, token }: Props) {
 
   async function handleDownload(doc: Documento) {
     try {
-      const { download_url } = await api.get<{ download_url: string; expires_in_seconds: number }>(
-        `/documentos/${doc.id}/download-url`,
-        token
-      );
+      const res = await fetch(`${API_URL}/documentos/${doc.id}/content?inline=false`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al descargar");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = download_url;
+      a.href = blobUrl;
       a.download = doc.nombre;
       a.click();
+      URL.revokeObjectURL(blobUrl);
     } catch {
-      setError("No se pudo generar el link de descarga");
+      setError("No se pudo descargar el archivo");
     }
   }
 
@@ -181,7 +191,7 @@ export function DocumentosTab({ expedienteId, token }: Props) {
     if (!confirm(`¿Eliminás "${doc.nombre}"? Esta acción no se puede deshacer.`)) return;
     setDeletingId(doc.id);
     try {
-      await fetch(`${API}/documentos/${doc.id}`, {
+      await fetch(`${API_URL}/documentos/${doc.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { api, SearchResult } from "@/lib/api";
+import { api, SearchResult, StudioMe } from "@/lib/api";
 import { SkeletonText, SkeletonAvatar } from "@/components/ui/skeletons";
 import { SearchModal } from "@/components/ui/search-modal";
 import { ToastProvider } from "@/components/ui/toast";
@@ -217,12 +217,20 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const [studioConfigured, setStudioConfigured] = useState<boolean | null>(null);
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
 
   // Verificar si el estudio tiene perfil completo (email_contacto requerido)
   useEffect(() => {
     if (!token) return;
-    api.get<{ email_contacto?: string | null }>("/studios/me", token)
-      .then((s) => setStudioConfigured(!!s.email_contacto))
+    api.get<StudioMe>("/studios/me", token)
+      .then((s) => {
+        setStudioConfigured(!!s.email_contacto);
+        if (s.trial_ends_at) {
+          const diff = new Date(s.trial_ends_at).getTime() - Date.now();
+          const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+          setTrialDaysLeft(days > 0 ? days : 0);
+        }
+      })
       .catch(() => setStudioConfigured(true)); // en caso de error, no bloquear
   }, [token]);
   const urgentes = urgentesList.length;
@@ -534,6 +542,15 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
+        {/* Trial warning banner */}
+        {trialDaysLeft !== null && trialDaysLeft <= 5 && (
+          <div className={`px-4 py-2.5 text-center text-xs font-medium ${trialDaysLeft === 0 ? "bg-red-600 text-white" : "bg-amber-50 text-amber-800 border-b border-amber-200"}`}>
+            {trialDaysLeft === 0
+              ? "Tu período de prueba venció. Contactanos para continuar usando LexCore."
+              : `Tu prueba gratuita vence en ${trialDaysLeft} día${trialDaysLeft !== 1 ? "s" : ""}. Contactanos para continuar.`}
+          </div>
+        )}
+
         {/* Page content */}
         <main className="flex-1 px-4 lg:px-6 py-6">{children}</main>
       </div>
@@ -542,7 +559,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
       {session && <HelpWidget token={token ?? ""} />}
 
       {/* Mandatory studio config modal */}
-      {studioConfigured === false && !pathname.startsWith("/perfil") && (
+      {studioConfigured === false && !pathname.startsWith("/perfil") && !sessionStorage.getItem("studio_modal_dismissed") && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="w-full sm:max-w-md mx-0 sm:mx-4 bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden">
             <div className="bg-brand-600 px-6 py-5">
