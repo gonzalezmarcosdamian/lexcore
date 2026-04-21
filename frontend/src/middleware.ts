@@ -6,9 +6,14 @@ export default withAuth(
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
 
-    // Usuario con Google que todavía no creó su estudio → setup
+    // Usuario que todavía no creó su estudio → setup
     if (token?.needsStudio && pathname !== "/setup-studio") {
       return NextResponse.redirect(new URL("/setup-studio", req.url));
+    }
+
+    // Usuario con studio ya configurado no debe ver /setup-studio
+    if (!token?.needsStudio && pathname === "/setup-studio") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     return NextResponse.next();
@@ -26,6 +31,7 @@ export const config = {
     "/expedientes/:path*",
     "/clientes/:path*",
     "/vencimientos/:path*",
+    "/setup-studio",
     // /dev/autologin queda fuera — no requiere auth
   ],
 };

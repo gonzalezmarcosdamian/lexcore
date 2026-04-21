@@ -170,6 +170,8 @@ def google_auth(body: GoogleAuthRequest, db: DbSession):
             user.auth_provider = AuthProvider.google
         db.commit()
 
+        # Si todavía no completó el setup de estudio, reiniciar ese flujo
+        still_pending = user.tenant_id == "pending"
         token = create_access_token(
             studio_id=user.tenant_id, user_id=user.id, role=user.role.value
         )
@@ -180,7 +182,7 @@ def google_auth(body: GoogleAuthRequest, db: DbSession):
             full_name=user.full_name,
             studio_id=user.tenant_id,
             role=user.role.value,
-            needs_studio=False,
+            needs_studio=still_pending,
         )
 
     # Usuario nuevo — necesita crear su estudio
@@ -396,9 +398,11 @@ def setup_studio(body: SetupStudioRequest, db: DbSession, request: Request):
     if db.query(Studio).filter(Studio.slug == body.studio_slug).first():
         raise HTTPException(status_code=400, detail="El slug del estudio ya está en uso")
 
-    user = db.query(User).filter(User.id == user_id, User.tenant_id == "pending").first()
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.tenant_id != "pending":
+        raise HTTPException(status_code=409, detail="Este usuario ya tiene un estudio configurado")
 
     studio = Studio(
         name=body.studio_name,

@@ -30,7 +30,10 @@ export default function SetupStudioPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!session?.user?.backendToken) return;
+    if (!session?.user?.backendToken) {
+      setError("Sesión inválida. Por favor volvé a iniciar sesión.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -39,7 +42,6 @@ export default function SetupStudioPage() {
         { studio_name: form.studio_name, studio_slug: form.studio_slug },
         session.user.backendToken
       );
-      // Actualizar sesión con el nuevo token y studio_id
       await update({
         backendToken: data.access_token,
         studioId: data.studio_id,
@@ -47,7 +49,14 @@ export default function SetupStudioPage() {
       });
       router.replace("/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error al crear el estudio");
+      const msg = err instanceof Error ? err.message : "Error al crear el estudio";
+      if (msg.includes("ya tiene un estudio")) {
+        // El usuario ya completó el setup — refrescar sesión y redirigir
+        await update();
+        router.replace("/dashboard");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
