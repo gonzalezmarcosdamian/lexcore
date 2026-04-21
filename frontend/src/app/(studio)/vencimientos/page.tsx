@@ -460,15 +460,16 @@ export default function VencimientosPage() {
           )}
           <PageHelp
             title="Vencimientos y Agenda"
-            description="Control de plazos, audiencias y fechas críticas del estudio"
+            description="Los vencimientos son plazos procesales externos: audiencias, presentaciones, pericias, notificaciones. Distintos de las Tareas, que son trabajo interno del estudio."
             items={[
-              { icon: "🔴", title: "Urgente (< 48hs)", description: "Los vencimientos en menos de 48 horas aparecen en rojo." },
-              { icon: "🟡", title: "Esta semana", description: "Los que vencen en los próximos 7 días se muestran en amarillo." },
-              { icon: "✅", title: "Marcar cumplido", description: "Al marcar cumplido desaparece de pendientes y queda en historial." },
-              { icon: "✏️", title: "Editar / Eliminar", description: "Pasá el mouse sobre un vencimiento para ver las opciones de editar y eliminar." },
-              { icon: "🔍", title: "Filtros", description: "Filtrá por período, tipo o estado." },
+              { icon: "🔴", title: "Urgente (< 48hs)", description: "Aparecen en rojo y se notifican en el header de toda la app. Si vence hoy o mañana, no lo podés perder de vista." },
+              { icon: "🟡", title: "Próximo (esta semana)", description: "Vence en los próximos 7 días. Amarillo como advertencia temprana para prepararse." },
+              { icon: "⚠️", title: "Diferencia con tareas", description: "Vencimiento = plazo del proceso judicial (externo, con fecha fija). Tarea = trabajo del estudio (interno, asignable a personas)." },
+              { icon: "📅", title: "Google Calendar", description: "Si conectás tu Google Calendar desde Perfil, cada vencimiento se sincroniza automáticamente con recordatorios en 7 días, 48hs y 2hs." },
+              { icon: "✅", title: "Marcar cumplido", description: "Al cumplirlo desaparece de pendientes y queda en el historial del expediente. También se elimina del calendario." },
+              { icon: "🔍", title: "Filtros", description: "Filtrá por tipo (audiencia, presentación, pericia, notificación, otro), por estado o por expediente." },
             ]}
-            tip="Los vencimientos urgentes también aparecen destacados en el Dashboard."
+            tip="Creá vencimientos directamente desde el detalle del expediente para que queden vinculados al caso automáticamente."
           />
           <Link
             href="/vencimientos/nuevo"

@@ -176,15 +176,16 @@ export default function EquipoPage() {
         <div className="flex items-center gap-2">
           <PageHelp
             title="Equipo del estudio"
-            description="Gestioná los miembros y sus roles de acceso"
+            description="Gestioná los miembros del estudio y sus permisos. Los roles determinan qué puede hacer cada persona en toda la plataforma."
             items={[
-              { icon: "🔴", title: "Admin", description: "Control total: puede invitar, cambiar roles, eliminar miembros y acceder a toda la configuración." },
-              { icon: "🔵", title: "Socio", description: "Acceso completo a expedientes y clientes. Puede gestionar el equipo pero no eliminar al admin." },
-              { icon: "🟡", title: "Asociado", description: "Trabaja sobre los expedientes asignados. No puede cambiar configuración del estudio." },
-              { icon: "⚪", title: "Pasante", description: "Solo puede ver y cargar movimientos. No crea ni elimina expedientes." },
-              { icon: "✉️", title: "Invitar miembro", description: "Se envía un email con un link de activación. El invitado crea su contraseña al aceptar." },
+              { icon: "🔴", title: "Admin", description: "Control total: invita miembros, cambia roles, configura el estudio y accede a todo. Solo hay un admin por estudio." },
+              { icon: "🔵", title: "Socio", description: "Acceso completo a expedientes, clientes, honorarios y contable. Puede gestionar el equipo pero no cambiar datos del estudio." },
+              { icon: "🟡", title: "Asociado", description: "Trabaja sobre los expedientes en que está asignado. Puede crear y editar, pero no eliminar ni cambiar configuración." },
+              { icon: "⚪", title: "Pasante", description: "Rol de solo lectura + carga de movimientos. No puede crear expedientes, clientes ni gestionar honorarios." },
+              { icon: "✉️", title: "Invitación por email", description: "El invitado recibe un link válido por 48hs. Al aceptar, crea su contraseña y accede directamente al estudio." },
+              { icon: "📁", title: "Rol en expediente vs rol global", description: "El rol global define permisos de plataforma. Dentro de cada expediente el abogado puede ser Responsable, Colaborador o Supervisión — eso es independiente." },
             ]}
-            tip="Cambiás el rol de un miembro con el selector al lado de su nombre. El cambio es inmediato."
+            tip="Podés cambiar el rol de cualquier miembro con el selector al lado de su nombre. El cambio aplica de inmediato."
           />
           {canManage && (
             <button

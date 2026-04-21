@@ -431,14 +431,16 @@ export default function ContablePage() {
         </div>
         <PageHelp
           title="Módulo Contable"
-          description="Controlá los gastos del estudio con periodicidad mensual"
+          description="Controlá egresos e ingresos del estudio mes a mes. Los totales alimentan el dashboard financiero."
           items={[
-            { icon: "🔄", title: "Gastos recurrentes", description: "Definí plantillas para gastos mensuales fijos (alquiler, sueldos). Se generan automáticamente cada mes y te pedirán confirmación." },
-            { icon: "💸", title: "Gastos puntuales", description: "Registrá cualquier gasto no programado en cualquier momento." },
-            { icon: "🟢", title: "Semáforo", description: "Rojo = pendiente de confirmar. Verde = confirmado. Solo los confirmados cuentan en los totales." },
-            { icon: "📅", title: "Navegación por período", description: "Usá las flechas para ver y gestionar gastos de cualquier mes." },
+            { icon: "🔄", title: "Gastos recurrentes", description: "Plantillas para gastos fijos mensuales (alquiler, sueldos, servicios). Se generan automáticamente al inicio de cada mes como 'pendientes'." },
+            { icon: "💸", title: "Gastos puntuales", description: "Cualquier gasto no programado: honorarios de terceros, materiales, viáticos. Se registran directamente en el mes correspondiente." },
+            { icon: "🟢", title: "Confirmado vs pendiente", description: "Pendiente (naranja) = gasto previsto pero no ejecutado. Confirmado (verde) = pagado y verificado. Solo los confirmados se suman al total del período." },
+            { icon: "💵", title: "Monedas ARS / USD", description: "Podés registrar gastos en pesos o dólares. El dashboard los convierte al tipo MEP del día para mostrar totales unificados." },
+            { icon: "📋", title: "Ingresos", description: "Registrá ingresos del estudio que no son honorarios de expedientes (ej: consultas, asesoramiento externo, retenciones)." },
+            { icon: "📅", title: "Navegación por período", description: "Usá las flechas para ver y editar gastos de cualquier mes histórico." },
           ]}
-          tip="Los gastos confirmados alimentan el widget financiero del dashboard."
+          tip="Asociar un gasto a un expediente te permite ver el costo real de cada caso en el detalle del expediente."
         />
       </div>
 
