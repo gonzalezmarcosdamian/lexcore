@@ -21,7 +21,7 @@ function Badge({ children, color }: { children: React.ReactNode; color: string }
   );
 }
 
-export function HonorariosTab({ expedienteId, token }: { expedienteId: string; token: string }) {
+export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId: string; token: string; onCreated?: () => void }) {
   const [honorarios, setHonorarios] = useState<Honorario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -56,6 +56,7 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
       setForm({ concepto: "", monto_acordado: "", moneda: "ARS", fecha_acuerdo: today, notas: "" });
       setShowForm(false);
       load();
+      onCreated?.();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al crear honorario");
     } finally {
@@ -98,6 +99,7 @@ export function HonorariosTab({ expedienteId, token }: { expedienteId: string; t
       }
       setPagoForm(prev => ({ ...prev, [honorarioId]: { importe: "", moneda: "ARS" as Moneda, fecha: today, comprobante: "", tipo: "capital" as const } }));
       load();
+      onCreated?.();
     } catch {}
     setSaving(false);
   };
