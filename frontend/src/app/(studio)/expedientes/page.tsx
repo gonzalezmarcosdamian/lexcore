@@ -62,6 +62,7 @@ export default function ExpedientesPage() {
   const [colsOpen, setColsOpen] = useState(false);
   const [visibleCols, setVisibleCols] = useState<ColKey[]>(DEFAULT_COLS);
   const colsRef = useRef<HTMLDivElement>(null);
+  const dragColRef = useRef<ColKey | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
@@ -106,11 +107,34 @@ export default function ExpedientesPage() {
 
   const toggleCol = (key: ColKey) => {
     setVisibleCols((prev) => {
-      const next = prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key];
-      // Siempre mantener al menos numero y caratula
+      const isVisible = prev.includes(key);
+      let next: ColKey[];
+      if (isVisible) {
+        next = prev.filter((k) => k !== key);
+      } else {
+        // Insertar en la posición según ALL_COLS cuando se activa
+        const allKeys = ALL_COLS.map(c => c.key);
+        const insertIdx = allKeys.indexOf(key);
+        const after = prev.findLastIndex((k) => allKeys.indexOf(k) < insertIdx);
+        next = [...prev.slice(0, after + 1), key, ...prev.slice(after + 1)];
+      }
       const safe = next.length === 0 ? ["numero", "caratula"] as ColKey[] : next;
       localStorage.setItem(COLS_STORAGE_KEY, JSON.stringify(safe));
       return safe;
+    });
+  };
+
+  const moveCol = (from: ColKey, to: ColKey) => {
+    if (from === to) return;
+    setVisibleCols((prev) => {
+      const next = [...prev];
+      const fi = next.indexOf(from);
+      const ti = next.indexOf(to);
+      if (fi === -1 || ti === -1) return prev;
+      next.splice(fi, 1);
+      next.splice(ti, 0, from);
+      localStorage.setItem(COLS_STORAGE_KEY, JSON.stringify(next));
+      return next;
     });
   };
 
@@ -317,24 +341,53 @@ export default function ExpedientesPage() {
                 <span className="hidden sm:inline">Columnas</span>
               </button>
               {colsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-ink-200 rounded-2xl shadow-xl z-50 p-2">
-                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider px-2 py-1.5">Mostrar columnas</p>
-                  {ALL_COLS.map((col) => (
-                    <button
-                      key={col.key}
-                      onClick={() => toggleCol(col.key)}
-                      className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-ink-50 transition text-sm text-ink-700"
-                    >
-                      <span className={`w-4 h-4 rounded flex items-center justify-center border transition ${visibleCols.includes(col.key) ? "bg-brand-600 border-brand-600" : "border-ink-300"}`}>
-                        {visibleCols.includes(col.key) && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white border border-ink-200 rounded-2xl shadow-xl z-50 p-2">
+                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider px-2 py-1.5">Columnas visibles</p>
+                  {/* Activas — arrastrables */}
+                  {visibleCols.map((key) => {
+                    const col = ALL_COLS.find(c => c.key === key)!;
+                    return (
+                      <div
+                        key={col.key}
+                        draggable
+                        onDragStart={() => { dragColRef.current = col.key; }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => { if (dragColRef.current) moveCol(dragColRef.current, col.key); dragColRef.current = null; }}
+                        className="w-full flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-ink-50 transition text-sm text-ink-700 cursor-grab active:cursor-grabbing select-none"
+                      >
+                        <svg className="w-3.5 h-3.5 text-ink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+                        </svg>
+                        <span className="flex-1 text-left">{col.label}</span>
+                        <button
+                          onClick={() => toggleCol(col.key)}
+                          className="w-4 h-4 rounded flex items-center justify-center border bg-brand-600 border-brand-600 flex-shrink-0"
+                          title="Ocultar columna"
+                        >
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
-                        )}
-                      </span>
-                      {col.label}
-                    </button>
-                  ))}
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {/* Separador */}
+                  {ALL_COLS.some(c => !visibleCols.includes(c.key)) && (
+                    <>
+                      <div className="border-t border-ink-100 my-1.5" />
+                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider px-2 py-1">Ocultas</p>
+                      {ALL_COLS.filter(c => !visibleCols.includes(c.key)).map((col) => (
+                        <button
+                          key={col.key}
+                          onClick={() => toggleCol(col.key)}
+                          className="w-full flex items-center gap-2 px-2 py-2 rounded-xl hover:bg-ink-50 transition text-sm text-ink-400"
+                        >
+                          <span className="w-4 h-4 rounded border border-ink-300 flex-shrink-0" />
+                          <span className="flex-1 text-left">{col.label}</span>
+                        </button>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -360,7 +413,7 @@ export default function ExpedientesPage() {
           <table className="w-full text-sm min-w-[500px]">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/60">
-                {ALL_COLS.filter((c) => visibleCols.includes(c.key)).map((col) => {
+                {visibleCols.map(key => ALL_COLS.find(c => c.key === key)!).map((col) => {
                   const isSortable = ["numero","caratula","fuero","estado","created_at"].includes(col.key);
                   const cls = col.key === "numero" ? "w-32" : col.key === "numero_judicial" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "juzgado" ? "w-40" : col.key === "localidad" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
                   return (
