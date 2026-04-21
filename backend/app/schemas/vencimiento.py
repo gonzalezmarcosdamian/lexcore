@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class VencimientoCreate(BaseModel):
     descripcion: str
     fecha: str  # YYYY-MM-DD
+    hora: Optional[str] = None  # HH:MM optional
     tipo: str = "vencimiento"
     expediente_id: str
 
@@ -13,6 +14,7 @@ class VencimientoCreate(BaseModel):
 class VencimientoUpdate(BaseModel):
     descripcion: Optional[str] = None
     fecha: Optional[str] = None
+    hora: Optional[str] = None
     tipo: Optional[str] = None
     cumplido: Optional[bool] = None
 
@@ -23,6 +25,7 @@ class VencimientoOut(BaseModel):
     expediente_id: str
     descripcion: str
     fecha: str
+    hora: Optional[str] = None
     tipo: str
     cumplido: bool
     google_event_ids: Optional[str] = None

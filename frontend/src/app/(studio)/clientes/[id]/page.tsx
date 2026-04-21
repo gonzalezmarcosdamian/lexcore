@@ -63,7 +63,9 @@ export default function ClienteDetailPage() {
   const [form, setForm] = useState({
     nombre: "",
     tipo: "fisica" as TipoCliente,
-    cuit_dni: "",
+    cuit_dni: "",  // legacy
+    dni: "",
+    cuit: "",
     telefono: "",
     email: "",
   });
@@ -84,6 +86,8 @@ export default function ClienteDetailPage() {
           nombre: c.nombre,
           tipo: c.tipo,
           cuit_dni: c.cuit_dni ?? "",
+          dni: c.dni ?? "",
+          cuit: c.cuit ?? "",
           telefono: c.telefono ?? "",
           email: c.email ?? "",
         });
@@ -100,8 +104,10 @@ export default function ClienteDetailPage() {
       const updated = await api.patch<Cliente>(
         `/clientes/${id}`,
         {
-          ...form,
-          cuit_dni: form.cuit_dni || undefined,
+          nombre: form.nombre,
+          tipo: form.tipo,
+          dni: form.dni || undefined,
+          cuit: form.cuit || undefined,
           telefono: form.telefono || undefined,
           email: form.email || undefined,
         },
@@ -132,6 +138,8 @@ export default function ClienteDetailPage() {
       nombre: cliente.nombre,
       tipo: cliente.tipo,
       cuit_dni: cliente.cuit_dni ?? "",
+      dni: cliente.dni ?? "",
+      cuit: cliente.cuit ?? "",
       telefono: cliente.telefono ?? "",
       email: cliente.email ?? "",
     });
@@ -231,11 +239,18 @@ export default function ClienteDetailPage() {
                     ))}
                   </div>
                 </div>
-                <InputField
-                  label="CUIT / DNI"
-                  value={form.cuit_dni}
-                  onChange={(v) => setForm({ ...form, cuit_dni: v })}
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <InputField
+                    label="DNI"
+                    value={form.dni}
+                    onChange={(v) => setForm({ ...form, dni: v })}
+                  />
+                  <InputField
+                    label="CUIT"
+                    value={form.cuit}
+                    onChange={(v) => setForm({ ...form, cuit: v })}
+                  />
+                </div>
                 <InputField
                   label="Teléfono"
                   value={form.telefono}
@@ -269,7 +284,8 @@ export default function ClienteDetailPage() {
                   label="Tipo"
                   value={cliente.tipo === "fisica" ? "Persona física" : "Persona jurídica"}
                 />
-                <FieldRow label="CUIT / DNI" value={cliente.cuit_dni} />
+                <FieldRow label="DNI" value={cliente.dni ?? cliente.cuit_dni} />
+                <FieldRow label="CUIT" value={cliente.cuit} />
                 <FieldRow label="Teléfono" value={cliente.telefono} />
                 <FieldRow label="Email" value={cliente.email} />
                 <FieldRow

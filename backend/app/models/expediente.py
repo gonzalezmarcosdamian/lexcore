@@ -22,9 +22,11 @@ class Expediente(TenantModel):
     __tablename__ = "expedientes"
 
     numero: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    numero_judicial: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
     caratula: Mapped[str] = mapped_column(String(500), nullable=False)
     fuero: Mapped[str | None] = mapped_column(String(100), nullable=True)
     juzgado: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    localidad: Mapped[str | None] = mapped_column(String(200), nullable=True)
     estado: Mapped[EstadoExpediente] = mapped_column(
         Enum(EstadoExpediente), nullable=False, default=EstadoExpediente.activo
     )
@@ -68,6 +70,7 @@ class Movimiento(TenantModel):
     )
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     texto: Mapped[str] = mapped_column(Text, nullable=False)
+    fecha_manual: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD override
 
     expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="movimientos")
 
@@ -80,6 +83,7 @@ class Vencimiento(TenantModel):
     )
     descripcion: Mapped[str] = mapped_column(String(500), nullable=False)
     fecha: Mapped[str] = mapped_column(String(10), nullable=False)  # ISO date YYYY-MM-DD
+    hora: Mapped[str | None] = mapped_column(String(5), nullable=True)  # HH:MM optional
     tipo: Mapped[str] = mapped_column(String(100), nullable=False, default="vencimiento")
     cumplido: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     google_event_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON {user_id: event_id}

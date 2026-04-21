@@ -69,7 +69,9 @@ export interface Cliente {
   tenant_id: string;
   nombre: string;
   tipo: TipoCliente;
-  cuit_dni?: string;
+  cuit_dni?: string;  // legacy
+  dni?: string;
+  cuit?: string;
   telefono?: string;
   email?: string;
   archivado: boolean;
@@ -88,9 +90,11 @@ export interface Expediente {
   id: string;
   tenant_id: string;
   numero: string;
+  numero_judicial?: string;
   caratula: string;
   fuero?: string;
   juzgado?: string;
+  localidad?: string;
   estado: EstadoExpediente;
   cliente_id?: string;
   cliente_nombre?: string;
@@ -104,6 +108,7 @@ export interface Movimiento {
   expediente_id: string;
   user_id: string;
   texto: string;
+  fecha_manual?: string;
   created_at: string;
 }
 
@@ -113,6 +118,7 @@ export interface Vencimiento {
   expediente_id: string;
   descripcion: string;
   fecha: string;
+  hora?: string;
   tipo: string;
   cumplido: boolean;
   google_event_ids?: string;

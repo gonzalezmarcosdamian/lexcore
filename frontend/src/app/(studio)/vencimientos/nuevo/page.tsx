@@ -33,6 +33,7 @@ function NuevoVencimientoPageInner() {
     expediente_id: expedienteIdParam,
     descripcion: "",
     fecha: "",
+    hora: "",
     tipo: "vencimiento",
   });
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -58,7 +59,7 @@ function NuevoVencimientoPageInner() {
     setSaving(true);
     setError("");
     try {
-      await api.post("/vencimientos", form, token);
+      await api.post("/vencimientos", { ...form, hora: form.hora || undefined }, token);
       router.push(cancelHref);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al crear vencimiento");
@@ -175,16 +176,27 @@ function NuevoVencimientoPageInner() {
               }
             />
           </div>
-          <div>
-            <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-            <input
-              required
-              type="date"
-              min={today}
-              value={form.fecha}
-              onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-              className={inputClass}
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
+              <input
+                required
+                type="date"
+                min={today}
+                value={form.fecha}
+                onChange={(e) => setForm({ ...form, fecha: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Hora <span className="text-xs text-ink-400 font-normal">(opcional)</span></label>
+              <input
+                type="time"
+                value={form.hora}
+                onChange={(e) => setForm({ ...form, hora: e.target.value })}
+                className={inputClass}
+              />
+            </div>
           </div>
         </div>
 

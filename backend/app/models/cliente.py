@@ -16,7 +16,9 @@ class Cliente(TenantModel):
 
     nombre: Mapped[str] = mapped_column(String(300), nullable=False, index=True)
     tipo: Mapped[TipoCliente] = mapped_column(Enum(TipoCliente), nullable=False)
-    cuit_dni: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    cuit_dni: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)  # legacy
+    dni: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    cuit: Mapped[str | None] = mapped_column(String(20), nullable=True)
     telefono: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     archivado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

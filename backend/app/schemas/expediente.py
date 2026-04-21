@@ -16,6 +16,12 @@ class AbogadoEnExpedienteOut(BaseModel):
 
 class MovimientoCreate(BaseModel):
     texto: str
+    fecha_manual: Optional[str] = None  # YYYY-MM-DD override
+
+
+class MovimientoUpdate(BaseModel):
+    texto: Optional[str] = None
+    fecha_manual: Optional[str] = None  # YYYY-MM-DD
 
 
 class MovimientoOut(BaseModel):
@@ -23,6 +29,7 @@ class MovimientoOut(BaseModel):
     expediente_id: str
     user_id: str
     texto: str
+    fecha_manual: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -30,17 +37,21 @@ class MovimientoOut(BaseModel):
 
 class ExpedienteCreate(BaseModel):
     caratula: str
+    numero_judicial: Optional[str] = None
     fuero: Optional[str] = None
     juzgado: Optional[str] = None
+    localidad: Optional[str] = None
     cliente_id: Optional[str] = None
     abogado_ids: List[str] = []  # user_ids adicionales (el creador siempre es responsable)
 
 
 class ExpedienteUpdate(BaseModel):
     numero: Optional[str] = None
+    numero_judicial: Optional[str] = None
     caratula: Optional[str] = None
     fuero: Optional[str] = None
     juzgado: Optional[str] = None
+    localidad: Optional[str] = None
     estado: Optional[EstadoExpediente] = None
     cliente_id: Optional[str] = None
 
@@ -49,9 +60,11 @@ class ExpedienteOut(BaseModel):
     id: str
     tenant_id: str
     numero: str
+    numero_judicial: Optional[str] = None
     caratula: str
     fuero: Optional[str] = None
     juzgado: Optional[str] = None
+    localidad: Optional[str] = None
     estado: EstadoExpediente
     cliente_id: Optional[str] = None
     cliente_nombre: Optional[str] = None   # enriquecido en el router

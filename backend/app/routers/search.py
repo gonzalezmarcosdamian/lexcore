@@ -27,6 +27,7 @@ class SearchCliente(BaseModel):
 class SearchExpediente(BaseModel):
     id: str
     numero: str
+    numero_judicial: Optional[str] = None
     caratula: str
     estado: str
     fuero: Optional[str] = None
@@ -92,7 +93,11 @@ def buscar(
             db.query(Expediente)
             .filter(
                 Expediente.tenant_id == tenant_id,
-                or_(Expediente.numero.ilike(term), Expediente.caratula.ilike(term)),
+                or_(
+                    Expediente.numero.ilike(term),
+                    Expediente.numero_judicial.ilike(term),
+                    Expediente.caratula.ilike(term),
+                ),
             )
             .limit(5)
             .all()
@@ -102,7 +107,12 @@ def buscar(
             .filter(
                 Cliente.tenant_id == tenant_id,
                 Cliente.archivado == False,  # noqa: E712
-                or_(Cliente.nombre.ilike(term), Cliente.cuit_dni.ilike(term)),
+                or_(
+                    Cliente.nombre.ilike(term),
+                    Cliente.cuit_dni.ilike(term),
+                    Cliente.dni.ilike(term),
+                    Cliente.cuit.ilike(term),
+                ),
             )
             .limit(5)
             .all()

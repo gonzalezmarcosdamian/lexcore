@@ -206,8 +206,10 @@ export default function ClientesPage() {
                     </span>
                   )}
                 </div>
-                {c.cuit_dni && (
-                  <p className="text-xs text-ink-400 mt-0.5">{c.cuit_dni}</p>
+                {(c.dni || c.cuit || c.cuit_dni) && (
+                  <p className="text-xs text-ink-400 mt-0.5">
+                    {[c.dni && `DNI ${c.dni}`, c.cuit && `CUIT ${c.cuit}`].filter(Boolean).join(" · ") || c.cuit_dni}
+                  </p>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

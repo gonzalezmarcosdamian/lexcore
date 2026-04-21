@@ -15,7 +15,7 @@ from app.schemas.expediente import (
     AbogadoEnExpedienteOut,
     AsignarAbogadoRequest,
     ExpedienteCreate, ExpedienteOut, ExpedienteUpdate,
-    MovimientoCreate, MovimientoOut,
+    MovimientoCreate, MovimientoOut, MovimientoUpdate,
 )
 
 
@@ -196,6 +196,52 @@ def crear_movimiento(
     db.commit()
     db.refresh(mov)
     return mov
+
+
+@router.patch("/{expediente_id}/movimientos/{movimiento_id}", response_model=MovimientoOut)
+def editar_movimiento(
+    expediente_id: str,
+    movimiento_id: str,
+    body: MovimientoUpdate,
+    db: DbSession,
+    current_user: CurrentUser,
+):
+    tenant_id = current_user["studio_id"]
+    _get_expediente(db, expediente_id, tenant_id)
+    mov = db.query(Movimiento).filter(
+        Movimiento.id == movimiento_id,
+        Movimiento.expediente_id == expediente_id,
+        Movimiento.tenant_id == tenant_id,
+    ).first()
+    if not mov:
+        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    for field, value in body.model_dump(exclude_unset=True).items():
+        setattr(mov, field, value)
+    from app.models.base import utcnow
+    mov.updated_at = utcnow()
+    db.commit()
+    db.refresh(mov)
+    return mov
+
+
+@router.delete("/{expediente_id}/movimientos/{movimiento_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_movimiento(
+    expediente_id: str,
+    movimiento_id: str,
+    db: DbSession,
+    current_user: CurrentUser,
+):
+    tenant_id = current_user["studio_id"]
+    _get_expediente(db, expediente_id, tenant_id)
+    mov = db.query(Movimiento).filter(
+        Movimiento.id == movimiento_id,
+        Movimiento.expediente_id == expediente_id,
+        Movimiento.tenant_id == tenant_id,
+    ).first()
+    if not mov:
+        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    db.delete(mov)
+    db.commit()
 
 
 # ── Abogados ─────────────────────────────────────────────────────────────────

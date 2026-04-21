@@ -51,9 +51,11 @@ export default function NuevoExpedientePage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState({
     caratula: "",
+    numero_judicial: "",
     fuero: "",
     fueroCustom: "",
     juzgado: "",
+    localidad: "",
     cliente_id: "",
   });
   const [clientes, setClientes] = useState<Cliente[]>([]);
@@ -106,8 +108,10 @@ export default function NuevoExpedientePage() {
     try {
       await api.post("/expedientes", {
         caratula: form.caratula,
+        numero_judicial: form.numero_judicial || undefined,
         fuero: fueroFinal || undefined,
         juzgado: form.juzgado || undefined,
+        localidad: form.localidad || undefined,
         cliente_id: form.cliente_id,
       }, token);
       router.push("/expedientes");
@@ -152,6 +156,17 @@ export default function NuevoExpedientePage() {
                 <p className="text-xs text-ink-400 mt-1.5">
                   Identificá el caso: partes y tipo de acción
                 </p>
+              </div>
+
+              <div>
+                <label className={labelCls}>N° Expediente judicial</label>
+                <input
+                  value={form.numero_judicial}
+                  onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })}
+                  className={inputCls}
+                  placeholder="12345/2026 — podés completarlo después"
+                />
+                <p className="text-xs text-ink-400 mt-1.5">El número asignado por el juzgado (opcional)</p>
               </div>
 
               <div>
@@ -211,15 +226,26 @@ export default function NuevoExpedientePage() {
                 )}
               </div>
 
-              <div>
-                <label className={labelCls}>Juzgado</label>
-                <input
-                  value={form.juzgado}
-                  onChange={(e) => setForm({ ...form, juzgado: e.target.value })}
-                  className={inputCls}
-                  placeholder="Juzgado Civil N° 5 — Sec. 10"
-                  autoFocus
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Juzgado</label>
+                  <input
+                    value={form.juzgado}
+                    onChange={(e) => setForm({ ...form, juzgado: e.target.value })}
+                    className={inputCls}
+                    placeholder="Juzgado Civil N° 5"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Localidad</label>
+                  <input
+                    value={form.localidad}
+                    onChange={(e) => setForm({ ...form, localidad: e.target.value })}
+                    className={inputCls}
+                    placeholder="Buenos Aires, CABA…"
+                  />
+                </div>
               </div>
 
               <div ref={clienteRef}>

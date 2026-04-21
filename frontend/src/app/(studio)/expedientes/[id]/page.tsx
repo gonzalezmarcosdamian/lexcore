@@ -124,12 +124,18 @@ export default function ExpedienteDetailPage() {
 
   // Edit mode
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ numero: "", caratula: "", fuero: "", juzgado: "", estado: "activo" as EstadoExpediente, cliente_id: "" });
+  const [form, setForm] = useState({ numero: "", numero_judicial: "", caratula: "", fuero: "", juzgado: "", localidad: "", estado: "activo" as EstadoExpediente, cliente_id: "" });
   const [saving, setSaving] = useState(false);
 
   // Bitácora — entrada manual
   const [nuevoMov, setNuevoMov] = useState("");
   const [savingMov, setSavingMov] = useState(false);
+
+  // Movimiento edit/delete
+  const [editingMovId, setEditingMovId] = useState<string | null>(null);
+  const [editingMovTexto, setEditingMovTexto] = useState("");
+  const [editingMovFecha, setEditingMovFecha] = useState("");
+  const [deletingMovId, setDeletingMovId] = useState<string | null>(null);
 
   // Equipo colapsable
   const [equipoOpen, setEquipoOpen] = useState(true);
@@ -145,7 +151,7 @@ export default function ExpedienteDetailPage() {
     api.get<Expediente>(`/expedientes/${id}`, token)
       .then((exp) => {
         setExpediente(exp);
-        setForm({ numero: exp.numero, caratula: exp.caratula, fuero: exp.fuero ?? "", juzgado: exp.juzgado ?? "", estado: exp.estado, cliente_id: exp.cliente_id ?? "" });
+        setForm({ numero: exp.numero, numero_judicial: exp.numero_judicial ?? "", caratula: exp.caratula, fuero: exp.fuero ?? "", juzgado: exp.juzgado ?? "", localidad: exp.localidad ?? "", estado: exp.estado, cliente_id: exp.cliente_id ?? "" });
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -189,7 +195,7 @@ export default function ExpedienteDetailPage() {
     if (!token) return;
     setSaving(true);
     try {
-      const updated = await api.patch<Expediente>(`/expedientes/${id}`, { ...form, fuero: form.fuero || undefined, juzgado: form.juzgado || undefined, cliente_id: form.cliente_id || undefined }, token);
+      const updated = await api.patch<Expediente>(`/expedientes/${id}`, { ...form, numero_judicial: form.numero_judicial || undefined, fuero: form.fuero || undefined, juzgado: form.juzgado || undefined, localidad: form.localidad || undefined, cliente_id: form.cliente_id || undefined }, token);
       setExpediente(updated);
       setEditing(false);
     } catch (e: unknown) {
@@ -208,6 +214,24 @@ export default function ExpedienteDetailPage() {
       setNuevoMov("");
       loadActividad();
     } catch { } finally { setSavingMov(false); }
+  };
+
+  const handleSaveMov = async (movId: string) => {
+    if (!token || !editingMovTexto.trim()) return;
+    try {
+      await api.patch(`/expedientes/${id}/movimientos/${movId}`, { texto: editingMovTexto, fecha_manual: editingMovFecha || undefined }, token);
+      setEditingMovId(null);
+      loadActividad();
+    } catch { }
+  };
+
+  const handleDeleteMov = async (movId: string) => {
+    if (!token) return;
+    try {
+      await api.delete(`/expedientes/${id}/movimientos/${movId}`, token);
+      setDeletingMovId(null);
+      loadActividad();
+    } catch { }
   };
 
   const handleAddAbogado = async (e: React.FormEvent) => {
@@ -309,8 +333,8 @@ export default function ExpedienteDetailPage() {
           <h3 className="text-sm font-semibold text-ink-700 mb-1">Editar expediente</h3>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Número</label>
-              <input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className={`${inputCls} font-mono`} />
+              <label className={labelCls}>N° Ref. interna</label>
+              <input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className={`${inputCls} font-mono`} placeholder="EXP-2026-0001" />
             </div>
             <div>
               <label className={labelCls}>Estado</label>
@@ -319,6 +343,10 @@ export default function ExpedienteDetailPage() {
                 <option value="archivado">Archivado</option>
                 <option value="cerrado">Cerrado</option>
               </select>
+            </div>
+            <div className="col-span-2">
+              <label className={labelCls}>N° Expediente judicial</label>
+              <input value={form.numero_judicial} onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })} className={inputCls} placeholder="12345/2026" />
             </div>
             <div className="col-span-2">
               <label className={labelCls}>Carátula</label>
@@ -331,6 +359,10 @@ export default function ExpedienteDetailPage() {
             <div>
               <label className={labelCls}>Juzgado</label>
               <input value={form.juzgado} onChange={(e) => setForm({ ...form, juzgado: e.target.value })} className={inputCls} />
+            </div>
+            <div className="col-span-2">
+              <label className={labelCls}>Localidad</label>
+              <input value={form.localidad} onChange={(e) => setForm({ ...form, localidad: e.target.value })} className={inputCls} placeholder="Buenos Aires, CABA" />
             </div>
           </div>
           <div className="flex gap-3 pt-1">
@@ -349,9 +381,11 @@ export default function ExpedienteDetailPage() {
           {/* Datos del expediente */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-3">Datos</p>
-            <FieldRow label="Número" value={expediente.numero} />
+            <FieldRow label="Ref. interna" value={expediente.numero} />
+            {expediente.numero_judicial && <FieldRow label="N° Judicial" value={expediente.numero_judicial} />}
             <FieldRow label="Fuero" value={expediente.fuero} />
             <FieldRow label="Juzgado" value={expediente.juzgado} />
+            {expediente.localidad && <FieldRow label="Localidad" value={expediente.localidad} />}
             <FieldRow label="Estado" value={ESTADO_LABELS[expediente.estado]} />
             <FieldRow label="Alta" value={new Date(expediente.created_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })} />
             <FieldRow label="Actualizado" value={new Date(expediente.updated_at).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })} />
@@ -502,7 +536,22 @@ export default function ExpedienteDetailPage() {
                   <div className="absolute left-[18px] top-3 bottom-3 w-px bg-ink-100" />
                   <div className="space-y-2">
                     {actividad.map((item) => (
-                      <ActividadRow key={`${item.tipo}-${item.id}`} item={item} />
+                      <ActividadRow
+                        key={`${item.tipo}-${item.id}`}
+                        item={item}
+                        editingMovId={editingMovId}
+                        editingMovTexto={editingMovTexto}
+                        editingMovFecha={editingMovFecha}
+                        deletingMovId={deletingMovId}
+                        onEditStart={(id, texto, fecha) => { setEditingMovId(id); setEditingMovTexto(texto); setEditingMovFecha(fecha ?? ""); }}
+                        onEditSave={handleSaveMov}
+                        onEditCancel={() => setEditingMovId(null)}
+                        onEditChange={(texto) => setEditingMovTexto(texto)}
+                        onFechaChange={(f) => setEditingMovFecha(f)}
+                        onDeleteConfirm={() => setDeletingMovId(item.id)}
+                        onDeleteCancel={() => setDeletingMovId(null)}
+                        onDelete={handleDeleteMov}
+                      />
                     ))}
                   </div>
                 </div>
@@ -614,31 +663,96 @@ const ACTIVIDAD_CONFIG: Record<string, { color: string; bg: string; icon: string
   documento:  { color: "text-ink-600", bg: "bg-ink-100", icon: "📄" },
 };
 
-function ActividadRow({ item }: { item: ActividadItem }) {
+interface ActividadRowProps {
+  item: ActividadItem;
+  editingMovId?: string | null;
+  editingMovTexto?: string;
+  editingMovFecha?: string;
+  deletingMovId?: string | null;
+  onEditStart?: (id: string, texto: string, fecha: string | null) => void;
+  onEditSave?: (id: string) => void;
+  onEditCancel?: () => void;
+  onEditChange?: (texto: string) => void;
+  onFechaChange?: (fecha: string) => void;
+  onDeleteConfirm?: (id: string) => void;
+  onDeleteCancel?: () => void;
+  onDelete?: (id: string) => void;
+}
+
+function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, deletingMovId, onEditStart, onEditSave, onEditCancel, onEditChange, onFechaChange, onDeleteConfirm, onDeleteCancel, onDelete }: ActividadRowProps) {
   const cfg = ACTIVIDAD_CONFIG[item.tipo] ?? { color: "text-ink-600", bg: "bg-ink-100", icon: "•" };
   const meta = item.meta as Record<string, unknown>;
+  const isEditing = editingMovId === item.id;
+  const isDeleting = deletingMovId === item.id;
+  const isMovimiento = item.tipo === "movimiento";
+
   return (
     <div className="relative flex items-start gap-3 pl-8">
       <div className={`absolute left-0 top-1 w-9 h-9 rounded-full ${cfg.bg} flex items-center justify-center text-base flex-shrink-0 z-10`}>
         {cfg.icon}
       </div>
-      <div className="flex-1 min-w-0 bg-ink-50 rounded-xl px-4 py-3 border border-ink-100">
-        <p className="text-sm text-ink-800">{item.descripcion}</p>
-        {item.tipo === "honorario" && meta.monto != null && (
-          <p className="text-xs text-emerald-600 font-medium mt-0.5">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR")}</p>
+      <div className={`flex-1 min-w-0 rounded-xl px-4 py-3 border group ${isEditing ? "bg-white border-brand-200 ring-1 ring-brand-300" : "bg-ink-50 border-ink-100"}`}>
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              value={editingMovTexto}
+              onChange={(e) => onEditChange?.(e.target.value)}
+              className="w-full text-sm text-ink-900 bg-transparent focus:outline-none resize-none"
+              rows={3}
+              autoFocus
+            />
+            <div className="flex items-center gap-2">
+              <input type="date" value={editingMovFecha} onChange={(e) => onFechaChange?.(e.target.value)}
+                className="text-xs border border-ink-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand-300 text-ink-600" />
+              <div className="flex gap-2 ml-auto">
+                <button onClick={onEditCancel} className="text-xs text-ink-500 hover:text-ink-700 transition">Cancelar</button>
+                <button onClick={() => onEditSave?.(item.id)} className="text-xs bg-brand-600 text-white px-2.5 py-1 rounded-lg hover:bg-brand-700 transition">Guardar</button>
+              </div>
+            </div>
+          </div>
+        ) : isDeleting ? (
+          <div className="space-y-2">
+            <p className="text-sm text-ink-800">{item.descripcion}</p>
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-xs text-red-600 font-medium">¿Eliminar este movimiento?</span>
+              <button onClick={onDeleteCancel} className="text-xs text-ink-500 hover:text-ink-700 transition ml-auto">No</button>
+              <button onClick={() => onDelete?.(item.id)} className="text-xs bg-red-600 text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition">Sí, eliminar</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm text-ink-800 flex-1">{item.descripcion}</p>
+              {isMovimiento && (
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
+                  <button onClick={() => onEditStart?.(item.id, item.descripcion, (meta.fecha_manual as string) ?? null)}
+                    className="text-ink-400 hover:text-brand-600 transition p-1 rounded" title="Editar">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <button onClick={() => onDeleteConfirm?.(item.id)}
+                    className="text-ink-400 hover:text-red-500 transition p-1 rounded" title="Eliminar">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              )}
+            </div>
+            {item.tipo === "honorario" && meta.monto != null && (
+              <p className="text-xs text-emerald-600 font-medium mt-0.5">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR")}</p>
+            )}
+            {item.tipo === "vencimiento" && meta.fecha != null && (
+              <p className="text-xs text-amber-600 font-medium mt-0.5">
+                {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
+                {meta.cumplido ? " · ✓ cumplido" : ""}
+              </p>
+            )}
+            {item.tipo === "tarea" && meta.estado != null && (
+              <p className="text-xs text-ink-400 mt-0.5 capitalize">{String(meta.estado).replace("_", " ")}</p>
+            )}
+            <p className="text-xs text-ink-400 mt-1.5">
+              {new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
+            </p>
+          </>
         )}
-        {item.tipo === "vencimiento" && meta.fecha != null && (
-          <p className="text-xs text-amber-600 font-medium mt-0.5">
-            {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
-            {meta.cumplido ? " · ✓ cumplido" : ""}
-          </p>
-        )}
-        {item.tipo === "tarea" && meta.estado != null && (
-          <p className="text-xs text-ink-400 mt-0.5 capitalize">{String(meta.estado).replace("_", " ")}</p>
-        )}
-        <p className="text-xs text-ink-400 mt-1.5">
-          {new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
-        </p>
       </div>
     </div>
   );

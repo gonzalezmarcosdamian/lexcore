@@ -27,6 +27,8 @@ def listar_clientes(
             or_(
                 Cliente.nombre.ilike(f"%{q}%"),
                 Cliente.cuit_dni.ilike(f"%{q}%"),
+                Cliente.dni.ilike(f"%{q}%"),
+                Cliente.cuit.ilike(f"%{q}%"),
             )
         )
     return query.order_by(Cliente.nombre).all()

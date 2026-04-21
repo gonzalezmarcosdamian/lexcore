@@ -8,7 +8,9 @@ from app.models.cliente import TipoCliente
 class ClienteCreate(BaseModel):
     nombre: str
     tipo: TipoCliente
-    cuit_dni: Optional[str] = None
+    cuit_dni: Optional[str] = None  # legacy
+    dni: Optional[str] = None
+    cuit: Optional[str] = None
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
 
@@ -16,7 +18,9 @@ class ClienteCreate(BaseModel):
 class ClienteUpdate(BaseModel):
     nombre: Optional[str] = None
     tipo: Optional[TipoCliente] = None
-    cuit_dni: Optional[str] = None
+    cuit_dni: Optional[str] = None  # legacy
+    dni: Optional[str] = None
+    cuit: Optional[str] = None
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
     archivado: Optional[bool] = None
@@ -27,7 +31,9 @@ class ClienteOut(BaseModel):
     tenant_id: str
     nombre: str
     tipo: TipoCliente
-    cuit_dni: Optional[str] = None
+    cuit_dni: Optional[str] = None  # legacy
+    dni: Optional[str] = None
+    cuit: Optional[str] = None
     telefono: Optional[str] = None
     email: Optional[str] = None
     archivado: bool

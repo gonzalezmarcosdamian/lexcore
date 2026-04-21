@@ -62,6 +62,7 @@ function EditVencimientoModal({
 }) {
   const [descripcion, setDescripcion] = useState(v.descripcion);
   const [fecha, setFecha] = useState(v.fecha);
+  const [hora, setHora] = useState(v.hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -69,7 +70,7 @@ function EditVencimientoModal({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, tipo }, token);
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || undefined, tipo }, token);
       onSaved(updated);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al guardar");
@@ -94,14 +95,25 @@ function EditVencimientoModal({
               className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
             />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-            <input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
+              <input
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+                className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora (opcional)</label>
+              <input
+                type="time"
+                value={hora}
+                onChange={(e) => setHora(e.target.value)}
+                className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
@@ -202,6 +214,9 @@ function VencimientoRow({
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TIPO_COLORS[v.tipo] ?? "bg-ink-100 text-ink-500"}`}>
             {TIPO_LABELS[v.tipo] ?? v.tipo}
           </span>
+          {v.hora && (
+            <span className="text-xs text-ink-500 font-medium">🕐 {v.hora}</span>
+          )}
           {exp ? (
             <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline font-medium truncate max-w-[180px]">
               {exp.numero}
