@@ -64,6 +64,7 @@ export default function DashboardPage() {
   const [totalExpedientes, setTotalExpedientes] = useState<number | null>(null);
   const [totalClientes, setTotalClientes] = useState<number | null>(null);
   const [expStats, setExpStats] = useState<{ activo: number; archivado: number; cerrado: number } | null>(null);
+  const [studioConfigured, setStudioConfigured] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -106,6 +107,9 @@ export default function DashboardPage() {
     api.get<Cliente[]>("/clientes", token)
       .then((cls) => setTotalClientes(cls.filter((c) => !c.archivado).length))
       .catch(() => setTotalClientes(0));
+    api.get<{ email_contacto?: string }>("/studios/me", token)
+      .then((s) => setStudioConfigured(!!s.email_contacto))
+      .catch(() => {});
   }, [token]);
 
   async function handleCumplido(id: string) {
@@ -204,7 +208,7 @@ export default function DashboardPage() {
               { step: "2", icon: "👤", title: "Agregá un cliente", desc: "Todo expediente necesita un cliente.", href: "/clientes/nuevo", cta: "Nuevo cliente" },
               { step: "3", icon: "📁", title: "Creá un expediente", desc: "Asociá al cliente y definí la causa.", href: "/expedientes/nuevo", cta: "Nuevo expediente" },
             ].map((item, i) => {
-              const done = (i === 1 && (totalClientes ?? 0) > 0);
+              const done = (i === 0 && studioConfigured) || (i === 1 && (totalClientes ?? 0) > 0);
               return (
                 <div key={i} className={`border rounded-2xl p-5 shadow-sm flex flex-col ${done ? "bg-ink-50 border-ink-100 opacity-60" : "bg-white border-ink-100"}`}>
                   <div className="flex items-center gap-3 mb-3">

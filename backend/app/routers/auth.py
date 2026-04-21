@@ -74,7 +74,11 @@ def register(body: RegisterRequest, db: DbSession):
         raise HTTPException(status_code=400, detail="El email ya está registrado")
 
     # Crear estudio
-    studio = Studio(name=body.studio_name, slug=body.studio_slug)
+    studio = Studio(
+        name=body.studio_name,
+        slug=body.studio_slug,
+        trial_ends_at=datetime.now(timezone.utc) + timedelta(days=30),
+    )
     db.add(studio)
     db.flush()  # obtener studio.id sin commitear
 
@@ -396,7 +400,11 @@ def setup_studio(body: SetupStudioRequest, db: DbSession, request: Request):
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    studio = Studio(name=body.studio_name, slug=body.studio_slug)
+    studio = Studio(
+        name=body.studio_name,
+        slug=body.studio_slug,
+        trial_ends_at=datetime.now(timezone.utc) + timedelta(days=30),
+    )
     db.add(studio)
     db.flush()
 
