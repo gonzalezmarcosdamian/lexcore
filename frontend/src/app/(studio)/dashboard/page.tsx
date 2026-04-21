@@ -9,7 +9,7 @@ import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
-import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
+import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -292,77 +292,27 @@ export default function DashboardPage() {
           {/* ── Google Calendar sync banner ── */}
           <CalendarSyncButton variant="banner" />
 
-          {/* ── Agenda: calendario + urgentes ── */}
-          <div>
-            {/* Picker día */}
-            {diaPickerFecha && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
-                <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
-                  <p className="text-sm font-semibold text-ink-800 mb-1">
-                    {new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
-                  </p>
-                  <p className="text-xs text-ink-400 mb-4">¿Qué querés agregar?</p>
-                  <div className="flex gap-3">
-                    <button onClick={() => { setShowNewTarea(true); setDiaPickerFecha(null); }}
-                      className="flex-1 flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl py-4 transition">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                      <span className="text-xs font-semibold text-blue-700">Tarea</span>
-                    </button>
-                    <button onClick={() => { setShowNewVenc(true); setDiaPickerFecha(null); }}
-                      className="flex-1 flex flex-col items-center gap-1.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-xl py-4 transition">
-                      <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      <span className="text-xs font-semibold text-purple-700">Vencimiento</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Header agenda */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-ink-700">Agenda</h2>
-              <div className="flex gap-2">
-                <button onClick={() => setShowNewTarea(true)} className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
-                  + Tarea
-                </button>
-                <button onClick={() => setShowNewVenc(true)} className="flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">
-                  + Vencimiento
-                </button>
-                <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center">Ver todo →</Link>
-              </div>
-            </div>
-
-            {/* Franja urgentes/hoy — solo si hay algo */}
-            {(vencimientosHoy.length > 0 || urgentes.length > 0 || tareasHoy.length > 0) && (
-              <div className="mb-3 bg-red-50 border border-red-100 rounded-2xl overflow-hidden">
-                <div className="px-4 py-2 border-b border-red-100">
-                  <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">⚡ Requieren atención ahora</p>
-                </div>
-                <div className="divide-y divide-red-100/60">
-                  {vencimientosHoy.map((v) => (
-                    <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
-                  ))}
-                  {urgentes.map((v) => (
-                    <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={handleCumplido} onEdit={setEditingV} onDelete={handleDeleteVencimiento} marking={marking} deleting={deletingV} />
-                  ))}
-                  {tareasHoy.map((t) => (
-                    <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Calendario mensual */}
-            <CalendarioMensual
-              anio={calAnio}
-              mes={calMes}
-              eventos={eventosCalendario}
-              inhabiles={inhabiles}
-              onPrevMes={() => { if (calMes === 1) { setCalMes(12); setCalAnio(a => a - 1); } else setCalMes(m => m - 1); }}
-              onNextMes={() => { if (calMes === 12) { setCalMes(1); setCalAnio(a => a + 1); } else setCalMes(m => m + 1); }}
-              onClickDia={(fecha) => setDiaPickerFecha(fecha)}
-            />
-          </div>
+          {/* ── Agenda widget ── */}
+          <AgendaWidget
+            eventos={eventosCalendario}
+            inhabiles={inhabiles}
+            vencimientosHoy={vencimientosHoy}
+            urgentes={urgentes}
+            tareasHoy={tareasHoy}
+            expLookup={expLookup}
+            marking={marking}
+            markingTarea={markingTarea}
+            deletingV={deletingV}
+            deletingT={deletingT}
+            onShowNewTarea={() => setShowNewTarea(true)}
+            onShowNewVenc={() => setShowNewVenc(true)}
+            onCumplido={handleCumplido}
+            onEditV={setEditingV}
+            onDeleteV={handleDeleteVencimiento}
+            onHecha={handleTareaHecha}
+            onEditT={setEditingT}
+            onDeleteT={handleDeleteTarea}
+          />
 
           {/* ── KPIs contables ── */}
           {(() => {
@@ -761,6 +711,136 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: 
             </button>
           </div>
         </>
+      )}
+    </div>
+  );
+}
+
+// ── AgendaWidget: mini-semana + hoy ──────────────────────────────────────────
+
+function AgendaWidget({
+  eventos, inhabiles, vencimientosHoy, urgentes, tareasHoy, expLookup,
+  marking, markingTarea, deletingV, deletingT,
+  onShowNewTarea, onShowNewVenc, onCumplido, onEditV, onDeleteV, onHecha, onEditT, onDeleteT,
+}: {
+  eventos: CalEvent[];
+  inhabiles: DiaInhabil[];
+  vencimientosHoy: Vencimiento[];
+  urgentes: Vencimiento[];
+  tareasHoy: Tarea[];
+  expLookup: Record<string, Expediente>;
+  marking: string | null; markingTarea: string | null;
+  deletingV: string | null; deletingT: string | null;
+  onShowNewTarea: () => void; onShowNewVenc: () => void;
+  onCumplido: (id: string) => void; onEditV: (v: Vencimiento) => void; onDeleteV: (id: string) => void;
+  onHecha: (id: string) => void; onEditT: (t: Tarea) => void; onDeleteT: (id: string) => void;
+}) {
+  const hoy = new Date();
+  const todayStr = hoy.toISOString().split("T")[0];
+
+  // Construir los 7 días de la semana actual (lun → dom)
+  const diasSemana = useMemo(() => {
+    const diaSemana = hoy.getDay(); // 0=dom
+    const lunes = new Date(hoy);
+    lunes.setDate(hoy.getDate() - ((diaSemana + 6) % 7));
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(lunes);
+      d.setDate(lunes.getDate() + i);
+      return d.toISOString().split("T")[0];
+    });
+  }, []);
+
+  const eventosPorFecha = useMemo(() => {
+    const map: Record<string, CalEvent[]> = {};
+    for (const e of eventos) {
+      const f = e.tipo === "tarea" ? (e as any).fecha_limite ?? (e as any).fecha : (e as any).fecha;
+      if (!f) continue;
+      if (!map[f]) map[f] = [];
+      map[f].push(e);
+    }
+    return map;
+  }, [eventos]);
+
+  const inhabileSet = useMemo(() => new Set(inhabiles.map(i => i.fecha)), [inhabiles]);
+
+  const DIAS_LABEL = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"];
+  const hayUrgentes = vencimientosHoy.length > 0 || urgentes.length > 0 || tareasHoy.length > 0;
+
+  return (
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-ink-700">Agenda</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={onShowNewTarea} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Tarea</button>
+          <button onClick={onShowNewVenc} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Vencimiento</button>
+          <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
+        </div>
+      </div>
+
+      {/* Mini-semana */}
+      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-3">
+        <div className="grid grid-cols-7 gap-1">
+          {diasSemana.map((fecha, i) => {
+            const esHoy = fecha === todayStr;
+            const evs = eventosPorFecha[fecha] ?? [];
+            const esInhabil = inhabileSet.has(fecha);
+            const tieneUrgente = evs.some(e => e.color === "red");
+            const dia = parseInt(fecha.slice(8));
+
+            return (
+              <Link key={fecha} href={`/agenda`}
+                className={`flex flex-col items-center gap-1 py-2 rounded-xl transition cursor-pointer hover:bg-brand-50/50 ${esHoy ? "bg-brand-50 ring-1 ring-brand-300" : ""}`}
+              >
+                <span className={`text-[10px] font-semibold uppercase ${esHoy ? "text-brand-600" : "text-ink-400"}`}>{DIAS_LABEL[i]}</span>
+                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${esHoy ? "bg-brand-600 text-white" : esInhabil ? "text-red-400" : "text-ink-700"}`}>{dia}</span>
+                {/* Dots de eventos */}
+                <div className="flex gap-0.5 h-2 items-center">
+                  {evs.length === 0
+                    ? <span className="w-1 h-1 rounded-full bg-transparent" />
+                    : evs.slice(0, 3).map((e, j) => (
+                      <span key={j} className={`w-1.5 h-1.5 rounded-full ${
+                        e.color === "red" ? "bg-red-400" :
+                        e.color === "purple" ? "bg-purple-400" :
+                        e.color === "blue" ? "bg-blue-400" : "bg-amber-400"
+                      }`} />
+                    ))
+                  }
+                  {evs.length > 3 && <span className="text-[8px] text-ink-400 font-bold">+</span>}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Widget Hoy / Urgentes */}
+      {hayUrgentes ? (
+        <div className="bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-red-100 flex items-center justify-between">
+            <span className="text-xs font-bold text-red-600">⚡ Requieren atención hoy</span>
+            <span className="text-xs text-ink-400">{vencimientosHoy.length + urgentes.length + tareasHoy.length} ítems</span>
+          </div>
+          <div className="divide-y divide-ink-50 max-h-64 overflow-y-auto">
+            {[...vencimientosHoy, ...urgentes].map(v => (
+              <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={onCumplido} onEdit={onEditV} onDelete={onDeleteV} marking={marking} deleting={deletingV} />
+            ))}
+            {tareasHoy.map(t => (
+              <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={onHecha} onEdit={onEditT} onDelete={onDeleteT} marking={markingTarea} deleting={deletingT} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm px-5 py-4 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-ink-800">Todo al día</p>
+            <p className="text-xs text-ink-400">Sin vencimientos urgentes ni tareas para hoy</p>
+          </div>
+          <Link href="/agenda" className="ml-auto text-xs text-brand-600 hover:underline font-medium flex-shrink-0">Ver agenda →</Link>
+        </div>
       )}
     </div>
   );
