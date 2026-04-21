@@ -607,16 +607,16 @@ function ActividadRow({ item }: { item: ActividadItem }) {
       </div>
       <div className="flex-1 min-w-0 bg-ink-50 rounded-xl px-4 py-3 border border-ink-100">
         <p className="text-sm text-ink-800">{item.descripcion}</p>
-        {item.tipo === "honorario" && meta.monto && (
-          <p className="text-xs text-emerald-600 font-medium mt-0.5">{meta.moneda as string} {Number(meta.monto).toLocaleString("es-AR")}</p>
+        {item.tipo === "honorario" && meta.monto != null && (
+          <p className="text-xs text-emerald-600 font-medium mt-0.5">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR")}</p>
         )}
-        {item.tipo === "vencimiento" && meta.fecha && (
+        {item.tipo === "vencimiento" && meta.fecha != null && (
           <p className="text-xs text-amber-600 font-medium mt-0.5">
             {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}
             {meta.cumplido ? " · ✓ cumplido" : ""}
           </p>
         )}
-        {item.tipo === "tarea" && meta.estado && (
+        {item.tipo === "tarea" && meta.estado != null && (
           <p className="text-xs text-ink-400 mt-0.5 capitalize">{String(meta.estado).replace("_", " ")}</p>
         )}
         <p className="text-xs text-ink-400 mt-1.5">
