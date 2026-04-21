@@ -737,18 +737,28 @@ function AgendaWidget({
 }) {
   const hoy = new Date();
   const todayStr = hoy.toISOString().split("T")[0];
+  const [semanaOffset, setSemanaOffset] = useState(0); // 0 = semana actual, +1 = próxima, -1 = anterior
 
-  // Construir los 7 días de la semana actual (lun → dom)
+  // Construir los 7 días de la semana (lun → dom) con offset
   const diasSemana = useMemo(() => {
-    const diaSemana = hoy.getDay(); // 0=dom
+    const diaSemana = hoy.getDay();
     const lunes = new Date(hoy);
-    lunes.setDate(hoy.getDate() - ((diaSemana + 6) % 7));
+    lunes.setDate(hoy.getDate() - ((diaSemana + 6) % 7) + semanaOffset * 7);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(lunes);
       d.setDate(lunes.getDate() + i);
       return d.toISOString().split("T")[0];
     });
-  }, []);
+  }, [semanaOffset]);
+
+  const semanaLabel = useMemo(() => {
+    if (semanaOffset === 0) return "Esta semana";
+    if (semanaOffset === 1) return "Próxima semana";
+    if (semanaOffset === -1) return "Semana pasada";
+    const d = new Date(diasSemana[0] + "T12:00:00");
+    return d.toLocaleDateString("es-AR", { day: "numeric", month: "short" }) + " – " +
+      new Date(diasSemana[6] + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+  }, [semanaOffset, diasSemana]);
 
   const eventosPorFecha = useMemo(() => {
     const map: Record<string, CalEvent[]> = {};
@@ -780,6 +790,17 @@ function AgendaWidget({
 
       {/* Mini-semana */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-3">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <button onClick={() => setSemanaOffset(o => o - 1)} className="p-1 rounded-lg hover:bg-ink-50 text-ink-400 hover:text-ink-700 transition">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button onClick={() => setSemanaOffset(0)} className={`text-[10px] font-semibold transition ${semanaOffset === 0 ? "text-brand-600" : "text-ink-400 hover:text-ink-700"}`}>
+            {semanaLabel}
+          </button>
+          <button onClick={() => setSemanaOffset(o => o + 1)} className="p-1 rounded-lg hover:bg-ink-50 text-ink-400 hover:text-ink-700 transition">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
         <div className="grid grid-cols-7 gap-1">
           {diasSemana.map((fecha, i) => {
             const esHoy = fecha === todayStr;
