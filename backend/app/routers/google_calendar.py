@@ -134,6 +134,10 @@ def listar_calendarios(db: DbSession, current_user: CurrentUser):
             for c in calendar_list.get("items", [])
         ]
     except HttpError as e:
+        logger.error("HttpError listando calendarios: %s", e)
+        raise HTTPException(status_code=400, detail=f"Error al listar calendarios: {e}")
+    except Exception as e:
+        logger.error("Error inesperado listando calendarios: %s", e, exc_info=True)
         raise HTTPException(status_code=400, detail=f"Error al listar calendarios: {e}")
 
 
