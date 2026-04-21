@@ -74,6 +74,9 @@ export interface Cliente {
   cuit?: string;
   telefono?: string;
   email?: string;
+  domicilio?: string | null;
+  domicilio_lat?: number | null;
+  domicilio_lng?: number | null;
   archivado: boolean;
   created_at: string;
   updated_at: string;
@@ -190,7 +193,9 @@ export interface StudioUser {
 
 export interface Documento {
   id: string;
-  expediente_id: string;
+  expediente_id?: string | null;
+  tarea_id?: string | null;
+  vencimiento_id?: string | null;
   nombre: string;
   label?: string | null;
   descripcion?: string | null;

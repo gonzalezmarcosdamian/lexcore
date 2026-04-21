@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Cliente, Expediente, TipoCliente, EstadoExpediente } from "@/lib/api";
+import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
 
 const ESTADO_EXP_COLORS: Record<EstadoExpediente, string> = {
   activo: "bg-green-50 text-green-700",
@@ -68,6 +69,9 @@ export default function ClienteDetailPage() {
     cuit: "",
     telefono: "",
     email: "",
+    domicilio: "",
+    domicilio_lat: undefined as number | undefined,
+    domicilio_lng: undefined as number | undefined,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,6 +94,9 @@ export default function ClienteDetailPage() {
           cuit: c.cuit ?? "",
           telefono: c.telefono ?? "",
           email: c.email ?? "",
+          domicilio: c.domicilio ?? "",
+          domicilio_lat: c.domicilio_lat ?? undefined,
+          domicilio_lng: c.domicilio_lng ?? undefined,
         });
       })
       .catch((e) => setError(e.message))
@@ -110,6 +117,9 @@ export default function ClienteDetailPage() {
           cuit: form.cuit || undefined,
           telefono: form.telefono || undefined,
           email: form.email || undefined,
+          domicilio: form.domicilio || undefined,
+          domicilio_lat: form.domicilio_lat,
+          domicilio_lng: form.domicilio_lng,
         },
         token
       );
@@ -142,6 +152,9 @@ export default function ClienteDetailPage() {
       cuit: cliente.cuit ?? "",
       telefono: cliente.telefono ?? "",
       email: cliente.email ?? "",
+      domicilio: cliente.domicilio ?? "",
+      domicilio_lat: cliente.domicilio_lat ?? undefined,
+      domicilio_lng: cliente.domicilio_lng ?? undefined,
     });
     setEditing(false);
   };
@@ -262,6 +275,27 @@ export default function ClienteDetailPage() {
                   value={form.email}
                   onChange={(v) => setForm({ ...form, email: v })}
                 />
+                <div>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Domicilio</label>
+                  <AddressAutocomplete
+                    value={form.domicilio}
+                    placeholder="Buscar dirección en Argentina…"
+                    onChange={(val: AddressValue | null, rawText: string) => {
+                      if (val) {
+                        setForm(f => ({ ...f, domicilio: val.domicilio, domicilio_lat: val.domicilio_lat, domicilio_lng: val.domicilio_lng }));
+                      } else {
+                        setForm(f => ({ ...f, domicilio: rawText, domicilio_lat: undefined, domicilio_lng: undefined }));
+                      }
+                    }}
+                  />
+                  {form.domicilio_lat && (
+                    <a href={`https://maps.google.com/?q=${form.domicilio_lat},${form.domicilio_lng}`} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 mt-1.5">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      Ver en mapa
+                    </a>
+                  )}
+                </div>
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={handleCancelEdit}
@@ -288,6 +322,23 @@ export default function ClienteDetailPage() {
                 <FieldRow label="CUIT" value={cliente.cuit} />
                 <FieldRow label="Teléfono" value={cliente.telefono} />
                 <FieldRow label="Email" value={cliente.email} />
+                <div className="flex justify-between items-start gap-4 py-2.5 border-b border-ink-50 last:border-0">
+                  <span className="text-sm text-ink-400 flex-shrink-0">Domicilio</span>
+                  {cliente.domicilio ? (
+                    <div className="text-right">
+                      <p className="text-sm text-ink-900 font-medium">{cliente.domicilio}</p>
+                      {cliente.domicilio_lat && (
+                        <a href={`https://maps.google.com/?q=${cliente.domicilio_lat},${cliente.domicilio_lng}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 mt-0.5">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          Ver en mapa
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-ink-900 font-medium">—</span>
+                  )}
+                </div>
                 <FieldRow
                   label="Alta"
                   value={new Date(cliente.created_at).toLocaleDateString("es-AR")}

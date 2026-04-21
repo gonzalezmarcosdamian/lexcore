@@ -448,7 +448,7 @@ export default function ExpedienteDetailPage() {
             <div className="p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>N° Ref. interna</label>
+                  <label className={labelCls}>N° Interno</label>
                   <input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className={`${inputCls} font-mono`} placeholder="EXP-2026-0001" />
                 </div>
                 <div>
@@ -460,8 +460,8 @@ export default function ExpedienteDetailPage() {
                   </select>
                 </div>
                 <div className="col-span-2">
-                  <label className={labelCls}>N° interno del estudio</label>
-                  <input value={form.numero_judicial} onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })} className={inputCls} placeholder="Ej: 045/2026" />
+                  <label className={labelCls}>N° de Expediente</label>
+                  <input value={form.numero_judicial} onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })} className={inputCls} placeholder="Ej: 13696006" />
                 </div>
                 <div className="col-span-2">
                   <label className={labelCls}>Carátula</label>
@@ -542,8 +542,8 @@ export default function ExpedienteDetailPage() {
           {/* Datos del expediente */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-3">Datos</p>
-            <FieldRow label="Ref. interna" value={expediente.numero} />
-            {expediente.numero_judicial && <FieldRow label="N° Interno estudio" value={expediente.numero_judicial} />}
+            <FieldRow label="N° Interno" value={expediente.numero} />
+            {expediente.numero_judicial && <FieldRow label="N° Expediente" value={expediente.numero_judicial} />}
             <FieldRow label="Fuero" value={expediente.fuero} />
             <FieldRow label="Juzgado" value={expediente.juzgado} />
             {expediente.localidad && <FieldRow label="Localidad" value={expediente.localidad} />}

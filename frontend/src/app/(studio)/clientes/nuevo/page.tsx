@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, TipoCliente } from "@/lib/api";
+import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
 
 function formatCuit(valor: string): string {
   const clean = valor.replace(/\D/g, "").slice(0, 11);
@@ -52,6 +53,9 @@ export default function NuevoClientePage() {
     cuit: "",
     telefono: "",
     email: "",
+    domicilio: "",
+    domicilio_lat: undefined as number | undefined,
+    domicilio_lng: undefined as number | undefined,
   });
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
@@ -80,6 +84,9 @@ export default function NuevoClientePage() {
         cuit: form.cuit || undefined,
         telefono: form.telefono || undefined,
         email: form.email || undefined,
+        domicilio: form.domicilio || undefined,
+        domicilio_lat: form.domicilio_lat,
+        domicilio_lng: form.domicilio_lng,
       };
       await api.post("/clientes", body, token);
       router.push("/clientes");
@@ -191,6 +198,32 @@ export default function NuevoClientePage() {
             />
             {touched.email && errores.email && <p className="text-xs text-red-600 mt-1">{errores.email}</p>}
           </div>
+        </div>
+
+        <div>
+          <label className={labelCls}>Domicilio</label>
+          <AddressAutocomplete
+            value={form.domicilio}
+            placeholder="Buscar dirección en Argentina…"
+            onChange={(val: AddressValue | null, rawText: string) => {
+              if (val) {
+                setForm(f => ({ ...f, domicilio: val.domicilio, domicilio_lat: val.domicilio_lat, domicilio_lng: val.domicilio_lng }));
+              } else {
+                setForm(f => ({ ...f, domicilio: rawText, domicilio_lat: undefined, domicilio_lng: undefined }));
+              }
+            }}
+          />
+          {form.domicilio_lat && (
+            <a
+              href={`https://maps.google.com/?q=${form.domicilio_lat},${form.domicilio_lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 mt-1.5"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              Ver en mapa
+            </a>
+          )}
         </div>
 
         <div className="flex gap-3 pt-2">

@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Boolean, Enum, String
+from sqlalchemy import Boolean, Enum, Float, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import TenantModel
@@ -21,4 +21,7 @@ class Cliente(TenantModel):
     cuit: Mapped[str | None] = mapped_column(String(20), nullable=True)
     telefono: Mapped[str | None] = mapped_column(String(50), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    domicilio: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    domicilio_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    domicilio_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     archivado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

@@ -104,9 +104,18 @@ export default function NuevoExpedientePage() {
   const [clienteError, setClienteError] = useState("");
   const [localidadOpen, setLocalidadOpen] = useState(false);
 
-  useEffect(() => {
+  const fetchClientes = () => {
     if (!token) return;
     api.get<Cliente[]>("/clientes", token).then(setClientes).catch(() => {});
+  };
+
+  useEffect(fetchClientes, [token]);
+
+  // Refrescar lista cuando el usuario vuelve al tab (puede haber creado un cliente en nueva pestaña)
+  useEffect(() => {
+    const handler = () => { if (document.visibilityState === "visible") fetchClientes(); };
+    document.addEventListener("visibilitychange", handler);
+    return () => document.removeEventListener("visibilitychange", handler);
   }, [token]);
 
   useEffect(() => {
@@ -204,14 +213,14 @@ export default function NuevoExpedientePage() {
               </div>
 
               <div>
-                <label className={labelCls}>N° interno del estudio</label>
+                <label className={labelCls}>N° de Expediente</label>
                 <input
                   value={form.numero_judicial}
                   onChange={(e) => setForm({ ...form, numero_judicial: e.target.value })}
                   className={inputCls}
-                  placeholder="Ej: 045/2026 — podés completarlo después"
+                  placeholder="Ej: 13696006 — podés completarlo después"
                 />
-                <p className="text-xs text-ink-400 mt-1.5">Número propio del estudio, distinto al judicial (opcional)</p>
+                <p className="text-xs text-ink-400 mt-1.5">Número judicial asignado por el juzgado (opcional)</p>
               </div>
 
               <div>
@@ -355,9 +364,13 @@ export default function NuevoExpedientePage() {
                   )}
                 </div>
                 {clienteError && <p className="text-xs text-red-500 mt-1.5">{clienteError}</p>}
-                {clientes.length === 0 && (
-                  <p className="text-xs text-ink-400 mt-1.5">No hay clientes creados.{" "}<Link href="/clientes/nuevo" className="text-brand-600 underline">Crear uno</Link></p>
-                )}
+                <p className="text-xs text-ink-400 mt-1.5">
+                  ¿No encontrás el cliente?{" "}
+                  <a href="/clientes/nuevo" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline hover:text-brand-700">
+                    Crear cliente en nueva pestaña →
+                  </a>
+                  {" "}y volvé aquí para buscarlo.
+                </p>
               </div>
 
               {error && (

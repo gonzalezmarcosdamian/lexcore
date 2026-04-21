@@ -322,7 +322,11 @@ export function DocumentosTab({ expedienteId, token, onCreated }: Props) {
                       <span className="ml-1.5 opacity-0 group-hover/label:opacity-100 transition text-ink-300 text-xs">✏️</span>
                     </p>
                     {doc.label && <p className="text-xs text-ink-400 truncate">{doc.nombre}</p>}
-                    <p className="text-xs text-ink-400">{formatSize(doc.size_bytes)} · {formatDate(doc.created_at)}</p>
+                    <p className="text-xs text-ink-400">
+                      {formatSize(doc.size_bytes)} · {formatDate(doc.created_at)}
+                      {doc.tarea_id && <span className="ml-1.5 text-blue-500">• Tarea</span>}
+                      {doc.vencimiento_id && <span className="ml-1.5 text-amber-500">• Vencimiento</span>}
+                    </p>
                   </div>
                 )}
               </div>

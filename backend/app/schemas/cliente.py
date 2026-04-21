@@ -13,6 +13,9 @@ class ClienteCreate(BaseModel):
     cuit: Optional[str] = None
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
+    domicilio: Optional[str] = None
+    domicilio_lat: Optional[float] = None
+    domicilio_lng: Optional[float] = None
 
 
 class ClienteUpdate(BaseModel):
@@ -24,6 +27,9 @@ class ClienteUpdate(BaseModel):
     telefono: Optional[str] = None
     email: Optional[EmailStr] = None
     archivado: Optional[bool] = None
+    domicilio: Optional[str] = None
+    domicilio_lat: Optional[float] = None
+    domicilio_lng: Optional[float] = None
 
 
 class ClienteOut(BaseModel):
@@ -36,6 +42,9 @@ class ClienteOut(BaseModel):
     cuit: Optional[str] = None
     telefono: Optional[str] = None
     email: Optional[str] = None
+    domicilio: Optional[str] = None
+    domicilio_lat: Optional[float] = None
+    domicilio_lng: Optional[float] = None
     archivado: bool
     created_at: datetime
     updated_at: datetime

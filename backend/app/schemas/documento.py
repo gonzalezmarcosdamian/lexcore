@@ -5,7 +5,9 @@ from pydantic import BaseModel, Field
 
 
 class UploadUrlRequest(BaseModel):
-    expediente_id: str
+    expediente_id: Optional[str] = None
+    tarea_id: Optional[str] = None
+    vencimiento_id: Optional[str] = None
     nombre: str = Field(..., min_length=1, max_length=255)
     content_type: str = Field(..., min_length=1)
     size_bytes: int = Field(..., gt=0, le=50 * 1024 * 1024)  # máx 50MB
@@ -18,7 +20,9 @@ class UploadUrlResponse(BaseModel):
 
 
 class DocumentoCreate(BaseModel):
-    expediente_id: str
+    expediente_id: Optional[str] = None
+    tarea_id: Optional[str] = None
+    vencimiento_id: Optional[str] = None
     nombre: str
     descripcion: Optional[str] = None
     file_key: str
@@ -28,7 +32,9 @@ class DocumentoCreate(BaseModel):
 
 class DocumentoOut(BaseModel):
     id: str
-    expediente_id: str
+    expediente_id: Optional[str] = None
+    tarea_id: Optional[str] = None
+    vencimiento_id: Optional[str] = None
     nombre: str
     label: Optional[str] = None
     descripcion: Optional[str]
