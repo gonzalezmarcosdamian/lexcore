@@ -276,7 +276,9 @@ export type TareaTipo = "judicial" | "extrajudicial" | "administrativa" | "opera
 export interface Tarea {
   id: string;
   tenant_id: string;
-  expediente_id: string;
+  expediente_id?: string | null;
+  cliente_id?: string | null;
+  cliente_nombre?: string | null;
   titulo: string;
   descripcion?: string | null;
   responsable_id?: string | null;

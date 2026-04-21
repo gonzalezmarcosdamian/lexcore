@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente } from "@/lib/api";
+import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente, Cliente } from "@/lib/api";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
@@ -348,6 +348,7 @@ export default function AgendaPage() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
 
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
@@ -356,12 +357,12 @@ export default function AgendaPage() {
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
 
   const [showTareaModal, setShowTareaModal] = useState(false);
-  const [tareaForm, setTareaForm] = useState({ titulo: "", expediente_id: "", fecha_limite: "", descripcion: "", tipo: "judicial" as TareaTipo });
+  const [tareaForm, setTareaForm] = useState({ titulo: "", expediente_id: "", cliente_id: "", fecha_limite: "", hora: "", descripcion: "", tipo: "judicial" as TareaTipo });
   const [savingTarea, setSavingTarea] = useState(false);
   const [tareaError, setTareaError] = useState("");
 
   const [showVencimientoModal, setShowVencimientoModal] = useState(false);
-  const [vencimientoForm, setVencimientoForm] = useState({ descripcion: "", fecha: "", tipo: "vencimiento", expediente_id: "" });
+  const [vencimientoForm, setVencimientoForm] = useState({ descripcion: "", fecha: "", hora: "", tipo: "vencimiento", expediente_id: "" });
   const [savingVencimiento, setSavingVencimiento] = useState(false);
   const [vencimientoError, setVencimientoError] = useState("");
 
@@ -382,6 +383,7 @@ export default function AgendaPage() {
   useEffect(() => {
     if (!token) return;
     api.get<Expediente[]>("/expedientes", token).then(setExpedientes).catch(() => {});
+    api.get<Cliente[]>("/clientes", token).then(setClientes).catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -424,12 +426,14 @@ export default function AgendaPage() {
         titulo: tareaForm.titulo,
         tipo: tareaForm.tipo,
         expediente_id: tareaForm.expediente_id || undefined,
+        cliente_id: tareaForm.cliente_id || undefined,
         fecha_limite: tareaForm.fecha_limite || undefined,
+        hora: tareaForm.hora || undefined,
         descripcion: tareaForm.descripcion || undefined,
       }, token);
       setTareas(prev => [...prev, created]);
       setShowTareaModal(false);
-      setTareaForm({ titulo: "", expediente_id: "", fecha_limite: "", descripcion: "", tipo: "judicial" });
+      setTareaForm({ titulo: "", expediente_id: "", cliente_id: "", fecha_limite: "", hora: "", descripcion: "", tipo: "judicial" });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al crear tarea";
       setTareaError(msg);
@@ -447,12 +451,13 @@ export default function AgendaPage() {
       const created = await api.post<Vencimiento>("/vencimientos", {
         descripcion: vencimientoForm.descripcion,
         fecha: vencimientoForm.fecha,
+        hora: vencimientoForm.hora || undefined,
         tipo: vencimientoForm.tipo,
         expediente_id: vencimientoForm.expediente_id || undefined,
       }, token);
       setVencimientos(prev => [...prev, created]);
       setShowVencimientoModal(false);
-      setVencimientoForm({ descripcion: "", fecha: "", tipo: "vencimiento", expediente_id: "" });
+      setVencimientoForm({ descripcion: "", fecha: "", hora: "", tipo: "vencimiento", expediente_id: "" });
     } catch (err: unknown) {
       setVencimientoError(err instanceof Error ? err.message : "Error al crear vencimiento");
     } finally {
@@ -503,9 +508,15 @@ export default function AgendaPage() {
                 <label className="block text-xs font-medium text-ink-600 mb-1">Descripción *</label>
                 <input required value={vencimientoForm.descripcion} onChange={(e) => setVencimientoForm(f => ({ ...f, descripcion: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Ej: Presentar memorial" />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
-                <input required type="date" value={vencimientoForm.fecha} onChange={(e) => setVencimientoForm(f => ({ ...f, fecha: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
+                  <input required type="date" value={vencimientoForm.fecha} onChange={(e) => setVencimientoForm(f => ({ ...f, fecha: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+                  <input type="time" value={vencimientoForm.hora} onChange={(e) => setVencimientoForm(f => ({ ...f, hora: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
@@ -718,17 +729,28 @@ export default function AgendaPage() {
                   <option value="operativa">🔧 Operativa</option>
                 </select>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
-                  <select value={tareaForm.expediente_id} onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
-                    <option value="">Sin expediente</option>
-                    {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">Cliente</label>
+                <select value={tareaForm.cliente_id} onChange={(e) => setTareaForm({ ...tareaForm, cliente_id: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
+                  <option value="">Sin cliente</option>
+                  {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
+                <select value={tareaForm.expediente_id} onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
+                  <option value="">Sin expediente</option>
+                  {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1.5">Fecha límite</label>
                   <input type="date" value={tareaForm.fecha_limite} onChange={(e) => setTareaForm({ ...tareaForm, fecha_limite: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Hora</label>
+                  <input type="time" value={tareaForm.hora} onChange={(e) => setTareaForm({ ...tareaForm, hora: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" />
                 </div>
               </div>
               <div>

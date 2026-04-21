@@ -7,6 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.deps import CurrentUser, DbSession
+from app.models.cliente import Cliente
 from app.models.expediente import Expediente
 from app.models.tarea import Tarea, TareaEstado
 from app.models.user import User
@@ -43,6 +44,9 @@ def _enriquecer(db, tarea: Tarea) -> TareaOut:
     if tarea.responsable_id:
         user = db.query(User).filter(User.id == tarea.responsable_id).first()
         out.responsable_nombre = user.full_name if user else None
+    if tarea.cliente_id:
+        cliente = db.query(Cliente).filter(Cliente.id == tarea.cliente_id).first()
+        out.cliente_nombre = cliente.nombre if cliente else None
     return out
 
 

@@ -8,6 +8,7 @@ from app.models.tarea import TareaEstado, TareaTipo
 
 class TareaCreate(BaseModel):
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
     titulo: str
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
@@ -26,6 +27,7 @@ class TareaCreate(BaseModel):
 
 class TareaUpdate(BaseModel):
     titulo: Optional[str] = None
+    cliente_id: Optional[str] = None
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None
     tipo: Optional[TareaTipo] = None
@@ -38,6 +40,8 @@ class TareaOut(BaseModel):
     id: str
     tenant_id: str
     expediente_id: Optional[str] = None
+    cliente_id: Optional[str] = None
+    cliente_nombre: Optional[str] = None
     titulo: str
     descripcion: Optional[str] = None
     responsable_id: Optional[str] = None

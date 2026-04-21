@@ -65,6 +65,7 @@ export default function DashboardPage() {
   const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
   const [totalExpedientes, setTotalExpedientes] = useState<number | null>(null);
   const [totalClientes, setTotalClientes] = useState<number | null>(null);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [expStats, setExpStats] = useState<{ activo: number; archivado: number; cerrado: number } | null>(null);
   const [studioConfigured, setStudioConfigured] = useState(false);
 
@@ -107,7 +108,7 @@ export default function DashboardPage() {
       setExpStats({ activo: activos.length, archivado: archivados.length, cerrado: cerrados.length });
     }).catch(() => { setTotalExpedientes(0); setExpStats({ activo: 0, archivado: 0, cerrado: 0 }); });
     api.get<Cliente[]>("/clientes", token)
-      .then((cls) => setTotalClientes(cls.filter((c) => !c.archivado).length))
+      .then((cls) => { const activos = cls.filter((c) => !c.archivado); setTotalClientes(activos.length); setClientes(activos); })
       .catch(() => setTotalClientes(0));
     api.get<{ email_contacto?: string }>("/studios/me", token)
       .then((s) => setStudioConfigured(!!s.email_contacto))
@@ -167,7 +168,7 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-20 lg:pb-6">
       {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
-      {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
+      {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} clientes={clientes} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
       {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
 
@@ -301,7 +302,7 @@ export default function DashboardPage() {
                         <p className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Vencidas o para hoy</p>
                       </div>
                       {tareasHoy.map((t) => (
-                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
+                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
                       ))}
                     </>
                   )}
@@ -314,7 +315,7 @@ export default function DashboardPage() {
                         </div>
                       )}
                       {tareasFuturas.map((t) => (
-                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
+                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
                       ))}
                     </>
                   )}
@@ -325,7 +326,7 @@ export default function DashboardPage() {
                         <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Sin fecha límite</p>
                       </div>
                       {tareasSinFecha.map((t) => (
-                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
+                        <TareaRow key={t.id} tarea={t} exp={expLookup[t.expediente_id ?? ""]} onHecha={handleTareaHecha} onEdit={setEditingT} onDelete={handleDeleteTarea} marking={markingTarea} deleting={deletingT} />
                       ))}
                     </>
                   )}
@@ -496,10 +497,11 @@ export default function DashboardPage() {
 
 const inputCls = "w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400";
 
-function NewTareaModal({ token, expedientes, onCreated, onClose }: { token: string; expedientes: Expediente[]; onCreated: (t: Tarea) => void; onClose: () => void }) {
+function NewTareaModal({ token, expedientes, clientes, onCreated, onClose }: { token: string; expedientes: Expediente[]; clientes: Cliente[]; onCreated: (t: Tarea) => void; onClose: () => void }) {
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState<TareaTipo>("judicial");
   const [expedienteId, setExpedienteId] = useState("");
+  const [clienteId, setClienteId] = useState("");
   const [fechaLimite, setFechaLimite] = useState("");
   const [hora, setHora] = useState("");
   const [saving, setSaving] = useState(false);
@@ -510,6 +512,7 @@ function NewTareaModal({ token, expedientes, onCreated, onClose }: { token: stri
     try {
       const body: Record<string, unknown> = { titulo: titulo.trim(), tipo, estado: "pendiente" };
       if (expedienteId) body.expediente_id = expedienteId;
+      if (clienteId) body.cliente_id = clienteId;
       if (fechaLimite) body.fecha_limite = fechaLimite;
       if (hora) body.hora = hora;
       const created = await api.post<Tarea>("/tareas", body, token);
@@ -535,6 +538,13 @@ function NewTareaModal({ token, expedientes, onCreated, onClose }: { token: stri
               <option value="extrajudicial">🤝 Extrajudicial</option>
               <option value="administrativa">🏢 Administrativa</option>
               <option value="operativa">🔧 Operativa</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Cliente</label>
+            <select value={clienteId} onChange={e => setClienteId(e.target.value)} className={inputCls}>
+              <option value="">— Sin cliente —</option>
+              {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
             </select>
           </div>
           <div>

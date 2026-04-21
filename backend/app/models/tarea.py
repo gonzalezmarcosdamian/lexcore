@@ -26,6 +26,9 @@ class Tarea(TenantModel):
     expediente_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("expedientes.id"), nullable=True, index=True
     )
+    cliente_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("clientes.id"), nullable=True, index=True
+    )
     titulo: Mapped[str] = mapped_column(String(500), nullable=False)
     descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
     responsable_id: Mapped[str | None] = mapped_column(
