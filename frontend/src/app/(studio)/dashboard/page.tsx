@@ -667,21 +667,20 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: 
   const esHoy = tarea.fecha_limite === today;
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${vencida ? "bg-red-50/30" : ""}`}>
-      <button
-        onClick={() => onHecha(tarea.id)}
-        disabled={marking === tarea.id}
-        className={`flex-shrink-0 w-5 h-5 rounded border-2 transition disabled:opacity-50 ${
-          marking === tarea.id ? "bg-blue-100 border-blue-300" : "border-blue-300 hover:border-blue-500 hover:bg-blue-50"
-        }`}
-      >
-        {marking === tarea.id && <svg className="w-full h-full text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
-      </button>
+      <div className={`flex-shrink-0 w-5 h-5 rounded border-2 ${
+        tarea.estado === "hecha" ? "bg-green-500 border-green-500" : tarea.estado === "en_curso" ? "bg-blue-100 border-blue-300" : "border-ink-200"
+      }`}>
+        {tarea.estado === "hecha" && <svg className="w-full h-full text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-ink-900 font-medium truncate">{tarea.titulo}</p>
+        {exp
+          ? <Link href={`/expedientes/${exp.id}`} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{tarea.titulo}</Link>
+          : <p className="text-sm text-ink-900 font-medium truncate">{tarea.titulo}</p>
+        }
         {exp && (
-          <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate block max-w-[180px]">
+          <span className="text-xs text-ink-400 truncate block max-w-[180px]">
             {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-          </Link>
+          </span>
         )}
       </div>
       {confirmDelete ? (

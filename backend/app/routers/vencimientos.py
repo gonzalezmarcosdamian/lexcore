@@ -101,16 +101,35 @@ def actualizar_vencimiento(
         from app.models.expediente import Movimiento
         if set(cambios.keys()) == {"cumplido"}:
             texto = f"{'✅' if venc.cumplido else '↩️'} Vencimiento {'cumplido' if venc.cumplido else 'reabierto'}: {venc.descripcion}"
+            # Reemplazar el movimiento de estado anterior del mismo vencimiento (no acumular)
+            from sqlalchemy import or_
+            prev = db.query(Movimiento).filter(
+                Movimiento.expediente_id == venc.expediente_id,
+                Movimiento.tenant_id == venc.tenant_id,
+                or_(
+                    Movimiento.texto.like(f"%cumplido%: {venc.descripcion}"),
+                    Movimiento.texto.like(f"%reabierto%: {venc.descripcion}"),
+                ),
+            ).order_by(Movimiento.created_at.desc()).first()
+            if prev:
+                prev.texto = texto
+            else:
+                db.add(Movimiento(
+                    tenant_id=venc.tenant_id,
+                    expediente_id=venc.expediente_id,
+                    user_id=current_user["sub"],
+                    texto=texto,
+                ))
         else:
             texto = f"✏️ Vencimiento editado: {venc.descripcion}"
             if "fecha" in cambios:
                 texto += f" → {venc.fecha}"
-        db.add(Movimiento(
-            tenant_id=venc.tenant_id,
-            expediente_id=venc.expediente_id,
-            user_id=current_user["sub"],
-            texto=texto,
-        ))
+            db.add(Movimiento(
+                tenant_id=venc.tenant_id,
+                expediente_id=venc.expediente_id,
+                user_id=current_user["sub"],
+                texto=texto,
+            ))
     db.commit()
     db.refresh(venc)
     push_vencimiento(db, venc, current_user["sub"])
