@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -12,9 +12,40 @@ interface SyncResult {
   total: number;
 }
 
+interface LastSync {
+  ts: number; // unix ms
+  synced: number;
+}
+
 interface Props {
-  /** "banner" muestra callout con descripción; "compact" solo el botón con ícono */
   variant?: "banner" | "compact";
+}
+
+const LS_KEY = "lexcore_last_calendar_sync";
+
+function loadLastSync(): LastSync | null {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveLastSync(data: LastSync) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch {}
+}
+
+function formatLastSync(ts: number): string {
+  const now = Date.now();
+  const diff = now - ts;
+  const mins = Math.floor(diff / 60000);
+  const hrs = Math.floor(diff / 3600000);
+  const d = new Date(ts);
+  const hhmm = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+
+  if (mins < 1) return "hace un momento";
+  if (mins < 60) return `hace ${mins} min`;
+  if (hrs < 24) return `hoy a las ${hhmm}`;
+  return `ayer a las ${hhmm}`;
 }
 
 const CalIcon = () => (
@@ -29,6 +60,12 @@ const SyncIcon = ({ spinning }: { spinning: boolean }) => (
   </svg>
 );
 
+const CheckIcon = () => (
+  <svg className="w-3 h-3 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);
+
 export function CalendarSyncButton({ variant = "compact" }: Props) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -37,19 +74,27 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
 
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [result, setResult] = useState<SyncResult | null>(null);
+  const [justSynced, setJustSynced] = useState<SyncResult | null>(null);
+  const [lastSync, setLastSync] = useState<LastSync | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLastSync(loadLastSync());
+  }, []);
 
   if (!token) return null;
 
   const handleSync = async () => {
     setSyncing(true);
-    setResult(null);
+    setJustSynced(null);
     setError(null);
     try {
       const res = await api.post<SyncResult>("/vencimientos/sync-calendar", {}, token);
-      setResult(res);
-      setTimeout(() => setResult(null), 5000);
+      const ls: LastSync = { ts: Date.now(), synced: res.synced };
+      saveLastSync(ls);
+      setLastSync(ls);
+      setJustSynced(res);
+      setTimeout(() => setJustSynced(null), 4000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Error al sincronizar";
       if (msg.includes("calendario") || msg.includes("calendar_id") || msg.includes("elegir") || msg.includes("perfil")) {
@@ -102,7 +147,6 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
         </div>
       );
     }
-    // compact
     return (
       <button
         onClick={handleConnect}
@@ -117,6 +161,29 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
   }
 
   // ── Usuario Google: sync directo ──────────────────────────────────────────
+  const subtitle = () => {
+    if (justSynced) return (
+      <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+        <CheckIcon />
+        {justSynced.synced} evento{justSynced.synced !== 1 ? "s" : ""} sincronizado{justSynced.synced !== 1 ? "s" : ""}
+      </span>
+    );
+    if (error) return (
+      <p className="text-xs text-red-500">
+        {error.includes("calendar_id") || error.includes("configurado") || error.includes("elegir")
+          ? <Link href="/perfil" className="underline">Elegí tu calendario en Perfil</Link>
+          : error}
+      </p>
+    );
+    if (lastSync) return (
+      <span className="flex items-center gap-1 text-xs text-ink-400">
+        <CheckIcon />
+        <span>{lastSync.synced} evento{lastSync.synced !== 1 ? "s" : ""} · {formatLastSync(lastSync.ts)}</span>
+      </span>
+    );
+    return <p className="text-xs text-ink-400">Sincronizá vencimientos y tareas con tu calendario</p>;
+  };
+
   if (variant === "banner") {
     return (
       <div className="flex items-center justify-between bg-white border border-ink-100 rounded-2xl px-4 py-3 shadow-sm">
@@ -126,17 +193,7 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
           </div>
           <div>
             <p className="text-xs font-semibold text-ink-800">Google Calendar</p>
-            {result ? (
-              <p className="text-xs text-green-600">{result.synced} evento{result.synced !== 1 ? "s" : ""} sincronizado{result.synced !== 1 ? "s" : ""}</p>
-            ) : error ? (
-              <p className="text-xs text-red-500">
-                {error.includes("calendar_id") || error.includes("configurado") || error.includes("elegir")
-                  ? <Link href="/perfil" className="underline">Elegí tu calendario en Perfil</Link>
-                  : error}
-              </p>
-            ) : (
-              <p className="text-xs text-ink-400">Sincronizá vencimientos y tareas con tu calendario</p>
-            )}
+            {subtitle()}
           </div>
         </div>
         <button
@@ -161,10 +218,12 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
       className="flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-brand-600 border border-ink-200 hover:border-brand-300 px-3 py-2 rounded-xl transition disabled:opacity-50"
     >
       <SyncIcon spinning={syncing} />
-      {result
-        ? <span className="text-green-600">{result.synced} sync</span>
+      {justSynced
+        ? <span className="text-green-600">{justSynced.synced} sync</span>
         : error
         ? <span className="text-red-500">Error</span>
+        : lastSync
+        ? <span className="text-ink-400">{formatLastSync(lastSync.ts)}</span>
         : syncing ? "Sync…" : "Sync Calendar"
       }
     </button>

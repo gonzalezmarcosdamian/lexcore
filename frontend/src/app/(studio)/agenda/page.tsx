@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, Vencimiento, Expediente } from "@/lib/api";
@@ -28,20 +28,129 @@ function formatFecha(f: string): string {
   return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
 }
 
+// ── Edit Modals ───────────────────────────────────────────────────────────────
+
+function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; token: string; onSaved: (u: Vencimiento) => void; onClose: () => void }) {
+  const [descripcion, setDescripcion] = useState(v.descripcion);
+  const [fecha, setFecha] = useState(v.fecha);
+  const [tipo, setTipo] = useState(v.tipo);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    setSaving(true);
+    try {
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, tipo }, token);
+      onSaved(updated);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
+            <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
+            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="vencimiento">Vencimiento</option>
+              <option value="audiencia">Audiencia</option>
+              <option value="presentacion">Presentación</option>
+              <option value="pericia">Pericia</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea; token: string; expedientes: Expediente[]; onSaved: (u: Tarea) => void; onClose: () => void }) {
+  const [titulo, setTitulo] = useState(t.titulo);
+  const [fechaLimite, setFechaLimite] = useState(t.fecha_limite ?? "");
+  const [estado, setEstado] = useState(t.estado);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = { titulo, estado };
+      body.fecha_limite = fechaLimite || null;
+      const updated = await api.patch<Tarea>(`/tareas/${t.id}`, body, token);
+      onSaved(updated);
+    } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-ink-900">Editar tarea</h2>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Título</label>
+            <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
+            <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
+            <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="pendiente">Pendiente</option>
+              <option value="en_curso">En curso</option>
+            </select>
+          </div>
+          {err && <p className="text-xs text-red-500">{err}</p>}
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Guardar"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Tarjeta Vencimiento ───────────────────────────────────────────────────────
 
-function VencimientoCard({ v, onToggle }: { v: Vencimiento; onToggle: () => void }) {
+function VencimientoCard({
+  v, exp, onToggle, onEdit, onDelete,
+}: {
+  v: Vencimiento;
+  exp?: Expediente;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const vencida = esVencida(v.fecha) && !v.cumplido;
   const urgente = esUrgente(v.fecha) && !v.cumplido;
 
   return (
-    <div className={`rounded-xl border px-4 py-3 flex items-start gap-3 transition ${
+    <div className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${
       v.cumplido      ? "bg-green-50 border-green-100 opacity-70" :
       vencida         ? "bg-red-50 border-red-200" :
       urgente         ? "bg-amber-50 border-amber-200" :
                         "bg-white border-ink-100 hover:border-ink-200"
     }`}>
-      {/* Checkbox circular */}
       <button onClick={onToggle} className="mt-0.5 flex-shrink-0 p-1 -m-1">
         {v.cumplido ? (
           <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
@@ -53,25 +162,41 @@ function VencimientoCard({ v, onToggle }: { v: Vencimiento; onToggle: () => void
       </button>
 
       <div className="flex-1 min-w-0">
-        {/* Badge tipo */}
         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             Vencimiento
           </span>
           {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
           {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
         </div>
         <p className={`text-sm font-medium leading-snug ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</p>
-        {v.tipo && v.tipo !== "vencimiento" && (
-          <p className="text-xs text-ink-400 mt-0.5">{v.tipo}</p>
+        {exp ? (
+          <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline mt-0.5 block truncate">
+            {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
+          </Link>
+        ) : (
+          <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline mt-1 block">Ver expediente →</Link>
         )}
-        <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline mt-1 block">
-          Ver expediente →
-        </Link>
       </div>
+
+      {/* Actions */}
+      {confirmDelete ? (
+        <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+          <button onClick={onDelete} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg font-semibold transition">Sí</button>
+          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50 transition">No</button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition ml-1">
+          <button onClick={onEdit} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+          <button onClick={() => setConfirmDelete(true)} title="Eliminar" className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -84,17 +209,25 @@ const ESTADO_CICLO: Record<TareaEstado, TareaEstado> = {
   hecha:     "pendiente",
 };
 
-function TareaCard({ t, onToggle }: { t: Tarea; onToggle: () => void }) {
+function TareaCard({
+  t, exp, onToggle, onEdit, onDelete,
+}: {
+  t: Tarea;
+  exp?: Expediente;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const vencida = t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha";
 
   return (
-    <div className={`rounded-xl border px-4 py-3 flex items-start gap-3 transition ${
+    <div className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${
       t.estado === "hecha" ? "bg-green-50 border-green-100 opacity-70" :
       vencida              ? "bg-red-50 border-red-200" :
       t.estado === "en_curso" ? "bg-blue-50 border-blue-100" :
                              "bg-white border-ink-100 hover:border-ink-200"
     }`}>
-      {/* Checkbox cuadrado */}
       <button onClick={onToggle} className="mt-0.5 flex-shrink-0 p-1 -m-1" title={`Estado: ${t.estado} → click para avanzar`}>
         {t.estado === "hecha" ? (
           <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center">
@@ -110,17 +243,12 @@ function TareaCard({ t, onToggle }: { t: Tarea; onToggle: () => void }) {
       </button>
 
       <div className="flex-1 min-w-0">
-        {/* Badge tipo */}
         <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
+            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
             Tarea
           </span>
-          {t.estado === "en_curso" && (
-            <span className="text-[10px] font-semibold text-blue-600">En curso</span>
-          )}
+          {t.estado === "en_curso" && <span className="text-[10px] font-semibold text-blue-600">En curso</span>}
           {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencida</span>}
         </div>
         <p className={`text-sm font-medium leading-snug ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>{t.titulo}</p>
@@ -131,13 +259,33 @@ function TareaCard({ t, onToggle }: { t: Tarea; onToggle: () => void }) {
               {t.responsable_nombre}
             </span>
           )}
-          {t.expediente_id && (
-            <Link href={`/expedientes/${t.expediente_id}`} className="text-xs text-brand-600 hover:underline">
-              Ver expediente →
+          {exp ? (
+            <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate max-w-[180px]">
+              {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
             </Link>
-          )}
+          ) : t.expediente_id ? (
+            <Link href={`/expedientes/${t.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
+          ) : null}
         </div>
       </div>
+
+      {/* Actions */}
+      {confirmDelete ? (
+        <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
+          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+          <button onClick={onDelete} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg font-semibold transition">Sí</button>
+          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50 transition">No</button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition ml-1">
+          <button onClick={onEdit} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          </button>
+          <button onClick={() => setConfirmDelete(true)} title="Eliminar" className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -154,9 +302,7 @@ function Skeleton() {
 
 // ── Columna ───────────────────────────────────────────────────────────────────
 
-function Columna({
-  titulo, color, icono, count, children,
-}: {
+function Columna({ titulo, color, icono, count, children }: {
   titulo: string; color: string; icono: React.ReactNode; count: number; children: React.ReactNode;
 }) {
   return (
@@ -186,11 +332,15 @@ export default function AgendaPage() {
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+
+  const [editingV, setEditingV] = useState<Vencimiento | null>(null);
+  const [editingT, setEditingT] = useState<Tarea | null>(null);
+
   const [showTareaModal, setShowTareaModal] = useState(false);
   const [tareaForm, setTareaForm] = useState({ titulo: "", expediente_id: "", fecha_limite: "", descripcion: "" });
   const [savingTarea, setSavingTarea] = useState(false);
   const [tareaError, setTareaError] = useState("");
-  const [expedientes, setExpedientes] = useState<Expediente[]>([]);
 
   const fetchData = useCallback(() => {
     if (!token) return;
@@ -208,7 +358,7 @@ export default function AgendaPage() {
 
   useEffect(() => {
     if (!token) return;
-    api.get<Expediente[]>("/expedientes", token, { estado: "activo" }).then(setExpedientes).catch(() => {});
+    api.get<Expediente[]>("/expedientes", token).then(setExpedientes).catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -217,10 +367,28 @@ export default function AgendaPage() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [fetchData]);
 
+  const expLookup = useMemo(() => {
+    const map: Record<string, Expediente> = {};
+    for (const e of expedientes) map[e.id] = e;
+    return map;
+  }, [expedientes]);
+
   const toggleVencimiento = async (v: Vencimiento) => {
     if (!token) return;
     const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { cumplido: !v.cumplido }, token);
     setVencimientos(prev => prev.map(x => x.id === v.id ? updated : x));
+  };
+
+  const deleteVencimiento = async (id: string) => {
+    if (!token) return;
+    await api.delete(`/vencimientos/${id}`, token);
+    setVencimientos(prev => prev.filter(x => x.id !== id));
+  };
+
+  const deleteTarea = async (id: string) => {
+    if (!token) return;
+    await api.delete(`/tareas/${id}`, token);
+    setTareas(prev => prev.filter(x => x.id !== id));
   };
 
   const handleCrearTarea = async (e: React.FormEvent) => {
@@ -239,7 +407,7 @@ export default function AgendaPage() {
       setShowTareaModal(false);
       setTareaForm({ titulo: "", expediente_id: "", fecha_limite: "", descripcion: "" });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : typeof err === "object" && err !== null && "detail" in err ? String((err as {detail: unknown}).detail) : "Error al crear tarea";
+      const msg = err instanceof Error ? err.message : "Error al crear tarea";
       setTareaError(msg);
     } finally {
       setSavingTarea(false);
@@ -258,7 +426,6 @@ export default function AgendaPage() {
   const vFiltradas = vencimientos.filter(v => inRange(v.fecha, desde, hasta));
   const tFiltradas = tareas.filter(t => t.fecha_limite && inRange(t.fecha_limite, desde, hasta));
 
-  // Fechas únicas de ambas columnas
   const todasFechas = Array.from(new Set([
     ...vFiltradas.map(v => v.fecha),
     ...tFiltradas.map(t => t.fecha_limite!),
@@ -270,6 +437,13 @@ export default function AgendaPage() {
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
+      {editingV && token && (
+        <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setVencimientos(prev => prev.map(x => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />
+      )}
+      {editingT && token && (
+        <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -293,10 +467,8 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* Selector de período */}
       <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
 
-      {/* Leyenda */}
       <div className="flex items-center gap-4 text-xs text-ink-500">
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-purple-400 flex-shrink-0" />
@@ -335,21 +507,12 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* ── Layout dos columnas en desktop, stack en mobile ── */}
       {!loading && !empty && (
         <>
-          {/* Desktop: columnas fijas lado a lado */}
+          {/* Desktop */}
           <div className="hidden lg:grid lg:grid-cols-2 gap-6">
-            {/* Col Vencimientos */}
-            <Columna
-              titulo="Vencimientos"
-              color="border-purple-300"
-              count={vFiltradas.length}
-              icono={
-                <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              }
+            <Columna titulo="Vencimientos" color="border-purple-300" count={vFiltradas.length}
+              icono={<svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
             >
               {vFiltradas.length === 0 ? (
                 <div className="text-center py-8">
@@ -360,12 +523,10 @@ export default function AgendaPage() {
                 <div className="space-y-6">
                   {todasFechas.filter(f => vFiltradas.some(v => v.fecha === f)).map(fecha => (
                     <div key={fecha}>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>
-                        {formatFecha(fecha)}
-                      </p>
+                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>{formatFecha(fecha)}</p>
                       <div className="space-y-2">
                         {vFiltradas.filter(v => v.fecha === fecha).map(v => (
-                          <VencimientoCard key={v.id} v={v} onToggle={() => toggleVencimiento(v)} />
+                          <VencimientoCard key={v.id} v={v} exp={expLookup[v.expediente_id]} onToggle={() => toggleVencimiento(v)} onEdit={() => setEditingV(v)} onDelete={() => deleteVencimiento(v.id)} />
                         ))}
                       </div>
                     </div>
@@ -374,16 +535,8 @@ export default function AgendaPage() {
               )}
             </Columna>
 
-            {/* Col Tareas */}
-            <Columna
-              titulo="Tareas"
-              color="border-blue-300"
-              count={tFiltradas.length}
-              icono={
-                <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-              }
+            <Columna titulo="Tareas" color="border-blue-300" count={tFiltradas.length}
+              icono={<svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>}
             >
               {tFiltradas.length === 0 ? (
                 <div className="text-center py-8">
@@ -393,12 +546,10 @@ export default function AgendaPage() {
                 <div className="space-y-6">
                   {todasFechas.filter(f => tFiltradas.some(t => t.fecha_limite === f)).map(fecha => (
                     <div key={fecha}>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>
-                        {formatFecha(fecha)}
-                      </p>
+                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>{formatFecha(fecha)}</p>
                       <div className="space-y-2">
                         {tFiltradas.filter(t => t.fecha_limite === fecha).map(t => (
-                          <TareaCard key={t.id} t={t} onToggle={() => toggleTarea(t)} />
+                          <TareaCard key={t.id} t={t} exp={t.expediente_id ? expLookup[t.expediente_id] : undefined} onToggle={() => toggleTarea(t)} onEdit={() => setEditingT(t)} onDelete={() => deleteTarea(t.id)} />
                         ))}
                       </div>
                     </div>
@@ -408,7 +559,7 @@ export default function AgendaPage() {
             </Columna>
           </div>
 
-          {/* Mobile: cronológico intercalado con badges diferenciados */}
+          {/* Mobile */}
           <div className="lg:hidden space-y-6">
             {todasFechas.map(fecha => {
               const vDia = vFiltradas.filter(v => v.fecha === fecha);
@@ -416,14 +567,12 @@ export default function AgendaPage() {
               return (
                 <div key={fecha}>
                   <div className="flex items-center gap-3 mb-2">
-                    <p className={`text-xs font-bold uppercase tracking-wider ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>
-                      {formatFecha(fecha)}
-                    </p>
+                    <p className={`text-xs font-bold uppercase tracking-wider ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>{formatFecha(fecha)}</p>
                     <div className="flex-1 h-px bg-ink-100" />
                   </div>
                   <div className="space-y-2">
-                    {vDia.map(v => <VencimientoCard key={v.id} v={v} onToggle={() => toggleVencimiento(v)} />)}
-                    {tDia.map(t => <TareaCard key={t.id} t={t} onToggle={() => toggleTarea(t)} />)}
+                    {vDia.map(v => <VencimientoCard key={v.id} v={v} exp={expLookup[v.expediente_id]} onToggle={() => toggleVencimiento(v)} onEdit={() => setEditingV(v)} onDelete={() => deleteVencimiento(v.id)} />)}
+                    {tDia.map(t => <TareaCard key={t.id} t={t} exp={t.expediente_id ? expLookup[t.expediente_id] : undefined} onToggle={() => toggleTarea(t)} onEdit={() => setEditingT(t)} onDelete={() => deleteTarea(t.id)} />)}
                   </div>
                 </div>
               );
@@ -432,7 +581,7 @@ export default function AgendaPage() {
         </>
       )}
 
-      {/* ── Modal: Nueva tarea ── */}
+      {/* Modal: Nueva tarea */}
       {showTareaModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowTareaModal(false); }}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
@@ -446,45 +595,24 @@ export default function AgendaPage() {
               {tareaError && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{tareaError}</div>}
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1.5">Título <span className="text-red-500">*</span></label>
-                <input
-                  required
-                  autoFocus
-                  value={tareaForm.titulo}
-                  onChange={(e) => setTareaForm({ ...tareaForm, titulo: e.target.value })}
-                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
-                  placeholder="Ej: Redactar escrito de responde"
-                />
+                <input required autoFocus value={tareaForm.titulo} onChange={(e) => setTareaForm({ ...tareaForm, titulo: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" placeholder="Ej: Redactar escrito de responde" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
-                  <select
-                    value={tareaForm.expediente_id}
-                    onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })}
-                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
-                  >
+                  <select value={tareaForm.expediente_id} onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
                     <option value="">Sin expediente</option>
                     {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1.5">Fecha límite</label>
-                  <input
-                    type="date"
-                    value={tareaForm.fecha_limite}
-                    onChange={(e) => setTareaForm({ ...tareaForm, fecha_limite: e.target.value })}
-                    className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
-                  />
+                  <input type="date" value={tareaForm.fecha_limite} onChange={(e) => setTareaForm({ ...tareaForm, fecha_limite: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1.5">Descripción</label>
-                <input
-                  value={tareaForm.descripcion}
-                  onChange={(e) => setTareaForm({ ...tareaForm, descripcion: e.target.value })}
-                  className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
-                  placeholder="Opcional"
-                />
+                <input value={tareaForm.descripcion} onChange={(e) => setTareaForm({ ...tareaForm, descripcion: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" placeholder="Opcional" />
               </div>
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={() => setShowTareaModal(false)} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
