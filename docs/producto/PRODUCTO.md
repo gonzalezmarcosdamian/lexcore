@@ -5,8 +5,8 @@
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
 **Última actualización:** 2026-04-21
-**Sprint activo:** Sprint 12 — completado
-**Versión:** 0.12.0
+**Sprint activo:** Sprint 13 — en curso
+**Versión:** 0.13.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -19,7 +19,7 @@
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, y notificaciones automáticas diarias.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop.**
 
 ---
 
@@ -345,6 +345,43 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 ---
 
 ## Changelog
+
+### v0.13.0 — 2026-04-21
+
+**Sprint 13 — Agenda UX, bitácora completa, vencimientos editables, columnas drag-and-drop**
+
+#### AGE-005 · Picker Tarea/Vencimiento al clickear día en agenda
+- Click en celda del calendario ya no crea tarea directamente
+- Muestra modal picker: "Tarea" / "Vencimiento" con fecha pre-cargada
+- Aplica a la vista CalendarioMensual en `/agenda`
+
+#### DASH-002 · AgendaWidget en dashboard (reemplaza CalendarioMensual)
+- Mini-semana de 7 días con chips de eventos (puntos de color)
+- Flechas prev/next para navegar semana a semana ("Esta semana", "Próxima semana", etc.)
+- Click en día → panel inferior muestra lista de eventos del día sin navegar a agenda
+- Día seleccionado resaltado con `bg-brand-600`; por defecto muestra hoy
+
+#### EXP-BIT-002 · Bitácora registra todos los cambios de estado
+- PATCH de vencimiento (cumplido/reabierto, edición de datos) → Movimiento automático
+- PATCH de tarea (estado pendiente/en_curso/hecha, edición) → Movimiento automático
+- Hora del vencimiento visible en entradas de bitácora
+- `onCreated` callback llamado también en edición (no solo creación) para refrescar feed
+
+#### VCT-005 · Vencimientos editables desde detalle de expediente
+- `VencimientoCardExpediente` con modo inline edit (descripcion, fecha, tipo)
+- Botón eliminar con confirmación inline
+- Botón "↩ Deshacer" cuando `cumplido === true` para reabrir el vencimiento
+
+#### EXP-COL-001 · Columnas de expediente con drag-and-drop
+- Columnas "N° judicial", "Juzgado", "Localidad" agregadas como seleccionables
+- "N° interno" renombrado, "N° judicial" columna independiente
+- Picker de columnas rediseñado: activas arriba con handle `≡` arrastrable, inactivas abajo
+- Orden persiste en localStorage; tabla respeta el orden del usuario
+
+**Migraciones:** ninguna nueva
+**Archivos clave:** `dashboard/page.tsx` (AgendaWidget), `agenda/page.tsx` (picker), `expedientes/[id]/page.tsx` (VencimientoCardExpediente), `expedientes/page.tsx` (columnas DnD), `routers/vencimientos.py`, `routers/tareas.py`
+
+---
 
 ### v0.12.0 — 2026-04-21
 

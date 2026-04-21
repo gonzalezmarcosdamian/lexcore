@@ -4,6 +4,64 @@
 
 ---
 
+## Sesión 008 — 2026-04-21
+
+**Sprint:** Sprint 13
+
+### Qué se hizo
+
+**Fix: SM hook mostraba contexto del proyecto equivocado (buildfuture)**
+- El hook global `~/.claude/settings.json` tenía paths hardcodeados a `c:/Users/gonza/.../buildfuture/`
+- Fix: reemplazado con detección dinámica via `os.getcwd()` + `git rev-parse --show-toplevel`
+- El hook ahora lee el proyecto activo desde el CWD — funciona para cualquier repo
+
+**Fix: Deploy Railway no linkado desde raíz**
+- `railway status` desde raíz devolvía "No linked project found"
+- Causa: el link está en `backend/` (proyecto `friendly-healing`, servicio `lexcore`)
+- Fix: siempre correr `railway up --detach` desde `backend/`
+- Documentado en LEARNINGS con secuencia estándar de deploy
+
+**Feat: Agenda — picker Tarea/Vencimiento al clickear día**
+- Click en celda del calendario abría modal de tarea directamente
+- Fix: ahora muestra picker intermedio "¿Qué querés crear?" con botones Tarea / Vencimiento
+- Fecha pre-cargada en cualquier opción del picker
+- Estado `diaPickerFecha` + modal picker en `agenda/page.tsx`
+
+**Feat: AgendaWidget en dashboard (reemplaza CalendarioMensual)**
+- Dashboard tenía un CalendarioMensual completo — pesado e incoherente visualmente
+- Reemplazado con widget compacto: mini-semana 7 días + panel de día seleccionado
+- Flechas prev/next para navegar semanas con label contextual ("Esta semana", etc.)
+- Click en día → lista de eventos abajo (no navega a /agenda)
+- Día seleccionado resaltado con `bg-brand-600`; por defecto = hoy
+
+**Feat: Vencimientos editables/eliminables desde detalle de expediente**
+- No había botones de edición/eliminación en los vencimientos del detalle
+- `VencimientoCardExpediente`: modo inline edit con campos descripcion/fecha/tipo
+- Eliminar con confirmación inline
+- "↩ Deshacer" para reabrir vencimiento cumplido
+
+**Feat: Bitácora registra todos los cambios de estado**
+- PATCH de vencimiento (cumplido/reabierto, edición) → Movimiento automático con emoji
+- PATCH de tarea (estado, edición) → Movimiento automático
+- Hora del vencimiento visible en entradas de bitácora (`meta.hora`)
+- `onCreated` callback llamado en edición además de creación
+
+**Feat: Columnas expediente drag-and-drop**
+- Picker de columnas rediseñado: activas con handle arrastrable, inactivas como checklist
+- Columnas nuevas: N° judicial (independiente), Juzgado, Localidad
+- Orden de columnas persiste en localStorage; tabla respeta el orden del usuario
+- Header de tabla usa `visibleCols.map(...)` en lugar de `ALL_COLS.filter(...)` para respetar orden
+
+### Decisiones tomadas
+- Deploy Railway: siempre desde `backend/`. Deploy Vercel: siempre desde raíz. Documentado en LEARNINGS.
+- Drag-and-drop con HTML5 Drag API nativa (sin dependencias) — suficiente para columnas
+- `findLastIndex` para insertar columna en posición correcta al activarla
+
+### Pendiente
+- Verificar deploy Railway y Vercel en producción
+
+---
+
 ## Sesión 007 — 2026-04-21
 
 **Sprint:** Sprint 10

@@ -147,6 +147,36 @@
 **Decisión:** `tiempoVida()` usa `toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" })` para obtener `"YYYY-MM-DD"` en ART y compara fechas enteras.
 **Razón:** Comparar milisegundos exactos hace que un expediente creado ayer a las 23:00 ART muestre "0 días" hasta pasadas las 23:00 de hoy. El usuario espera "1 día" desde el día siguiente calendario.
 
+## 2026-04-21 (deploy)
+
+### Deploy Railway: SIEMPRE desde `backend/`, nunca desde la raíz
+**Decisión:** `railway up --detach` se corre desde `c:\...\lexcore\backend\`, no desde la raíz del repo.
+**Razón:** Railway tiene el servicio `lexcore` linkeado al directorio `backend/`. Desde la raíz devuelve "No linked project found". Desde `backend/` muestra `Project: friendly-healing, Service: lexcore` y el deploy sube correctamente.
+**Verificar antes de deployar:** `cd backend && railway status` — debe mostrar el nombre del proyecto y servicio.
+**Nunca:** `railway up` desde la raíz. Siempre: `cd backend && railway up --detach`.
+
+### Deploy Vercel: SIEMPRE desde la raíz del repo, nunca desde `frontend/`
+**Decisión:** `vercel --prod --yes` se corre desde `c:\...\lexcore\`, no desde `frontend/`.
+**Razón:** `vercel.json` en la raíz tiene `{"rootDirectory": "frontend"}`. Si corrés el CLI desde `frontend/`, Vercel construye el path como `frontend/frontend` y falla con "path does not exist".
+**Verificar antes de deployar:** estar parado en la raíz del repo (`ls vercel.json` debe existir).
+**Nunca:** `cd frontend && vercel --prod`. Siempre: desde raíz `vercel --prod --yes`.
+
+### Secuencia de deploy estándar (ambos servicios)
+```bash
+# 1. Railway (backend) — desde backend/
+cd backend
+railway up --detach
+
+# 2. Vercel (frontend) — desde raíz del repo
+cd ..  # o directamente desde la raíz
+vercel --prod --yes
+```
+**Orden:** primero Railway (puede tardar ~3 min en buildear), luego Vercel (más rápido). Si hay cambios solo en un servicio, deployar solo ese.
+**Señal de éxito Railway:** URL de Build Logs en la salida. Verificar en Railway dashboard que el deploy llega a "Success".
+**Señal de éxito Vercel:** URL de producción en la salida. Verificar que la URL termina en `.vercel.app`.
+
+---
+
 ### pydantic[email] obligatorio
 **Decisión:** Usar `pydantic[email]` en requirements.txt, no `pydantic` solo.
 **Razón:** `EmailStr` de Pydantic requiere `email-validator` instalado. Sin el extra, el backend falla al arrancar.
