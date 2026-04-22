@@ -4,6 +4,58 @@
 
 ---
 
+## Sesión 009 — 2026-04-22
+
+**Sprint:** Sprint 14
+
+### Qué se hizo
+
+**Feat: Páginas de detalle `/tareas/{id}` y `/vencimientos/{id}`**
+- Reemplazados los modales read-only por páginas completas con URL propia
+- Cada página incluye: todos los campos, estado toggleable, badges de tipo/urgencia, link al expediente, documentos adjuntos, sección de notas (bitácora propia)
+- Las notas se guardan con autor y timestamp; soportan Ctrl+Enter para enviar
+- Navegación de vuelta al expediente o a la lista según contexto
+
+**Feat: Modelo `Nota` — bitácora de tareas y vencimientos**
+- Nuevo modelo `backend/app/models/nota.py` con FK nullable a `tareas` y `vencimientos`, cascade delete
+- Migración `dd8a608d6ac3_add_notas_table`
+- Endpoints CRUD: `GET/POST /{tarea_id}/notas`, `DELETE /{tarea_id}/notas/{nota_id}` (igual para vencimientos)
+
+**Fix: `GET /tareas/{id}` faltaba en el router**
+- La página de detalle necesitaba obtener una tarea individual — endpoint inexistente
+- Agregado en `backend/app/routers/tareas.py` usando helpers existentes
+
+**Feat: Navegación desde todos los puntos de entrada**
+- Dashboard (widget agenda, calendar, rows de tareas/vencimientos): `router.push`
+- Agenda (tablero kanban, calendario mensual): `router.push`
+- Lista `/tareas` y `/vencimientos`: `router.push`
+- Detalle de cliente: vencimientos y tareas navegan al detalle
+- Bitácora de expediente: rows de tipo "tarea" y "vencimiento" son clickeables (card completa con onClick)
+
+**Fix: CalendarioMensual hardcodeaba navegación al expediente**
+- El click en evento navegaba a `/expedientes/{id}` incondicionalmente
+- Fix: nuevo prop `onClickEvento?: (ev: CalEvent) => void` — la agenda pasa `router.push`
+
+**Feat: Chevron en cards del tablero kanban**
+- Botón `›` siempre visible en cada card — señal visual de que hay un detalle navegable
+- Botones editar/eliminar se muestran solo en hover (sin cambios)
+
+**Fix: Google Calendar — scope sin forzar consent en cada sesión**
+- El login de Google pedía scope de Calendar en cada autenticación
+- Removido `calendar` scope del Google Provider en NextAuth + eliminado `prompt: "consent"` forzado
+- El scope de Calendar solo se pide en el flujo explícito de `/perfil`
+
+### Decisiones tomadas
+- Entidades con vida propia (tarea, vencimiento) → página, nunca modal
+- `Nota` denormaliza `autor_nombre` para evitar joins al listar
+- `CalendarioMensual` recibe callback de navegación — no hardcodea destino
+
+### Pendiente
+- Migración `dd8a608d6ac3` debe aplicarse en Railway prod (`alembic upgrade head`)
+- Páginas de edición `/tareas/{id}/editar` y `/vencimientos/{id}/editar` (referenciadas en detalle pero aún no creadas — hoy redirigen al modal desde el botón Editar)
+
+---
+
 ## Sesión 008 — 2026-04-21
 
 **Sprint:** Sprint 13

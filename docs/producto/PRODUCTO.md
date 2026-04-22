@@ -5,8 +5,8 @@
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
 **Última actualización:** 2026-04-22
-**Sprint activo:** Sprint 14 — en curso
-**Versión:** 0.14.0
+**Sprint activo:** Sprint 14 — COMPLETADO
+**Versión:** 0.15.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -19,7 +19,7 @@
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos, navegación desde todos los puntos de la app.**
 
 ---
 
@@ -233,6 +233,42 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 
 #### US-11 · Observabilidad Sentry — `blocked`
 - **🚫 BLOQUEADO:** Activar al incorporar el primer cliente real en producción.
+
+### Sprint 14 — COMPLETADO (2026-04-22)
+
+#### UX-DETAIL-001 · Páginas de detalle Tarea y Vencimiento ✓
+
+**Backend:**
+- [x] Modelo `Nota` — bitácora propia de tareas/vencimientos (`backend/app/models/nota.py`)
+- [x] Migración `dd8a608d6ac3_add_notas_table` — tabla `notas` con FK a tareas/vencimientos, cascade delete
+- [x] `GET /tareas/{id}` — endpoint individual que faltaba
+- [x] `GET /tareas/{id}/notas`, `POST /tareas/{id}/notas`, `DELETE /tareas/{id}/notas/{nota_id}`
+- [x] Mismos endpoints de notas para vencimientos
+- [x] `?cliente_id=` en `GET /tareas` — filtra tareas directamente asociadas al cliente (sin expediente)
+
+**Frontend — páginas de detalle:**
+- [x] `/tareas/{id}` — detalle completo: estado toggle, tipo badge, urgencia, fecha+hora, responsable, link expediente, descripción, documentos adjuntos, bitácora de notas
+- [x] `/vencimientos/{id}` — detalle completo: cumplido toggle, tipo badge, urgencia, fecha+hora, link expediente, documentos adjuntos, bitácora de notas
+- [x] Notas: lista con avatar, autor, timestamp; textarea con Ctrl+Enter; borrado individual
+
+**Frontend — navegación unificada:**
+- [x] Dashboard: widget agenda (calendar + rows de hoy) → `router.push`
+- [x] Agenda tablero kanban: chevron `›` siempre visible en cards + título clickeable → `router.push`
+- [x] Agenda calendario mensual: click en evento → `router.push` (antes navegaba al expediente)
+- [x] Lista `/tareas` → `router.push`
+- [x] Lista `/vencimientos` → `router.push`
+- [x] Detalle de cliente: vencimientos por expediente + tareas directas → `router.push`
+- [x] Bitácora de expediente: cards de tipo "tarea" y "vencimiento" → `router.push` al click
+
+**Fix:**
+- [x] Google login no pide scope Calendar en cada sesión (solo en flujo explícito de /perfil)
+
+**Migraciones:** `dd8a608d6ac3`
+**Nuevos endpoints:** `GET /tareas/{id}`, `GET|POST|DELETE /tareas/{id}/notas`, `GET|POST|DELETE /vencimientos/{id}/notas`
+**Nuevas páginas:** `/tareas/[id]`, `/vencimientos/[id]`
+**Componente modificado:** `calendar-mensual.tsx` — nuevo prop `onClickEvento`
+
+---
 
 ## Features pendientes
 

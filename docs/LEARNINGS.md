@@ -175,6 +175,30 @@ vercel --prod --yes
 **Señal de éxito Railway:** URL de Build Logs en la salida. Verificar en Railway dashboard que el deploy llega a "Success".
 **Señal de éxito Vercel:** URL de producción en la salida. Verificar que la URL termina en `.vercel.app`.
 
+## 2026-04-22 (sesión 009 — detalle de entidades + navegación)
+
+### Páginas de detalle vs modales: siempre preferir página
+**Decisión:** Tarea y Vencimiento son entidades completas con su propia URL (`/tareas/{id}`, `/vencimientos/{id}`).
+**Razón:** Los modales no son bookmarkeables, no tienen URL, no pueden abrirse en pestaña nueva y requieren duplicar estado en cada página que los muestra. Con páginas propias, el `router.push` es la única API — se llama igual desde dashboard, agenda, tablero, bitácora de expediente y detalle de cliente.
+**Patrón:** Reemplazar todo `useState<T | null>` + modal render por `router.push('/entidad/${id}')`. El código queda más simple y la UX más coherente.
+**Regla:** Ante la duda entre modal y página para una entidad, elegir página.
+
+### Bitácora de entidad: modelo Nota con FK nullable y cascade delete
+**Decisión:** Modelo `Nota` con `tarea_id` y `vencimiento_id` nullables (solo uno se setea), `autor_id` nullable, `autor_nombre` denormalizado.
+**Razón:** Un solo modelo sirve para bitácora de tareas y de vencimientos. El `autor_nombre` denormalizado evita joins costosos al listar. Cascade delete garantiza que las notas no quedan huérfanas si se borra la tarea/vencimiento.
+**Archivo clave:** `backend/app/models/nota.py`, migración `dd8a608d6ac3`.
+**Regla:** Siempre verificar que el modelo esté en `models/__init__.py` antes de generar la migración.
+
+### CalendarioMensual: click en evento debe recibir callback, no hardcodear navegación
+**Decisión:** `CalendarioMensual` acepta `onClickEvento?: (ev: CalEvent) => void`. Sin el prop, hace fallback al expediente (comportamiento anterior).
+**Razón:** El componente no debe saber a dónde navegar — eso es responsabilidad del padre. Hardcodear `window.location.href = /expedientes/...` dentro del componente rompe el principio de separación de responsabilidades y fue la causa de que los eventos del calendario no navegaran al detalle.
+**Archivo clave:** `frontend/src/components/ui/calendar-mensual.tsx`.
+
+### GET /tareas/{id} debe existir si hay páginas de detalle
+**Decisión:** El router de tareas debe tener `GET /tareas/{id}` además de `GET /tareas` (listado).
+**Razón:** La página `/tareas/{id}` necesita obtener un único recurso. Estaba ausente en el router original — se usaba solo el listado filtrado por expediente. Cualquier entidad con página de detalle necesita su endpoint individual.
+**Fix aplicado:** `GET /tareas/{id}` en `backend/app/routers/tareas.py` usando el helper `_get_tarea_or_404` + `_enriquecer` existentes.
+
 ---
 
 ### pydantic[email] obligatorio
