@@ -847,33 +847,54 @@ export default function ExpedienteDetailPage() {
               </form>
 
               {/* Feed */}
-              {actividad.length === 0 ? (
-                <p className="text-sm text-ink-400 text-center py-6">Sin actividad registrada</p>
-              ) : (
-                <div className="relative">
-                  <div className="absolute left-[18px] top-3 bottom-3 w-px bg-ink-100" />
-                  <div className="space-y-2">
-                    {actividad.map((item) => (
-                      <ActividadRow
-                        key={`${item.tipo}-${item.id}`}
-                        item={item}
-                        editingMovId={editingMovId}
-                        editingMovTexto={editingMovTexto}
-                        editingMovFecha={editingMovFecha}
-                        deletingMovId={deletingMovId}
-                        onEditStart={(id, texto, fecha) => { setEditingMovId(id); setEditingMovTexto(texto); setEditingMovFecha(fecha ?? ""); }}
-                        onEditSave={handleSaveMov}
-                        onEditCancel={() => setEditingMovId(null)}
-                        onEditChange={(texto) => setEditingMovTexto(texto)}
-                        onFechaChange={(f) => setEditingMovFecha(f)}
-                        onDeleteConfirm={() => setDeletingMovId(item.id)}
-                        onDeleteCancel={() => setDeletingMovId(null)}
-                        onDelete={handleDeleteMov}
-                      />
-                    ))}
+              {(() => {
+                // Agrupar documentos adjuntos dentro de su tarea/vencimiento padre
+                type DocMeta = { nombre?: string; label?: string; size_bytes?: number; tarea_id?: string; vencimiento_id?: string };
+                const adjuntosPor: Record<string, ActividadItem[]> = {};
+                for (const item of actividad) {
+                  if (item.tipo === "documento") {
+                    const m = item.meta as DocMeta;
+                    const parentId = m.tarea_id ?? m.vencimiento_id;
+                    if (parentId) {
+                      if (!adjuntosPor[parentId]) adjuntosPor[parentId] = [];
+                      adjuntosPor[parentId].push(item);
+                    }
+                  }
+                }
+                const feedItems = actividad.filter(item => {
+                  if (item.tipo !== "documento") return true;
+                  const m = item.meta as DocMeta;
+                  return !m.tarea_id && !m.vencimiento_id;
+                });
+                return feedItems.length === 0 ? (
+                  <p className="text-sm text-ink-400 text-center py-6">Sin actividad registrada</p>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute left-[18px] top-3 bottom-3 w-px bg-ink-100" />
+                    <div className="space-y-2">
+                      {feedItems.map((item) => (
+                        <ActividadRow
+                          key={`${item.tipo}-${item.id}`}
+                          item={item}
+                          adjuntos={adjuntosPor[item.id]}
+                          editingMovId={editingMovId}
+                          editingMovTexto={editingMovTexto}
+                          editingMovFecha={editingMovFecha}
+                          deletingMovId={deletingMovId}
+                          onEditStart={(id, texto, fecha) => { setEditingMovId(id); setEditingMovTexto(texto); setEditingMovFecha(fecha ?? ""); }}
+                          onEditSave={handleSaveMov}
+                          onEditCancel={() => setEditingMovId(null)}
+                          onEditChange={(texto) => setEditingMovTexto(texto)}
+                          onFechaChange={(f) => setEditingMovFecha(f)}
+                          onDeleteConfirm={() => setDeletingMovId(item.id)}
+                          onDeleteCancel={() => setDeletingMovId(null)}
+                          onDelete={handleDeleteMov}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
 
@@ -970,6 +991,7 @@ const ACTIVIDAD_CONFIG: Record<string, { color: string; bg: string; icon: string
 
 interface ActividadRowProps {
   item: ActividadItem;
+  adjuntos?: ActividadItem[];
   editingMovId?: string | null;
   editingMovTexto?: string;
   editingMovFecha?: string;
@@ -984,7 +1006,7 @@ interface ActividadRowProps {
   onDelete?: (id: string) => void;
 }
 
-function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, deletingMovId, onEditStart, onEditSave, onEditCancel, onEditChange, onFechaChange, onDeleteConfirm, onDeleteCancel, onDelete }: ActividadRowProps) {
+function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMovFecha, deletingMovId, onEditStart, onEditSave, onEditCancel, onEditChange, onFechaChange, onDeleteConfirm, onDeleteCancel, onDelete }: ActividadRowProps) {
   const router = useRouter();
   const cfg = ACTIVIDAD_CONFIG[item.tipo] ?? { color: "text-ink-600", bg: "bg-ink-100", icon: "•" };
   const meta = item.meta as Record<string, string | number | boolean | null | undefined>;
@@ -1112,6 +1134,21 @@ function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, de
                 </div>
               )}
             </div>
+            {adjuntos && adjuntos.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-ink-100">
+                {adjuntos.map((doc) => {
+                  const dm = doc.meta as Record<string, unknown>;
+                  const sizeKb = dm.size_bytes ? Math.round(Number(dm.size_bytes) / 1024) : null;
+                  return (
+                    <span key={doc.id} className="inline-flex items-center gap-1 text-xs bg-ink-100 text-ink-700 px-2 py-0.5 rounded-full">
+                      <svg className="w-3 h-3 text-ink-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                      <span className="max-w-[160px] truncate">{doc.descripcion}</span>
+                      {sizeKb && <span className="text-ink-400 flex-shrink-0">{sizeKb} KB</span>}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             <p className="text-xs text-ink-400 mt-1.5">
               {new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
             </p>

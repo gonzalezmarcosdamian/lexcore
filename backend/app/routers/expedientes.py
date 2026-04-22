@@ -442,7 +442,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=d.id, tipo="documento", subtipo="subido",
             descripcion=nombre_display,
-            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type, "adjunto_en": adjunto_en},
+            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type, "adjunto_en": adjunto_en, "tarea_id": d.tarea_id, "vencimiento_id": d.vencimiento_id},
             created_at=d.created_at,
         ))
 
