@@ -68,6 +68,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
     if (!confirm("¿Eliminar este honorario? Se perderán todos los pagos asociados.")) return;
     await api.delete(`/honorarios/${id}`, token);
     load();
+    onCreated?.();
   };
 
   const registrarPago = async (honorarioId: string) => {
@@ -307,8 +308,17 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                       </div>
                     )}
 
-                    {/* Form nuevo pago */}
-                    <div className="space-y-2">
+                    {/* Form nuevo pago — se oculta si el capital está saldado (se puede seguir registrando intereses) */}
+                    {saldo <= 0 && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
+                        <span className="text-xs text-green-700 font-medium">✓ Capital saldado</span>
+                        <button type="button" onClick={() => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, tipo: "interes" } }))}
+                          className="ml-auto text-[10px] text-blue-600 hover:underline">
+                          Registrar intereses
+                        </button>
+                      </div>
+                    )}
+                    {(saldo > 0 || pf.tipo === "interes") && <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold text-ink-600">Registrar pago</p>
                         {saldo > 0 && (
@@ -382,7 +392,15 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                           Eliminar
                         </button>
                       </div>
-                    </div>
+                    </div>}
+                    {saldo <= 0 && pf.tipo !== "interes" && (
+                      <button
+                        onClick={() => { if (confirm("¿Eliminar este honorario?")) eliminarHonorario(h.id); }}
+                        className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-lg transition w-full"
+                      >
+                        Eliminar honorario
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
