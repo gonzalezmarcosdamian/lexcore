@@ -452,7 +452,8 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             return str(m["fecha"]) + "T23:59:59"
         if item.tipo == "tarea" and m.get("fecha_limite"):
             return str(m["fecha_limite"]) + "T23:59:59"
-        return item.created_at
+        ca = item.created_at
+        return ca.isoformat() if hasattr(ca, "isoformat") else str(ca)
 
     items.sort(key=_sort_key, reverse=True)
     return items
