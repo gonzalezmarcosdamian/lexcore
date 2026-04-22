@@ -1,5 +1,9 @@
 "use client";
 
+import { TimeInput } from "@/components/ui/time-input";
+
+import { DateInput } from "@/components/ui/date-input";
+
 import { useState, useEffect, useRef } from "react";
 import { api, Tarea, TareaEstado, TareaTipo, StudioUser } from "@/lib/api";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
@@ -178,11 +182,11 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-              <input type="date" value={form.fecha_limite} onChange={e => setForm({ ...form, fecha_limite: e.target.value })} className={inputCls} />
+              <DateInput value={form.fecha_limite} onChange={v => setForm({ ...form, fecha_limite: v })} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={form.hora} onChange={e => setForm({ ...form, hora: e.target.value })} className={inputCls} />
+              <TimeInput value={form.hora} onChange={v => setForm({ ...form, hora: v })} />
             </div>
           </div>
           {editingId && (

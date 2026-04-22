@@ -1,5 +1,9 @@
 "use client";
 
+import { TimeInput } from "@/components/ui/time-input";
+
+import { DateInput } from "@/components/ui/date-input";
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -99,21 +103,11 @@ function EditVencimientoModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-              <input
-                type="date"
-                value={fecha}
-                onChange={(e) => setFecha(e.target.value)}
-                className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-              />
+              <DateInput value={fecha} onChange={setFecha} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora (opcional)</label>
-              <input
-                type="time"
-                value={hora}
-                onChange={(e) => setHora(e.target.value)}
-                className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-              />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           <div>

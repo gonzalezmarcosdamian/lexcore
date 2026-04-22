@@ -1,5 +1,7 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
+
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente, Cliente } from "@/lib/api";
@@ -797,7 +799,7 @@ export default function ContablePage() {
                 </div>
                 <div>
                   <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-                  <input required type="date" value={gastoForm.fecha} onChange={(e) => setGastoForm({ ...gastoForm, fecha: e.target.value })} className={inputClass} />
+                  <DateInput value={gastoForm.fecha} onChange={v => setGastoForm({ ...gastoForm, fecha: v })} required />
                 </div>
                 <div>
                   <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
@@ -856,7 +858,7 @@ export default function ContablePage() {
                 </div>
                 <div>
                   <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-                  <input required type="date" value={ingresoForm.fecha} onChange={(e) => setIngresoForm({ ...ingresoForm, fecha: e.target.value })} className={inputClass} />
+                  <DateInput value={ingresoForm.fecha} onChange={v => setIngresoForm({ ...ingresoForm, fecha: v })} required />
                 </div>
                 <div>
                   <label className={labelClass}>Monto <span className="text-red-500">*</span></label>

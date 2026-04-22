@@ -29,6 +29,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-lexcore}:${POSTGRES_PASSWORD:-lexcore}@db:5432/${POSTGRES_DB:-lexcore}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-prod}
       ENVIRONMENT: ${ENVIRONMENT:-development}
+      MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+      MERCADOPAGO_PUBLIC_KEY: ${MERCADOPAGO_PUBLIC_KEY:-}
+      MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
       # Storage local via MinIO (S3-compatible)
       S3_ENDPOINT_URL: http://minio:9000
       S3_PUBLIC_URL: http://localhost:9000

@@ -1,5 +1,9 @@
 "use client";
 
+import { TimeInput } from "@/components/ui/time-input";
+
+import { DateInput } from "@/components/ui/date-input";
+
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -168,23 +172,11 @@ function NuevoVencimientoPageInner() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-              <input
-                required
-                type="date"
-                min={today}
-                value={form.fecha}
-                onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-                className={inputClass}
-              />
+              <DateInput value={form.fecha} onChange={v => setForm({ ...form, fecha: v })} required min={today} />
             </div>
             <div>
               <label className={labelClass}>Hora <span className="text-xs text-ink-400 font-normal">(opcional)</span></label>
-              <input
-                type="time"
-                value={form.hora}
-                onChange={(e) => setForm({ ...form, hora: e.target.value })}
-                className={inputClass}
-              />
+              <TimeInput value={form.hora} onChange={v => setForm({ ...form, hora: v })} />
             </div>
           </div>
         </div>

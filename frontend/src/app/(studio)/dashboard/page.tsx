@@ -1,5 +1,9 @@
 "use client";
 
+import { TimeInput } from "@/components/ui/time-input";
+
+import { DateInput } from "@/components/ui/date-input";
+
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -350,11 +354,11 @@ function NewTareaModal({ token, expedientes, clientes, onCreated, onClose }: { t
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-              <input type="date" value={fechaLimite} onChange={e => setFechaLimite(e.target.value)} className={inputCls} />
+              <DateInput value={fechaLimite} onChange={setFechaLimite} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={hora} onChange={e => setHora(e.target.value)} className={inputCls} />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           <div>
@@ -421,11 +425,11 @@ function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
-              <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className={inputCls} />
+              <DateInput value={fecha} onChange={setFecha} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={hora} onChange={e => setHora(e.target.value)} className={inputCls} />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}
@@ -472,11 +476,11 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-              <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <DateInput value={fechaLimite} onChange={setFechaLimite} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           <div>
@@ -532,11 +536,11 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-              <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <DateInput value={fecha} onChange={setFecha} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           <div>

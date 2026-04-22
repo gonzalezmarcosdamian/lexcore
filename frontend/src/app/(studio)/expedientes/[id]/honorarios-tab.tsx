@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, Honorario, Moneda } from "@/lib/api";
+import { DateInput } from "@/components/ui/date-input";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -212,7 +213,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
           </div>
           <div>
             <label className={labelCls}>Fecha de acuerdo *</label>
-            <input required type="date" value={form.fecha_acuerdo} onChange={e => setForm({ ...form, fecha_acuerdo: e.target.value })} className={inputCls} />
+            <DateInput value={form.fecha_acuerdo} onChange={v => setForm({ ...form, fecha_acuerdo: v })} required />
           </div>
           <div>
             <label className={labelCls}>Notas (opcional)</label>
@@ -342,12 +343,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                           <option value="ARS">ARS</option>
                           <option value="USD">USD</option>
                         </select>
-                        <input
-                          type="date"
-                          value={pf.fecha}
-                          onChange={e => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, fecha: e.target.value } }))}
-                          className="bg-white border border-ink-200 rounded-lg px-2 py-2 text-sm focus:outline-none"
-                        />
+                        <DateInput value={pf.fecha} onChange={v => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, fecha: v } }))} className="min-w-[140px]" />
                       </div>
                       <input
                         placeholder="Comprobante (opcional)"

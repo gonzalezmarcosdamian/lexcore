@@ -1,5 +1,9 @@
 "use client";
 
+import { TimeInput } from "@/components/ui/time-input";
+
+import { DateInput } from "@/components/ui/date-input";
+
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -336,11 +340,11 @@ export default function TareaDetailPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-              <input type="date" value={editForm.fecha_limite} onChange={e => setEditForm(f => ({ ...f, fecha_limite: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <DateInput value={editForm.fecha_limite} onChange={v => setEditForm(f => ({ ...f, fecha_limite: v }))} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={editForm.hora} onChange={e => setEditForm(f => ({ ...f, hora: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <TimeInput value={editForm.hora} onChange={v => setEditForm(f => ({ ...f, hora: v }))} />
             </div>
           </div>
           <div>

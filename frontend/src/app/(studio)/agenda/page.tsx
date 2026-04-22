@@ -1,5 +1,9 @@
 "use client";
 
+import { TimeInput } from "@/components/ui/time-input";
+
+import { DateInput } from "@/components/ui/date-input";
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -145,11 +149,11 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-              <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <DateInput value={fecha} onChange={setFecha} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           <div>
@@ -206,11 +210,11 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-              <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <DateInput value={fechaLimite} onChange={setFechaLimite} />
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+              <TimeInput value={hora} onChange={setHora} />
             </div>
           </div>
           <div>
@@ -817,11 +821,11 @@ export default function AgendaPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
-                  <input required type="date" value={vencimientoForm.fecha} onChange={(e) => setVencimientoForm(f => ({ ...f, fecha: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  <DateInput value={vencimientoForm.fecha} onChange={v => setVencimientoForm(f => ({ ...f, fecha: v }))} required ringColor="focus-within:ring-purple-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-                  <input type="time" value={vencimientoForm.hora} onChange={(e) => setVencimientoForm(f => ({ ...f, hora: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" />
+                  <TimeInput value={vencimientoForm.hora} onChange={v => setVencimientoForm(f => ({ ...f, hora: v }))} ringColor="focus-within:ring-purple-400" />
                 </div>
               </div>
               <div>
@@ -1073,11 +1077,11 @@ export default function AgendaPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1.5">Fecha límite</label>
-                  <input type="date" value={tareaForm.fecha_limite} onChange={(e) => setTareaForm({ ...tareaForm, fecha_limite: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" />
+                  <DateInput value={tareaForm.fecha_limite} onChange={v => setTareaForm(f => ({ ...f, fecha_limite: v }))} ringColor="focus-within:ring-blue-400" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-ink-700 mb-1.5">Hora</label>
-                  <input type="time" value={tareaForm.hora} onChange={(e) => setTareaForm({ ...tareaForm, hora: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition" />
+                  <TimeInput value={tareaForm.hora} onChange={v => setTareaForm(f => ({ ...f, hora: v }))} ringColor="focus-within:ring-blue-400" />
                 </div>
               </div>
               <div>
