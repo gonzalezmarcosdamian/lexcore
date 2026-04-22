@@ -695,14 +695,11 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: 
         tarea.estado === "hecha" ? "bg-green-500" : tarea.estado === "en_curso" ? "bg-blue-400" : "bg-ink-300"
       }`} />
       <div className="flex-1 min-w-0">
-        {exp
-          ? <Link href={`/expedientes/${exp.id}`} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{tarea.titulo}</Link>
-          : <p className="text-sm text-ink-900 font-medium truncate">{tarea.titulo}</p>
-        }
+        <Link href="/agenda" className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{tarea.titulo}</Link>
         {exp && (
-          <span className="text-xs text-ink-400 truncate block max-w-[180px]">
+          <Link href={`/expedientes/${exp.id}`} className="text-xs text-ink-400 truncate block max-w-[180px] hover:text-brand-600 transition">
             {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-          </span>
+          </Link>
         )}
       </div>
       {confirmDelete ? (
@@ -923,14 +920,11 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, marking, deletin
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
       <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.cumplido ? "bg-green-500" : urg || vencida ? "bg-red-400" : warning ? "bg-amber-400" : "bg-purple-300"}`} />
       <div className="flex-1 min-w-0">
-        {exp
-          ? <Link href={`/expedientes/${exp.id}`} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{v.descripcion}</Link>
-          : <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
-        }
+        <Link href="/agenda" className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{v.descripcion}</Link>
         {exp ? (
-          <span className="text-xs text-ink-400 truncate block max-w-[180px]">
+          <Link href={`/expedientes/${exp.id}`} className="text-xs text-ink-400 truncate block max-w-[180px] hover:text-brand-600 transition">
             {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-          </span>
+          </Link>
         ) : (
           <p className="text-xs text-ink-400 truncate">{v.tipo}</p>
         )}
