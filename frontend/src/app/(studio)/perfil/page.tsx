@@ -52,12 +52,14 @@ interface SuscripcionStatus {
 interface PlanInfo {
   plan: string;
   label: string;
-  description: string;
-  monthly_price: number;
-  annual_price: number;
-  currency: string;
+  monthly: number;
+  annual_monthly: number;
   max_users: number | null;
-  features: string[];
+}
+
+interface PlanesResponse {
+  planes: Record<string, PlanInfo & { label: string }>;
+  public_key: string;
 }
 
 interface CalendarItem {
@@ -180,7 +182,7 @@ function PerfilPageInner() {
 
   // Suscripción
   const [suscripcion, setSuscripcion] = useState<SuscripcionStatus | null>(null);
-  const [planes, setPlanes] = useState<PlanInfo[]>([]);
+  const [planes, setPlanes] = useState<Array<PlanInfo & { plan: string }>>([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -241,13 +243,16 @@ function PerfilPageInner() {
     setSubsLoading(true);
     Promise.all([
       api.get<SuscripcionStatus>("/suscripcion/status", token),
-      api.get<PlanInfo[]>("/suscripcion/planes", token),
+      api.get<PlanesResponse>("/suscripcion/planes", token),
     ])
       .then(([status, ps]) => {
         setSuscripcion(status);
-        setPlanes(ps);
+        const list = Object.entries(ps.planes).map(([key, val]) => ({ ...val, plan: key }));
+        setPlanes(list);
       })
-      .catch(() => {})
+      .catch((err) => {
+        setSubsMsg({ text: err instanceof Error ? err.message : "Error al cargar el plan", type: "err" });
+      })
       .finally(() => setSubsLoading(false));
   }, [token]);
 
@@ -789,8 +794,9 @@ function PerfilPageInner() {
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   {planes.map((plan) => {
-                    const price = selectedCycle === "monthly" ? plan.monthly_price : plan.annual_price;
+                    const price = selectedCycle === "monthly" ? plan.monthly : plan.annual_monthly;
                     const isCurrent = suscripcion.plan === plan.plan;
+                    const usersLabel = plan.max_users ? `Hasta ${plan.max_users} usuarios` : "Usuarios ilimitados";
                     return (
                       <div
                         key={plan.plan}
@@ -803,21 +809,19 @@ function PerfilPageInner() {
                             <span className="text-sm font-semibold text-ink-900">{plan.label}</span>
                             {isCurrent && <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium">Actual</span>}
                           </div>
-                          <p className="text-xs text-ink-400 mt-0.5">{plan.description}</p>
                         </div>
                         <div>
                           <span className="text-xl font-bold text-ink-900">${price.toLocaleString("es-AR")}</span>
-                          <span className="text-xs text-ink-400">/{selectedCycle === "monthly" ? "mes" : "año"}</span>
+                          <span className="text-xs text-ink-400">/mes</span>
+                          {selectedCycle === "annual" && <span className="text-xs text-green-600 ml-1">facturado anual</span>}
                         </div>
                         <ul className="space-y-1">
-                          {plan.features.map((f, i) => (
-                            <li key={i} className="flex items-start gap-1.5 text-xs text-ink-600">
-                              <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              {f}
-                            </li>
-                          ))}
+                          <li className="flex items-start gap-1.5 text-xs text-ink-600">
+                            <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            {usersLabel}
+                          </li>
                         </ul>
                         <button
                           onClick={() => handleCheckout(plan.plan)}

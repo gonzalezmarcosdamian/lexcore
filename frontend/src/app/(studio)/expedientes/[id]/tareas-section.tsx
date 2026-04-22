@@ -1,16 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api, Tarea, TareaEstado, TareaTipo, StudioUser } from "@/lib/api";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 
 const today = new Date().toISOString().split("T")[0];
 
-const ESTADO_CONFIG: Record<TareaEstado, { label: string; cls: string }> = {
-  pendiente: { label: "Pendiente", cls: "bg-yellow-50 text-yellow-700 border-yellow-100" },
-  en_curso:  { label: "En curso",  cls: "bg-blue-50 text-blue-700 border-blue-100" },
-  hecha:     { label: "Hecha",     cls: "bg-green-50 text-green-700 border-green-100" },
-};
+const TAREA_ESTADOS = [
+  { value: "pendiente" as TareaEstado, label: "PENDIENTE", cls: "bg-ink-100 text-ink-600" },
+  { value: "en_curso"  as TareaEstado, label: "EN CURSO",  cls: "bg-blue-100 text-blue-700" },
+  { value: "hecha"     as TareaEstado, label: "HECHO",     cls: "bg-green-100 text-green-700" },
+];
+
+function TareaStatusPill({ estado, onChange }: { estado: TareaEstado; onChange: (e: TareaEstado) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = TAREA_ESTADOS.find(e => e.value === estado) ?? TAREA_ESTADOS[0];
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button onClick={() => setOpen(o => !o)} className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition ${current.cls}`}>
+        {current.label}
+        <svg className="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-ink-200 rounded-lg shadow-lg py-1 min-w-[130px]">
+          {TAREA_ESTADOS.map(e => (
+            <button key={e.value} onClick={() => { onChange(e.value); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-[11px] font-semibold tracking-wide uppercase hover:bg-ink-50 transition ${e.value === estado ? "opacity-40 cursor-default" : ""}`}>
+              <span className={`inline-block px-1.5 py-0.5 rounded ${e.cls}`}>{e.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function esVencida(fecha: string | null | undefined): boolean {
   if (!fecha) return false;
@@ -82,8 +111,8 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
     setSaving(false);
   };
 
-  const toggleEstado = async (tarea: Tarea) => {
-    const next: TareaEstado = tarea.estado === "hecha" ? "pendiente" : tarea.estado === "pendiente" ? "en_curso" : "hecha";
+  const toggleEstado = async (tarea: Tarea, estado?: TareaEstado) => {
+    const next: TareaEstado = estado ?? (tarea.estado === "hecha" ? "pendiente" : tarea.estado === "pendiente" ? "en_curso" : "hecha");
     const updated = await api.patch<Tarea>(`/tareas/${tarea.id}`, { estado: next }, token);
     setTareas(prev => prev.map(t => t.id === tarea.id ? updated : t));
   };
@@ -187,16 +216,9 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
             const dias = diasRestantes(t.fecha_limite);
             return (
               <div key={t.id} className={`rounded-xl border px-4 py-3 flex items-start gap-3 group ${vencida ? "bg-red-50 border-red-200" : "bg-ink-50 border-ink-100"}`}>
-                {/* Toggle estado */}
-                <button onClick={() => toggleEstado(t)} className="mt-0.5 flex-shrink-0" title="Cambiar estado">
-                  <div className={`w-4 h-4 rounded-full border-2 transition ${t.estado === "en_curso" ? "border-blue-400 bg-blue-100" : "border-ink-300 bg-white hover:border-brand-400"}`} />
-                </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ink-900">{t.titulo}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border ${ESTADO_CONFIG[t.estado].cls}`}>
-                      {ESTADO_CONFIG[t.estado].label}
-                    </span>
+                  <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                    <TareaStatusPill estado={t.estado} onChange={(e) => toggleEstado(t, e)} />
                     {t.tipo && t.tipo !== "judicial" && (
                       <span className="text-xs px-1.5 py-0.5 rounded border bg-ink-50 text-ink-500 border-ink-100">
                         {t.tipo === "administrativa" ? "🏢 Admin" : t.tipo === "extrajudicial" ? "🤝 Extrajudicial" : "🔧 Operativa"}
@@ -206,6 +228,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
                       <span className="text-xs text-ink-400">👤 {t.responsable_nombre}</span>
                     )}
                   </div>
+                  <p className="text-sm font-medium text-ink-900 mb-1">{t.titulo}</p>
                   {t.fecha_limite && (
                     <div className={`flex items-center gap-1 mt-1.5 text-xs font-semibold px-2 py-1 rounded-lg w-fit ${vencida ? "bg-red-100 text-red-700" : dias === "Hoy" || dias === "Mañana" ? "bg-amber-100 text-amber-700" : "bg-ink-100 text-ink-600"}`}>
                       <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>

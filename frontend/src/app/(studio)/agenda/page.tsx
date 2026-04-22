@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente, Cliente } from "@/lib/api";
@@ -8,10 +8,6 @@ import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
-
-function inRange(fecha: string, desde: string, hasta: string): boolean {
-  return fecha >= desde && fecha <= hasta;
-}
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -22,12 +18,98 @@ function esUrgente(fecha: string): boolean {
   return diff >= 0 && diff < 48;
 }
 
-const today = new Date().toISOString().split("T")[0];
-
 function formatFecha(f: string): string {
+  const today = new Date().toISOString().split("T")[0];
   if (f === today) return "Hoy";
   const d = new Date(f + "T12:00:00");
   return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+}
+
+// ── JIRA-style Status Pill ────────────────────────────────────────────────────
+
+const VENC_ESTADOS = [
+  { value: "pendiente", label: "PENDIENTE", cls: "bg-ink-100 text-ink-600" },
+  { value: "cumplido",  label: "CUMPLIDO",  cls: "bg-green-100 text-green-700" },
+] as const;
+
+const TAREA_ESTADOS = [
+  { value: "pendiente", label: "PENDIENTE", cls: "bg-ink-100 text-ink-600" },
+  { value: "en_curso",  label: "EN CURSO",  cls: "bg-blue-100 text-blue-700" },
+  { value: "hecha",     label: "HECHO",     cls: "bg-green-100 text-green-700" },
+] as const;
+
+function VencimientoStatusPill({ cumplido, onChange }: { cumplido: boolean; onChange: (c: boolean) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = cumplido ? VENC_ESTADOS[1] : VENC_ESTADOS[0];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition ${current.cls}`}
+      >
+        {current.label}
+        <svg className="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-ink-200 rounded-lg shadow-lg py-1 min-w-[130px]">
+          {VENC_ESTADOS.map(e => (
+            <button
+              key={e.value}
+              onClick={() => { onChange(e.value === "cumplido"); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-[11px] font-semibold tracking-wide uppercase hover:bg-ink-50 transition ${e.value === current.value ? "opacity-40 cursor-default" : ""}`}
+            >
+              <span className={`inline-block px-1.5 py-0.5 rounded ${e.cls}`}>{e.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TareaStatusPill({ estado, onChange }: { estado: TareaEstado; onChange: (e: TareaEstado) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = TAREA_ESTADOS.find(e => e.value === estado) ?? TAREA_ESTADOS[0];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition ${current.cls}`}
+      >
+        {current.label}
+        <svg className="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-ink-200 rounded-lg shadow-lg py-1 min-w-[130px]">
+          {TAREA_ESTADOS.map(e => (
+            <button
+              key={e.value}
+              onClick={() => { onChange(e.value as TareaEstado); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-[11px] font-semibold tracking-wide uppercase hover:bg-ink-50 transition ${e.value === estado ? "opacity-40 cursor-default" : ""}`}
+            >
+              <span className={`inline-block px-1.5 py-0.5 rounded ${e.cls}`}>{e.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Edit Modals ───────────────────────────────────────────────────────────────
@@ -35,13 +117,14 @@ function formatFecha(f: string): string {
 function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; token: string; onSaved: (u: Vencimiento) => void; onClose: () => void }) {
   const [descripcion, setDescripcion] = useState(v.descripcion);
   const [fecha, setFecha] = useState(v.fecha);
+  const [hora, setHora] = useState(v.hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, tipo }, token);
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo }, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
@@ -57,9 +140,15 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
             <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
             <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-            <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
+              <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
@@ -85,6 +174,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
 function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea; token: string; expedientes: Expediente[]; onSaved: (u: Tarea) => void; onClose: () => void }) {
   const [titulo, setTitulo] = useState(t.titulo);
   const [fechaLimite, setFechaLimite] = useState(t.fecha_limite ?? "");
+  const [hora, setHora] = useState(t.hora ?? "");
   const [estado, setEstado] = useState(t.estado);
   const [expedienteId, setExpedienteId] = useState(t.expediente_id ?? "");
   const [saving, setSaving] = useState(false);
@@ -94,6 +184,7 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
     try {
       const body: Record<string, unknown> = { titulo, estado, expediente_id: expedienteId || null };
       body.fecha_limite = fechaLimite || null;
+      body.hora = hora || null;
       const updated = await api.patch<Tarea>(`/tareas/${t.id}`, body, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
@@ -110,15 +201,22 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
             <label className="block text-xs font-medium text-ink-600 mb-1">Título</label>
             <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
-            <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
+              <input type="date" value={fechaLimite} onChange={(e) => setFechaLimite(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={hora} onChange={(e) => setHora(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
             <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="pendiente">Pendiente</option>
               <option value="en_curso">En curso</option>
+              <option value="hecha">Hecha</option>
             </select>
           </div>
           <div>
@@ -142,7 +240,7 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
 // ── Tarjeta Vencimiento ───────────────────────────────────────────────────────
 
 function VencimientoCard({
-  v, exp, token, onToggle, onEdit, onDelete,
+  v, exp, token, onToggle, onEdit, onDelete, draggable: isDraggable, onDragStart,
 }: {
   v: Vencimiento;
   exp?: Expediente;
@@ -150,49 +248,48 @@ function VencimientoCard({
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const vencida = esVencida(v.fecha) && !v.cumplido;
   const urgente = esUrgente(v.fecha) && !v.cumplido;
 
   return (
-    <div className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${
-      v.cumplido      ? "bg-green-50 border-green-100 opacity-70" :
-      vencida         ? "bg-red-50 border-red-200" :
-      urgente         ? "bg-amber-50 border-amber-200" :
-                        "bg-white border-ink-100 hover:border-ink-200"
-    }`}>
-      <button onClick={onToggle} className="mt-0.5 flex-shrink-0 p-1 -m-1">
-        {v.cumplido ? (
-          <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-          </div>
-        ) : (
-          <div className={`w-5 h-5 rounded-full border-2 ${urgente ? "border-amber-400" : vencida ? "border-red-400" : "border-ink-300 hover:border-brand-400"}`} />
-        )}
-      </button>
-
+    <div
+      draggable={isDraggable}
+      onDragStart={onDragStart}
+      className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
+        v.cumplido      ? "bg-green-50 border-green-100 opacity-70" :
+        vencida         ? "bg-red-50 border-red-200" :
+        urgente         ? "bg-amber-50 border-amber-200" :
+                          "bg-white border-ink-100 hover:border-ink-200"
+      }`}
+    >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+          <VencimientoStatusPill cumplido={v.cumplido} onChange={onToggle} />
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            Vencimiento
+            {v.tipo ?? "Vencimiento"}
           </span>
           {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
           {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
         </div>
         <p className={`text-sm font-medium leading-snug ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</p>
-        {exp ? (
-          <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline mt-0.5 block truncate">
-            {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-          </Link>
-        ) : (
-          <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline mt-1 block">Ver expediente →</Link>
-        )}
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          <span className="text-xs text-ink-400">{formatFecha(v.fecha)}{v.hora ? ` · ${v.hora}` : ""}</span>
+          {exp ? (
+            <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate">
+              {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
+            </Link>
+          ) : (
+            <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
+          )}
+        </div>
         <AdjuntosInline vencimientoId={v.id} token={token} />
       </div>
 
-      {/* Actions */}
       {confirmDelete ? (
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
           <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
@@ -215,59 +312,46 @@ function VencimientoCard({
 
 // ── Tarjeta Tarea ─────────────────────────────────────────────────────────────
 
-const ESTADO_CICLO: Record<TareaEstado, TareaEstado> = {
-  pendiente: "en_curso",
-  en_curso:  "hecha",
-  hecha:     "pendiente",
-};
-
 const TIPO_TAREA_LABEL: Record<string, string> = { judicial: "⚖️", extrajudicial: "🤝", administrativa: "🏢", operativa: "🔧" };
 
 function TareaCard({
-  t, exp, token, onToggle, onEdit, onDelete,
+  t, exp, token, onToggle, onEdit, onDelete, draggable: isDraggable, onDragStart,
 }: {
   t: Tarea;
   exp?: Expediente;
   token: string;
-  onToggle: () => void;
+  onToggle: (estado: TareaEstado) => void;
   onEdit: () => void;
   onDelete: () => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const vencida = t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha";
 
   return (
-    <div className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${
-      t.estado === "hecha" ? "bg-green-50 border-green-100 opacity-70" :
-      vencida              ? "bg-red-50 border-red-200" :
-      t.estado === "en_curso" ? "bg-blue-50 border-blue-100" :
-                             "bg-white border-ink-100 hover:border-ink-200"
-    }`}>
-      <button onClick={onToggle} className="mt-0.5 flex-shrink-0 p-1 -m-1" title={`Estado: ${t.estado} → click para avanzar`}>
-        {t.estado === "hecha" ? (
-          <div className="w-5 h-5 rounded bg-green-500 flex items-center justify-center">
-            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-          </div>
-        ) : t.estado === "en_curso" ? (
-          <div className="w-5 h-5 rounded border-2 border-blue-400 bg-blue-100 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
-          </div>
-        ) : (
-          <div className="w-5 h-5 rounded border-2 border-ink-300 hover:border-brand-400" />
-        )}
-      </button>
-
+    <div
+      draggable={isDraggable}
+      onDragStart={onDragStart}
+      className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
+        t.estado === "hecha"    ? "bg-green-50 border-green-100 opacity-70" :
+        vencida                 ? "bg-red-50 border-red-200" :
+        t.estado === "en_curso" ? "bg-blue-50 border-blue-100" :
+                                  "bg-white border-ink-100 hover:border-ink-200"
+      }`}
+    >
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+          <TareaStatusPill estado={t.estado} onChange={onToggle} />
           <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
             {TIPO_TAREA_LABEL[t.tipo] ?? ""} {t.tipo ?? "Tarea"}
           </span>
-          {t.estado === "en_curso" && <span className="text-[10px] font-semibold text-blue-600">En curso</span>}
           {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencida</span>}
         </div>
         <p className={`text-sm font-medium leading-snug ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>{t.titulo}</p>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {t.fecha_limite && <span className="text-xs text-ink-400">{formatFecha(t.fecha_limite)}{t.hora ? ` · ${t.hora}` : ""}</span>}
           {t.responsable_nombre && (
             <span className="text-xs text-ink-400 flex items-center gap-0.5">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -285,7 +369,6 @@ function TareaCard({
         <AdjuntosInline tareaId={t.id} token={token} />
       </div>
 
-      {/* Actions */}
       {confirmDelete ? (
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
           <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
@@ -316,24 +399,130 @@ function Skeleton() {
   );
 }
 
-// ── Columna ───────────────────────────────────────────────────────────────────
+// ── Kanban Tablero ────────────────────────────────────────────────────────────
 
-function Columna({ titulo, color, icono, count, children }: {
-  titulo: string; color: string; icono: React.ReactNode; count: number; children: React.ReactNode;
+type KanbanCol = "pendiente" | "en_curso" | "hecho";
+
+const KANBAN_COLS: { id: KanbanCol; label: string; headerCls: string; bgCls: string }[] = [
+  { id: "pendiente", label: "PENDIENTE", headerCls: "border-ink-300 text-ink-600",    bgCls: "bg-ink-50/60" },
+  { id: "en_curso",  label: "EN CURSO",  headerCls: "border-blue-400 text-blue-700",  bgCls: "bg-blue-50/40" },
+  { id: "hecho",     label: "HECHO",     headerCls: "border-green-400 text-green-700", bgCls: "bg-green-50/30" },
+];
+
+function AgendaTablero({
+  vencimientos, tareas, expLookup, token,
+  onToggleVenc, onToggleTarea,
+  onEditVenc, onEditTarea,
+  onDeleteVenc, onDeleteTarea,
+}: {
+  vencimientos: Vencimiento[];
+  tareas: Tarea[];
+  expLookup: Record<string, Expediente>;
+  token: string;
+  onToggleVenc: (v: Vencimiento) => void;
+  onToggleTarea: (t: Tarea, estado: TareaEstado) => void;
+  onEditVenc: (v: Vencimiento) => void;
+  onEditTarea: (t: Tarea) => void;
+  onDeleteVenc: (id: string) => void;
+  onDeleteTarea: (id: string) => void;
 }) {
+  const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
+  const dragRef = useRef<{ type: "v" | "t"; id: string } | null>(null);
+
+  const colVenc = (col: KanbanCol): Vencimiento[] => {
+    if (col === "pendiente") return vencimientos.filter(v => !v.cumplido);
+    if (col === "hecho")     return vencimientos.filter(v => v.cumplido);
+    return [];
+  };
+
+  const colTarea = (col: KanbanCol): Tarea[] => {
+    if (col === "pendiente") return tareas.filter(t => t.estado === "pendiente");
+    if (col === "en_curso")  return tareas.filter(t => t.estado === "en_curso");
+    return tareas.filter(t => t.estado === "hecha");
+  };
+
+  const handleDrop = (col: KanbanCol) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    if (drag.type === "v") {
+      const venc = vencimientos.find(v => v.id === drag.id);
+      if (!venc) return;
+      const shouldBeCumplido = col === "hecho";
+      if (venc.cumplido !== shouldBeCumplido) onToggleVenc(venc);
+    } else {
+      const tarea = tareas.find(t => t.id === drag.id);
+      if (!tarea) return;
+      const estadoMap: Record<KanbanCol, TareaEstado> = { pendiente: "pendiente", en_curso: "en_curso", hecho: "hecha" };
+      const nuevoEstado = estadoMap[col];
+      if (tarea.estado !== nuevoEstado) onToggleTarea(tarea, nuevoEstado);
+    }
+    dragRef.current = null;
+    setDragOver(null);
+  };
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className={`flex items-center gap-2 pb-2 border-b-2 ${color}`}>
-        {icono}
-        <span className="text-sm font-bold text-ink-800">{titulo}</span>
-        <span className="ml-auto text-xs font-semibold text-ink-400">{count}</span>
-      </div>
-      {children}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {KANBAN_COLS.map(col => {
+        const vs = colVenc(col.id);
+        const ts = colTarea(col.id);
+        const total = vs.length + ts.length;
+        const isOver = dragOver === col.id;
+        return (
+          <div
+            key={col.id}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(col.id); }}
+            onDragLeave={() => setDragOver(null)}
+            onDrop={() => handleDrop(col.id)}
+            className={`flex flex-col gap-2 min-h-[200px] rounded-xl p-3 transition-colors ${col.bgCls} ${isOver ? "ring-2 ring-brand-400 ring-inset" : ""}`}
+          >
+            {/* Column header */}
+            <div className={`flex items-center gap-2 pb-2 border-b-2 ${col.headerCls} mb-1`}>
+              <span className="text-xs font-bold tracking-wider">{col.label}</span>
+              <span className="ml-auto text-xs font-semibold text-ink-400">{total}</span>
+            </div>
+
+            {/* Cards */}
+            <div className="flex flex-col gap-2">
+              {vs.map(v => (
+                <VencimientoCard
+                  key={v.id}
+                  v={v}
+                  exp={expLookup[v.expediente_id]}
+                  token={token}
+                  draggable
+                  onDragStart={(e) => { dragRef.current = { type: "v", id: v.id }; e.dataTransfer.effectAllowed = "move"; }}
+                  onToggle={() => onToggleVenc(v)}
+                  onEdit={() => onEditVenc(v)}
+                  onDelete={() => onDeleteVenc(v.id)}
+                />
+              ))}
+              {ts.map(t => (
+                <TareaCard
+                  key={t.id}
+                  t={t}
+                  exp={t.expediente_id ? expLookup[t.expediente_id] : undefined}
+                  token={token}
+                  draggable
+                  onDragStart={(e) => { dragRef.current = { type: "t", id: t.id }; e.dataTransfer.effectAllowed = "move"; }}
+                  onToggle={(estado) => onToggleTarea(t, estado)}
+                  onEdit={() => onEditTarea(t)}
+                  onDelete={() => onDeleteTarea(t.id)}
+                />
+              ))}
+              {total === 0 && (
+                <p className="text-xs text-ink-300 text-center py-6 italic">Sin items</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 // ── Página ────────────────────────────────────────────────────────────────────
+
+type Vista = "tablero" | "calendario";
 
 export default function AgendaPage() {
   const { data: session } = useSession();
@@ -351,7 +540,7 @@ export default function AgendaPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [inhabiles, setInhabiles] = useState<DiaInhabil[]>([]);
-  const [vistaCalendario, setVistaCalendario] = useState(true);
+  const [vista, setVista] = useState<Vista>("tablero");
   const now3 = new Date();
   const [calMes, setCalMes] = useState(now3.getMonth() + 1);
   const [calAnio, setCalAnio] = useState(now3.getFullYear());
@@ -393,7 +582,6 @@ export default function AgendaPage() {
     api.get<Cliente[]>("/clientes", token).then(setClientes).catch(() => {});
   }, [token]);
 
-  // Cargar feriados del mes visible en calendario
   useEffect(() => {
     if (!token) return;
     const desde = `${calAnio}-${String(calMes).padStart(2, "0")}-01`;
@@ -481,28 +669,21 @@ export default function AgendaPage() {
     }
   };
 
-  const toggleTarea = async (t: Tarea) => {
+  const handleToggleTarea = async (t: Tarea, estado?: TareaEstado) => {
     if (!token) return;
-    const next = ESTADO_CICLO[t.estado];
+    const CICLO: Record<TareaEstado, TareaEstado> = { pendiente: "en_curso", en_curso: "hecha", hecha: "pendiente" };
+    const next = estado ?? CICLO[t.estado];
     const updated = await api.patch<Tarea>(`/tareas/${t.id}`, { estado: next }, token);
     setTareas(prev => prev.map(x => x.id === t.id ? updated : x));
   };
 
   const { desde, hasta } = getDatesFromValue(periodoValue);
+  const vFiltradas = vencimientos.filter(v => v.fecha >= desde && v.fecha <= hasta && (!filtroTipoVenc || v.tipo === filtroTipoVenc));
+  const tFiltradas = tareas.filter(t => (!t.fecha_limite || (t.fecha_limite >= desde && t.fecha_limite <= hasta)) && (!filtroTipoTarea || t.tipo === filtroTipoTarea));
 
-  const vFiltradas = vencimientos.filter(v => inRange(v.fecha, desde, hasta) && (!filtroTipoVenc || v.tipo === filtroTipoVenc));
-  const tFiltradas = tareas.filter(t => t.fecha_limite && inRange(t.fecha_limite, desde, hasta) && (!filtroTipoTarea || t.tipo === filtroTipoTarea));
+  const totalPendientes = vencimientos.filter(v => !v.cumplido).length + tareas.filter(t => t.estado !== "hecha").length;
+  const urgentes = vencimientos.filter(v => !v.cumplido && esUrgente(v.fecha)).length;
 
-  const todasFechas = Array.from(new Set([
-    ...vFiltradas.map(v => v.fecha),
-    ...tFiltradas.map(t => t.fecha_limite!),
-  ])).sort();
-
-  const totalPendientes = vFiltradas.filter(v => !v.cumplido).length + tFiltradas.filter(t => t.estado !== "hecha").length;
-  const urgentes = vFiltradas.filter(v => !v.cumplido && esUrgente(v.fecha)).length;
-  const empty = vFiltradas.length === 0 && tFiltradas.length === 0;
-
-  // Eventos para el calendario — DEBE ir antes del return
   const eventosCalendario = useMemo(() => [
     ...vencimientos.map(v => ({
       id: v.id,
@@ -548,7 +729,6 @@ export default function AgendaPage() {
         <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
       )}
 
-      {/* Picker: qué crear al hacer click en día del calendario */}
       {diaPickerFecha && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
           <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
@@ -635,7 +815,7 @@ export default function AgendaPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
           <p className="text-sm text-ink-500 mt-0.5">
@@ -643,20 +823,20 @@ export default function AgendaPage() {
             {urgentes > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap justify-end">
-          {/* Toggle lista/calendario */}
+        <div className="flex gap-2 flex-wrap justify-end items-center">
+          {/* Toggle vista */}
           <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
             <button
-              onClick={() => setVistaCalendario(true)}
-              className={`px-3 py-1.5 transition ${vistaCalendario ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
+              onClick={() => setVista("tablero")}
+              className={`px-3 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
             >
-              📅 Calendario
+              ⊞ Tablero
             </button>
             <button
-              onClick={() => setVistaCalendario(false)}
-              className={`px-3 py-1.5 transition ${!vistaCalendario ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
+              onClick={() => setVista("calendario")}
+              className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
             >
-              ☰ Lista
+              📅 Calendario
             </button>
           </div>
           <button
@@ -675,8 +855,57 @@ export default function AgendaPage() {
         </div>
       </div>
 
+      {/* Filtros — solo en tablero */}
+      {vista === "tablero" && !loading && (
+        <div className="space-y-3">
+          <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-medium text-ink-500">Vencimientos:</span>
+              {(["", "vencimiento", "audiencia", "presentacion", "pericia", "otro"] as const).map(t => (
+                <button key={t} onClick={() => setFiltroTipoVenc(t)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoVenc === t ? "bg-purple-600 text-white border-purple-600" : "bg-white text-ink-500 border-ink-200 hover:border-purple-300"}`}>
+                  {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-medium text-ink-500">Tareas:</span>
+              {(["", "judicial", "extrajudicial", "administrativa", "operativa"] as const).map(t => (
+                <button key={t} onClick={() => setFiltroTipoTarea(t)}
+                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoTarea === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-ink-500 border-ink-200 hover:border-blue-300"}`}>
+                  {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Vista Tablero */}
+      {vista === "tablero" && (
+        loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1,2,3].map(i => <div key={i} className="space-y-3"><Skeleton /></div>)}
+          </div>
+        ) : (
+          <AgendaTablero
+            vencimientos={vFiltradas}
+            tareas={tFiltradas}
+            expLookup={expLookup}
+            token={token!}
+            onToggleVenc={toggleVencimiento}
+            onToggleTarea={handleToggleTarea}
+            onEditVenc={setEditingV}
+            onEditTarea={setEditingT}
+            onDeleteVenc={deleteVencimiento}
+            onDeleteTarea={deleteTarea}
+          />
+        )
+      )}
+
       {/* Vista Calendario */}
-      {vistaCalendario && (
+      {vista === "calendario" && (
         <CalendarioMensual
           anio={calAnio}
           mes={calMes}
@@ -688,142 +917,6 @@ export default function AgendaPage() {
         />
       )}
 
-      {/* Vista Lista */}
-      {!vistaCalendario && (<>
-        <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-        <div className="flex items-center gap-4 text-xs text-ink-500">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-purple-400 flex-shrink-0" />
-            Vencimientos procesales
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded bg-blue-400 flex-shrink-0" />
-            Tareas internas
-          </span>
-        </div>
-
-      {loading && (
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div><Skeleton /></div>
-          <div><Skeleton /></div>
-        </div>
-      )}
-
-      {!loading && empty && (
-        <div className="text-center py-12">
-          <p className="text-sm font-semibold text-ink-700 mb-1">Sin eventos en este período</p>
-          <p className="text-xs text-ink-400 mb-4">
-            No hay vencimientos ni tareas con fecha en este período.
-            {periodoValue.periodo !== "anio" && (
-              <> <button onClick={() => setPeriodoValue({ periodo: "anio", desde: `${new Date().getFullYear()}-01-01`, hasta: `${new Date().getFullYear()}-12-31` })} className="text-brand-600 hover:underline font-medium">Ver este año →</button></>
-            )}
-          </p>
-          <div className="flex gap-2 justify-center">
-            <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-semibold transition">
-              + Vencimiento
-            </button>
-            <Link href="/expedientes" className="text-xs border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-lg font-medium transition">
-              Ver expedientes
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {!loading && !empty && (
-        <>
-          {/* Filtros de tipo */}
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-ink-500">Vencimientos:</span>
-              {(["", "vencimiento", "audiencia", "presentacion", "pericia", "otro"] as const).map(t => (
-                <button key={t} onClick={() => setFiltroTipoVenc(t)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoVenc === t ? "bg-purple-600 text-white border-purple-600" : "bg-white text-ink-500 border-ink-200 hover:border-purple-300"}`}>
-                  {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-ink-500">Tareas:</span>
-              {(["", "judicial", "extrajudicial", "administrativa", "operativa"] as const).map(t => (
-                <button key={t} onClick={() => setFiltroTipoTarea(t)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoTarea === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-ink-500 border-ink-200 hover:border-blue-300"}`}>
-                  {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Desktop */}
-          <div className="hidden lg:grid lg:grid-cols-2 gap-6">
-            <Columna titulo="Vencimientos" color="border-purple-300" count={vFiltradas.length}
-              icono={<svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
-            >
-              {vFiltradas.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-xs text-ink-400">Sin vencimientos en este período</p>
-                  <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs text-purple-600 hover:underline mt-1 block">+ Agregar vencimiento</button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {todasFechas.filter(f => vFiltradas.some(v => v.fecha === f)).map(fecha => (
-                    <div key={fecha}>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>{formatFecha(fecha)}</p>
-                      <div className="space-y-2">
-                        {vFiltradas.filter(v => v.fecha === fecha).map(v => (
-                          <VencimientoCard key={v.id} v={v} exp={expLookup[v.expediente_id]} token={token!} onToggle={() => toggleVencimiento(v)} onEdit={() => setEditingV(v)} onDelete={() => deleteVencimiento(v.id)} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Columna>
-
-            <Columna titulo="Tareas" color="border-blue-300" count={tFiltradas.length}
-              icono={<svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>}
-            >
-              {tFiltradas.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-xs text-ink-400">Sin tareas con fecha en este período</p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {todasFechas.filter(f => tFiltradas.some(t => t.fecha_limite === f)).map(fecha => (
-                    <div key={fecha}>
-                      <p className={`text-[10px] font-bold uppercase tracking-wider mb-2 ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>{formatFecha(fecha)}</p>
-                      <div className="space-y-2">
-                        {tFiltradas.filter(t => t.fecha_limite === fecha).map(t => (
-                          <TareaCard key={t.id} t={t} exp={t.expediente_id ? expLookup[t.expediente_id] : undefined} token={token!} onToggle={() => toggleTarea(t)} onEdit={() => setEditingT(t)} onDelete={() => deleteTarea(t.id)} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Columna>
-          </div>
-
-          {/* Mobile */}
-          <div className="lg:hidden space-y-6">
-            {todasFechas.map(fecha => {
-              const vDia = vFiltradas.filter(v => v.fecha === fecha);
-              const tDia = tFiltradas.filter(t => t.fecha_limite === fecha);
-              return (
-                <div key={fecha}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <p className={`text-xs font-bold uppercase tracking-wider ${fecha === today ? "text-brand-600" : "text-ink-400"}`}>{formatFecha(fecha)}</p>
-                    <div className="flex-1 h-px bg-ink-100" />
-                  </div>
-                  <div className="space-y-2">
-                    {vDia.map(v => <VencimientoCard key={v.id} v={v} exp={expLookup[v.expediente_id]} token={token!} onToggle={() => toggleVencimiento(v)} onEdit={() => setEditingV(v)} onDelete={() => deleteVencimiento(v.id)} />)}
-                    {tDia.map(t => <TareaCard key={t.id} t={t} exp={t.expediente_id ? expLookup[t.expediente_id] : undefined} token={token!} onToggle={() => toggleTarea(t)} onEdit={() => setEditingT(t)} onDelete={() => deleteTarea(t.id)} />)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-      </>)}
 
       {/* Modal: Nueva tarea */}
       {showTareaModal && (
