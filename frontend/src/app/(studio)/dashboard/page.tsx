@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea, TareaTipo } from "@/lib/api";
 import Link from "next/link";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
@@ -64,11 +63,7 @@ export default function DashboardPage() {
   const [honorarios, setHonorarios] = useState<HonorarioResumen | null>(null);
   const [gastoResumen, setGastoResumen] = useState<GastoResumen | null>(null);
   const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
-  const [totalExpedientes, setTotalExpedientes] = useState<number | null>(null);
-  const [totalClientes, setTotalClientes] = useState<number | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [expStats, setExpStats] = useState<{ activo: number; archivado: number; cerrado: number } | null>(null);
-  const [studioConfigured, setStudioConfigured] = useState(false);
   const now4 = new Date();
   const [calMes, setCalMes] = useState(now4.getMonth() + 1);
   const [calAnio, setCalAnio] = useState(now4.getFullYear());
@@ -105,19 +100,8 @@ export default function DashboardPage() {
     api.get<HonorarioResumen>("/honorarios/resumen", token).then(setHonorarios).catch(() => setHonorarios({ saldo_pendiente_ars: 0, saldo_pendiente_usd: 0, expedientes_con_deuda: 0, total_cobrado_ars: 0, total_cobrado_usd: 0 } as any));
     api.get<GastoResumen>("/gastos/resumen", token).then(setGastoResumen).catch(() => setGastoResumen({ total_ars: 0, total_usd: 0 } as any));
     api.get<IngresoResumen>("/ingresos/resumen", token).then(setIngresoResumen).catch(() => setIngresoResumen({ total_ars: 0, total_usd: 0 } as any));
-    Promise.all([
-      api.get<Expediente[]>("/expedientes", token, { estado: "activo" }),
-      api.get<Expediente[]>("/expedientes", token, { estado: "archivado" }),
-      api.get<Expediente[]>("/expedientes", token, { estado: "cerrado" }),
-    ]).then(([activos, archivados, cerrados]) => {
-      setTotalExpedientes(activos.length);
-      setExpStats({ activo: activos.length, archivado: archivados.length, cerrado: cerrados.length });
-    }).catch(() => { setTotalExpedientes(0); setExpStats({ activo: 0, archivado: 0, cerrado: 0 }); });
     api.get<Cliente[]>("/clientes", token)
-      .then((cls) => { const activos = cls.filter((c) => !c.archivado); setTotalClientes(activos.length); setClientes(activos); })
-      .catch(() => setTotalClientes(0));
-    api.get<{ email_contacto?: string }>("/studios/me", token)
-      .then((s) => setStudioConfigured(!!s.email_contacto))
+      .then((cls) => setClientes(cls.filter((c) => !c.archivado)))
       .catch(() => {});
   }, [token]);
 
@@ -235,64 +219,10 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Empty state */}
-      {totalExpedientes === 0 ? (
-        <div className="py-8">
-          <div className="max-w-xl mx-auto text-center mb-10">
-            <div className="w-16 h-16 bg-brand-50 rounded-3xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-ink-900 mb-2">Tu estudio está listo</h2>
-            <p className="text-sm text-ink-400 leading-relaxed">Para ver el dashboard en acción necesitás cargar tus primeros datos.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            {[
-              { step: "1", icon: "🏛️", title: "Configurá tu estudio", desc: "Nombre, logo, email de contacto y dirección.", href: "/perfil", cta: "Ir al perfil" },
-              { step: "2", icon: "👤", title: "Agregá un cliente", desc: "Todo expediente necesita un cliente.", href: "/clientes/nuevo", cta: "Nuevo cliente" },
-              { step: "3", icon: "📁", title: "Creá un expediente", desc: "Asociá al cliente y definí la causa.", href: "/expedientes/nuevo", cta: "Nuevo expediente" },
-            ].map((item, i) => {
-              const done = (i === 0 && studioConfigured) || (i === 1 && (totalClientes ?? 0) > 0);
-              return (
-                <div key={i} className={`border rounded-2xl p-5 shadow-sm flex flex-col ${done ? "bg-ink-50 border-ink-100 opacity-60" : "bg-white border-ink-100"}`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    {done ? <span className="w-7 h-7 rounded-full bg-green-500 text-white text-xs flex items-center justify-center flex-shrink-0">✓</span>
-                      : <span className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">{item.step}</span>}
-                    <span className="text-xl">{item.icon}</span>
-                  </div>
-                  <p className={`text-sm font-semibold mb-1 ${done ? "text-ink-400 line-through" : "text-ink-900"}`}>{item.title}</p>
-                  <p className="text-xs text-ink-400 leading-relaxed mb-4 flex-1">{item.desc}</p>
-                  {!done && <a href={item.href} className="w-full text-center bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-all">{item.cta}</a>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Selector de período */}
-          <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
+      {/* ── Google Calendar sync banner ── */}
+      <CalendarSyncButton variant="banner" />
 
-          {/* ── Fila de stats compacta ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "Expedientes activos", value: totalExpedientes ?? "—" },
-              { label: "Clientes activos", value: totalClientes ?? "—" },
-              { label: "Tareas pendientes", value: tareasFiltradas.length, accent: tareasHoy.length > 0 ? "red" : undefined },
-              { label: "Vencimientos pendientes", value: proximosFiltrados.length, accent: urgentes.length > 0 ? "red" : undefined },
-            ].map(({ label, value, accent }) => (
-              <div key={label} className="bg-white rounded-2xl border border-ink-100 shadow-sm px-4 py-3.5 flex flex-col gap-1">
-                <p className="text-xs text-ink-400 font-medium leading-tight truncate">{label}</p>
-                <p className={`text-2xl font-bold ${accent === "red" ? "text-red-600" : "text-ink-900"}`}>{value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Google Calendar sync banner ── */}
-          <CalendarSyncButton variant="banner" />
-
-          {/* ── Agenda widget ── */}
+          {/* ── Agenda semanal ── */}
           <AgendaWidget
             eventos={eventosCalendario}
             inhabiles={inhabiles}
@@ -314,17 +244,18 @@ export default function DashboardPage() {
             onDeleteT={handleDeleteTarea}
           />
 
-          {/* ── KPIs contables ── */}
+          {/* ── Contable ── */}
           {(() => {
-            const hoy = new Date();
-            const mesLabel = hoy.toLocaleDateString("es-AR", { month: "long", year: "numeric" });
             const ingARS = ingresoResumen?.total_ars ?? 0;
             const egARS = gastoResumen?.total_ars ?? 0;
             const resultadoARS = ingARS - egARS;
             const loadingContable = ingresoResumen === null || gastoResumen === null;
             return (
-              <div>
-                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider mb-2 capitalize">Contable — {mesLabel}</p>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">Contable</p>
+                  <PeriodSelector value={periodoValue} onChange={setPeriodoValue} compact />
+                </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { label: "Ingresos ARS", value: loadingContable ? null : `$ ${Number(ingARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-green-700" },
@@ -344,52 +275,6 @@ export default function DashboardPage() {
               </div>
             );
           })()}
-
-          {/* ── Gráfico expedientes ── */}
-          {expStats && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">Expedientes</p>
-                  <p className="text-sm font-semibold text-ink-900 mt-0.5">{expStats.activo + expStats.archivado + expStats.cerrado} en total</p>
-                </div>
-                <Link href="/expedientes" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver todos →</Link>
-              </div>
-              <div className="flex gap-6 items-end">
-                <div className="flex-1 h-32">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: "Activos", value: expStats.activo, color: "#22c55e" },
-                      { name: "Archivados", value: expStats.archivado, color: "#94a3b8" },
-                      { name: "Cerrados", value: expStats.cerrado, color: "#f87171" },
-                    ]} barCategoryGap="30%">
-                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                      <YAxis hide allowDecimals={false} />
-                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }} cursor={{ fill: "#f8fafc" }} formatter={(v: unknown) => [v as number, "expedientes"]} />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {[{ color: "#22c55e" }, { color: "#94a3b8" }, { color: "#f87171" }].map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex-shrink-0 space-y-3 pb-1">
-                  {[
-                    { label: "Activos", value: expStats.activo, color: "bg-green-500", text: "text-green-700" },
-                    { label: "Archivados", value: expStats.archivado, color: "bg-slate-400", text: "text-slate-600" },
-                    { label: "Cerrados", value: expStats.cerrado, color: "bg-red-400", text: "text-red-600" },
-                  ].map(({ label, value, color, text }) => (
-                    <div key={label} className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${color}`} />
-                      <span className="text-xs text-ink-500 w-20">{label}</span>
-                      <span className={`text-sm font-bold ${text}`}>{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }
@@ -810,49 +695,83 @@ function AgendaWidget({
         </div>
       </div>
 
-      {/* Mini-semana */}
-      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-3">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <button onClick={() => setSemanaOffset(o => o - 1)} className="p-1 rounded-lg hover:bg-ink-50 text-ink-400 hover:text-ink-700 transition">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      {/* Calendario semanal */}
+      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+        {/* Nav */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-ink-50">
+          <button onClick={() => setSemanaOffset(o => o - 1)} className="p-1.5 rounded-lg hover:bg-ink-50 text-ink-400 hover:text-ink-700 transition">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
           </button>
-          <button onClick={() => setSemanaOffset(0)} className={`text-[10px] font-semibold transition ${semanaOffset === 0 ? "text-brand-600" : "text-ink-400 hover:text-ink-700"}`}>
+          <button onClick={() => setSemanaOffset(0)} className={`text-xs font-semibold px-3 py-1 rounded-lg transition ${semanaOffset === 0 ? "text-brand-600 bg-brand-50" : "text-ink-500 hover:text-ink-800 hover:bg-ink-50"}`}>
             {semanaLabel}
           </button>
-          <button onClick={() => setSemanaOffset(o => o + 1)} className="p-1 rounded-lg hover:bg-ink-50 text-ink-400 hover:text-ink-700 transition">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+          <button onClick={() => setSemanaOffset(o => o + 1)} className="p-1.5 rounded-lg hover:bg-ink-50 text-ink-400 hover:text-ink-700 transition">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
           </button>
         </div>
-        <div className="grid grid-cols-7 gap-1">
+
+        {/* Grid de días */}
+        <div className="grid grid-cols-7 divide-x divide-ink-50">
           {diasSemana.map((fecha, i) => {
             const esHoy = fecha === todayStr;
             const esSel = fecha === diaSeleccionado;
             const evs = eventosPorFecha[fecha] ?? [];
             const esInhabil = inhabileSet.has(fecha);
             const dia = parseInt(fecha.slice(8));
+            const mes = new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", { month: "short" });
 
             return (
-              <button key={fecha} onClick={() => setDiaSeleccionado(fecha)}
-                className={`flex flex-col items-center gap-1 py-2 rounded-xl transition w-full ${
-                  esSel ? "bg-brand-600 ring-2 ring-brand-400" :
-                  esHoy ? "bg-brand-50 ring-1 ring-brand-200" :
-                  "hover:bg-ink-50"
+              <button
+                key={fecha}
+                onClick={() => setDiaSeleccionado(fecha)}
+                className={`flex flex-col items-stretch text-left transition group min-h-[280px] ${
+                  esSel ? "bg-brand-50/60" : esHoy ? "bg-brand-50/30" : "hover:bg-ink-50/40"
                 }`}
               >
-                <span className={`text-[10px] font-semibold uppercase ${esSel ? "text-white/80" : esHoy ? "text-brand-600" : "text-ink-400"}`}>{DIAS_LABEL[i]}</span>
-                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${esSel ? "bg-white/20 text-white" : esHoy ? "bg-brand-600 text-white" : esInhabil ? "text-red-400" : "text-ink-700"}`}>{dia}</span>
-                <div className="flex gap-0.5 h-2 items-center">
-                  {evs.length === 0
-                    ? <span className="w-1 h-1 rounded-full bg-transparent" />
-                    : evs.slice(0, 3).map((e, j) => (
-                      <span key={j} className={`w-1.5 h-1.5 rounded-full ${esSel ? "bg-white/60" :
+                {/* Cabecera del día */}
+                <div className={`flex flex-col items-center py-3 border-b ${esSel ? "border-brand-200 bg-brand-600" : esHoy ? "border-brand-100 bg-brand-50" : "border-ink-50 bg-ink-50/40"}`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${esSel ? "text-white/80" : esHoy ? "text-brand-500" : "text-ink-400"}`}>{DIAS_LABEL[i]}</span>
+                  <span className={`text-lg font-bold mt-0.5 ${esSel ? "text-white" : esHoy ? "text-brand-700" : esInhabil ? "text-red-400" : "text-ink-800"}`}>{dia}</span>
+                  {/* Mes si es el primero de mes */}
+                  {dia === 1 && <span className={`text-[9px] uppercase font-semibold ${esSel ? "text-white/70" : "text-ink-400"}`}>{mes}</span>}
+                </div>
+
+                {/* Eventos — desktop: pills con texto; mobile: solo dots */}
+                <div className="flex-1 p-1.5 space-y-1 overflow-hidden">
+                  {/* Desktop: pills con título */}
+                  <div className="hidden lg:block space-y-1">
+                    {evs.slice(0, 4).map((e, j) => {
+                      const colorCls =
+                        e.color === "red"    ? "bg-red-50 border-red-200 text-red-700" :
+                        e.color === "purple" ? "bg-purple-50 border-purple-200 text-purple-700" :
+                        e.color === "blue"   ? "bg-blue-50 border-blue-200 text-blue-700" :
+                                               "bg-amber-50 border-amber-200 text-amber-700";
+                      const dotCls =
+                        e.color === "red"    ? "bg-red-400" :
+                        e.color === "purple" ? "bg-purple-400" :
+                        e.color === "blue"   ? "bg-blue-400" : "bg-amber-400";
+                      return (
+                        <div key={j} className={`flex items-center gap-1 px-1.5 py-1 rounded-md border text-[10px] font-medium truncate ${colorCls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotCls}`} />
+                          <span className="truncate">{e.hora ? `${e.hora} ` : ""}{e.titulo}</span>
+                        </div>
+                      );
+                    })}
+                    {evs.length > 4 && (
+                      <p className="text-[10px] text-ink-400 font-medium px-1">+{evs.length - 4} más</p>
+                    )}
+                  </div>
+                  {/* Mobile: dots */}
+                  <div className="lg:hidden flex flex-wrap gap-0.5 justify-center pt-1">
+                    {evs.slice(0, 3).map((e, j) => (
+                      <span key={j} className={`w-1.5 h-1.5 rounded-full ${
                         e.color === "red" ? "bg-red-400" :
                         e.color === "purple" ? "bg-purple-400" :
                         e.color === "blue" ? "bg-blue-400" : "bg-amber-400"
                       }`} />
-                    ))
-                  }
-                  {evs.length > 3 && <span className={`text-[8px] font-bold ${esSel ? "text-white/70" : "text-ink-400"}`}>+</span>}
+                    ))}
+                    {evs.length > 3 && <span className="text-[8px] text-ink-400 font-bold">+</span>}
+                  </div>
                 </div>
               </button>
             );
@@ -860,22 +779,19 @@ function AgendaWidget({
         </div>
       </div>
 
-      {/* Resumen del día seleccionado */}
+      {/* Detalle del día seleccionado */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-ink-50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-ink-50 flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
             {esHoySeleccionado && <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">HOY</span>}
-            <span className="text-xs font-semibold text-ink-700">
+            <span className="text-sm font-semibold text-ink-800 capitalize">
               {new Date(diaSeleccionado + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
             </span>
             {eventosDelDia.some(e => e.color === "red") && (
-              <span className="text-[10px] font-bold text-red-500">⚡ Urgente</span>
+              <span className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">⚡ Urgente</span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-ink-400">{eventosDelDia.length} evento{eventosDelDia.length !== 1 ? "s" : ""}</span>
-            <Link href="/agenda" className="text-xs text-brand-600 hover:underline font-medium">Ver en agenda →</Link>
-          </div>
+          <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium flex-shrink-0">Ver agenda →</Link>
         </div>
 
         {eventosDelDia.length === 0 ? (

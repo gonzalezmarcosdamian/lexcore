@@ -48,9 +48,10 @@ export function getDatesFromValue(v: PeriodoValue): { desde: string; hasta: stri
 interface Props {
   value: PeriodoValue;
   onChange: (v: PeriodoValue) => void;
+  compact?: boolean;
 }
 
-export function PeriodSelector({ value, onChange }: Props) {
+export function PeriodSelector({ value, onChange, compact }: Props) {
   const [showCustom, setShowCustom] = useState(false);
   const [tempDesde, setTempDesde] = useState(value.desde);
   const [tempHasta, setTempHasta] = useState(value.hasta);
@@ -78,6 +79,50 @@ function selectPeriodo(p: Periodo) {
   const customLabel = isCustomActive && value.desde && value.hasta
     ? `${formatShort(value.desde)} — ${formatShort(value.hasta)}`
     : "Personalizado";
+
+  if (compact) {
+    return (
+      <div className="relative flex items-center gap-2">
+        <select
+          value={value.periodo === "custom" ? "custom" : value.periodo}
+          onChange={(e) => {
+            const p = e.target.value as Periodo;
+            if (p === "custom") { setTempDesde(""); setTempHasta(""); setShowCustom(true); return; }
+            selectPeriodo(p);
+          }}
+          className="text-xs border border-ink-200 rounded-lg px-2.5 py-1.5 text-ink-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 font-medium"
+        >
+          <option value="hoy">Hoy</option>
+          <option value="semana">Esta semana</option>
+          <option value="mes">Este mes</option>
+          <option value="anio">Este año</option>
+          <option value="custom">{isCustomActive ? customLabel : "Personalizado…"}</option>
+        </select>
+        {showCustom && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4 bg-black/40"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowCustom(false); }}>
+            <div ref={panelRef} className="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl p-5">
+              <p className="text-sm font-semibold text-ink-900 mb-4">Rango personalizado</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Desde</label>
+                  <input type="date" value={tempDesde} onChange={(e) => setTempDesde(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-ink-500 mb-1">Hasta</label>
+                  <input type="date" value={tempHasta} onChange={(e) => setTempHasta(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400" />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-4">
+                <button onClick={() => setShowCustom(false)} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+                <button onClick={applyCustom} disabled={!tempDesde || !tempHasta} className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white rounded-xl py-2.5 text-sm font-semibold transition">Aplicar</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative">
