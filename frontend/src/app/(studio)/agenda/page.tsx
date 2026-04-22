@@ -446,15 +446,14 @@ function AgendaTablero({
   const dragRef = useRef<{ type: "v" | "t"; id: string } | null>(null);
 
   const colVenc = (col: KanbanCol): Vencimiento[] => {
-    if (col === "pendiente") return vencimientos.filter(v => !v.cumplido);
-    if (col === "hecho")     return vencimientos.filter(v => v.cumplido);
-    return [];
+    const base = col === "pendiente" ? vencimientos.filter(v => !v.cumplido) : vencimientos.filter(v => v.cumplido);
+    return [...base].sort((a, b) => ((a.fecha ?? "") + (a.hora ?? "")).localeCompare((b.fecha ?? "") + (b.hora ?? "")));
   };
 
   const colTarea = (col: KanbanCol): Tarea[] => {
-    if (col === "pendiente") return tareas.filter(t => t.estado === "pendiente");
-    if (col === "en_curso")  return tareas.filter(t => t.estado === "en_curso");
-    return tareas.filter(t => t.estado === "hecha");
+    const estadoMap: Record<KanbanCol, TareaEstado | null> = { pendiente: "pendiente", en_curso: "en_curso", hecho: "hecha" };
+    const base = tareas.filter(t => t.estado === estadoMap[col]);
+    return [...base].sort((a, b) => ((a.fecha_limite ?? "") + (a.hora ?? "")).localeCompare((b.fecha_limite ?? "") + (b.hora ?? "")));
   };
 
   const handleDrop = (col: KanbanCol) => {

@@ -181,12 +181,15 @@ export default function DashboardPage() {
   const tareasFiltradas = tareas.filter((t) => !t.fecha_limite || inRange(t.fecha_limite));
   const proximosFiltrados = proximos.filter((v) => inRange(v.fecha));
 
-  const tareasHoy = tareasFiltradas.filter((t) => t.fecha_limite && t.fecha_limite <= today);
-  const tareasFuturas = tareasFiltradas.filter((t) => t.fecha_limite && t.fecha_limite > today);
+  const sortT = (arr: Tarea[]) => [...arr].sort((a, b) => ((a.fecha_limite ?? "") + (a.hora ?? "")).localeCompare((b.fecha_limite ?? "") + (b.hora ?? "")));
+  const sortV = (arr: Vencimiento[]) => [...arr].sort((a, b) => ((a.fecha ?? "") + (a.hora ?? "")).localeCompare((b.fecha ?? "") + (b.hora ?? "")));
+
+  const tareasHoy = sortT(tareasFiltradas.filter((t) => t.fecha_limite && t.fecha_limite <= today));
+  const tareasFuturas = sortT(tareasFiltradas.filter((t) => t.fecha_limite && t.fecha_limite > today));
   const tareasSinFecha = tareasFiltradas.filter((t) => !t.fecha_limite);
-  const vencimientosHoy = proximosFiltrados.filter((v) => v.fecha === today);
-  const urgentes = proximosFiltrados.filter((v) => isUrgente(v.fecha) && v.fecha !== today);
-  const proximos30 = proximosFiltrados.filter((v) => !isUrgente(v.fecha) && v.fecha !== today);
+  const vencimientosHoy = sortV(proximosFiltrados.filter((v) => v.fecha === today));
+  const urgentes = sortV(proximosFiltrados.filter((v) => isUrgente(v.fecha) && v.fecha !== today));
+  const proximos30 = sortV(proximosFiltrados.filter((v) => !isUrgente(v.fecha) && v.fecha !== today));
 
   return (
     <div className="space-y-6 pb-20 lg:pb-6">
