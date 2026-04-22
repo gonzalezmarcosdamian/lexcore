@@ -4,6 +4,39 @@
 
 ---
 
+## Sesión 010 — 2026-04-22
+
+**Sprint:** Sprint 15 / Versión estable v0.16.0
+
+### Qué se hizo
+
+**Feat: Landing page pública completa**
+- Reemplaza el redirect `/` → `/login` por una landing real de marketing
+- Estructura UX Kid: hero con beneficio directo → dolor → solución → cómo funciona → precios → FAQ → CTA final
+- Mockup del dashboard renderizado en código (sin imágenes externas)
+- Nav sticky responsive, hamburger mobile, trust pills, accordion FAQ
+- Copy en español orientado a abogados: sin jerga tech, con dolor real
+
+**Docs: CHANGELOG.md creado**
+- Historial completo desde v0.11.0 hasta v0.16.0
+- Cada versión con Added/Fixed, migraciones y endpoints nuevos
+
+**Versión v0.16.0 taggeada como estable**
+- `git tag v0.16.0` sobre el commit de la landing
+- PRODUCTO.md actualizado a v0.16.0 ESTABLE
+
+### Decisiones tomadas
+- Landing en Next.js (no Framer) para mantener un solo repo y un solo deploy
+- Precio base sugerido en la landing: USD 39/mes por estudio (ajustable)
+- El `/` público no requiere auth — el middleware de Next.js lo permite por whitelist
+
+### Pendiente
+- Reemplazar precio placeholder `USD 39` con precio real al definir modelo de pricing
+- Agregar screenshots/capturas reales cuando haya estudios en prod
+- Testimonios reales (backlog LAND-011/012)
+
+---
+
 ## Sesión 009 — 2026-04-22
 
 **Sprint:** Sprint 14

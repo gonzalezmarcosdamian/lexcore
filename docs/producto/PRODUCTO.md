@@ -6,7 +6,7 @@
 
 **Última actualización:** 2026-04-22
 **Sprint activo:** Sprint 14 — COMPLETADO
-**Versión:** 0.15.0
+**Versión:** 0.16.0 · `git tag v0.16.0` · **ESTABLE**
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -19,6 +19,8 @@
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
+**Versión estable taggeada:** `v0.16.0` — 2026-04-22
+
 Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos, navegación desde todos los puntos de la app.**
 
 ---
@@ -233,6 +235,26 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 
 #### US-11 · Observabilidad Sentry — `blocked`
 - **🚫 BLOQUEADO:** Activar al incorporar el primer cliente real en producción.
+
+### Sprint 15 — Landing page ✓ (2026-04-22)
+
+#### LAND-P0 · Landing page pública ✓
+- [x] Página `/` — reemplaza el redirect a `/login`
+- [x] Nav sticky responsive (hamburger mobile)
+- [x] Hero: headline orientado a beneficio, mockup del dashboard interactivo, trust pills, CTA doble
+- [x] Sección Dolor — 3 pain points reales del abogado
+- [x] Sección Solución — 6 features con beneficio y ícono
+- [x] Sección Cómo funciona — 3 pasos (fondo dark `ink-900`)
+- [x] Pricing card con checklist, CTA, garantía 30 días, precio base
+- [x] FAQ accordion interactivo — 6 preguntas/objeciones
+- [x] CTA final + footer con links legales
+- [x] 100% Next.js + Tailwind, mobile-first, sin dependencias adicionales
+
+**Páginas:** `/` (pública, sin auth)
+**Documento de referencia:** `docs/producto/LANDING.md`
+**Estilo:** basado en UX Kid (uxkid.com) — copy orientado a resultado, CTA único por sección
+
+---
 
 ### Sprint 14 — COMPLETADO (2026-04-22)
 
