@@ -297,6 +297,7 @@ function NewTareaModal({ token, expedientes, clientes, onCreated, onClose }: { t
   const [clienteId, setClienteId] = useState("");
   const [fechaLimite, setFechaLimite] = useState("");
   const [hora, setHora] = useState("");
+  const [descripcionTarea, setDescripcionTarea] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
@@ -308,6 +309,7 @@ function NewTareaModal({ token, expedientes, clientes, onCreated, onClose }: { t
       if (clienteId) body.cliente_id = clienteId;
       if (fechaLimite) body.fecha_limite = fechaLimite;
       if (hora) body.hora = hora;
+      if (descripcionTarea) body.descripcion = descripcionTarea;
       const created = await api.post<Tarea>("/tareas", body, token);
       onCreated(created);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
@@ -356,6 +358,10 @@ function NewTareaModal({ token, expedientes, clientes, onCreated, onClose }: { t
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
               <input type="time" value={hora} onChange={e => setHora(e.target.value)} className={inputCls} />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
+            <textarea value={descripcionTarea} onChange={e => setDescripcionTarea(e.target.value)} rows={2} className={inputCls + " resize-none"} placeholder="Opcional" />
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}
         </div>
