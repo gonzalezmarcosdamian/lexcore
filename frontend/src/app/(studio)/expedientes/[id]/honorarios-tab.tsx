@@ -308,17 +308,12 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                       </div>
                     )}
 
-                    {/* Form nuevo pago — se oculta si el capital está saldado (se puede seguir registrando intereses) */}
                     {saldo <= 0 && (
                       <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
                         <span className="text-xs text-green-700 font-medium">✓ Capital saldado</span>
-                        <button type="button" onClick={() => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, tipo: "interes" } }))}
-                          className="ml-auto text-[10px] text-blue-600 hover:underline">
-                          Registrar intereses
-                        </button>
                       </div>
                     )}
-                    {(saldo > 0 || pf.tipo === "interes") && <div className="space-y-2">
+                    {saldo > 0 && <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <p className="text-xs font-semibold text-ink-600">Registrar pago</p>
                         {saldo > 0 && (
@@ -330,23 +325,6 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                             Completar saldo ({fmt(saldo, h.moneda)})
                           </button>
                         )}
-                      </div>
-                      {/* Tipo de pago */}
-                      <div className="flex gap-2">
-                        {(["capital", "interes"] as const).map(t => (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, tipo: t } }))}
-                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                              pf.tipo === t
-                                ? t === "capital" ? "bg-brand-50 border-brand-300 text-brand-700" : "bg-blue-50 border-blue-300 text-blue-700"
-                                : "bg-white border-ink-200 text-ink-500 hover:border-ink-300"
-                            }`}
-                          >
-                            {t === "capital" ? "Capital" : "Intereses"}
-                          </button>
-                        ))}
                       </div>
                       <div className="flex gap-2">
                         <input
