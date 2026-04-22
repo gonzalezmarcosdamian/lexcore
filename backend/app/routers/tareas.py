@@ -97,43 +97,9 @@ def actualizar_tarea(
     tenant_id = current_user["studio_id"]
     tarea = _get_tarea_or_404(db, tarea_id, tenant_id)
     cambios = body.model_dump(exclude_none=True)
-    solo_estado = set(cambios.keys()) == {"estado"}
     for field, value in cambios.items():
         setattr(tarea, field, value)
     tarea.updated_at = utcnow()
-    if tarea.expediente_id:
-        from app.models.expediente import Movimiento
-        from sqlalchemy import or_
-        if solo_estado:
-            ESTADO_LABEL = {"pendiente": "↩️ Tarea reabierta", "en_curso": "▶️ Tarea en curso", "hecha": "✅ Tarea completada"}
-            texto = f"{ESTADO_LABEL.get(tarea.estado, 'Estado actualizado')}: {tarea.titulo}"
-            # Reemplazar movimiento de estado anterior del mismo ítem (no acumular)
-            prev = db.query(Movimiento).filter(
-                Movimiento.expediente_id == tarea.expediente_id,
-                Movimiento.tenant_id == tarea.tenant_id,
-                or_(
-                    Movimiento.texto.like(f"%reabierta%: {tarea.titulo}"),
-                    Movimiento.texto.like(f"%en curso%: {tarea.titulo}"),
-                    Movimiento.texto.like(f"%completada%: {tarea.titulo}"),
-                ),
-            ).order_by(Movimiento.created_at.desc()).first()
-            if prev:
-                prev.texto = texto
-            else:
-                db.add(Movimiento(
-                    tenant_id=tarea.tenant_id,
-                    expediente_id=tarea.expediente_id,
-                    user_id=current_user["sub"],
-                    texto=texto,
-                ))
-        else:
-            texto = f"✏️ Tarea editada: {tarea.titulo}"
-            db.add(Movimiento(
-                tenant_id=tarea.tenant_id,
-                expediente_id=tarea.expediente_id,
-                user_id=current_user["sub"],
-                texto=texto,
-            ))
     db.commit()
     db.refresh(tarea)
     push_tarea(db, tarea, current_user["sub"])
