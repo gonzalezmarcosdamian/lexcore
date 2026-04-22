@@ -591,6 +591,7 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
             <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="pendiente">Pendiente</option>
               <option value="en_curso">En curso</option>
+              <option value="hecha">Hecha</option>
             </select>
           </div>
           <div>
@@ -616,12 +617,13 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
   const [fecha, setFecha] = useState(v.fecha);
   const [hora, setHora] = useState((v as any).hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
+  const [cumplido, setCumplido] = useState(v.cumplido);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo }, token);
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo, cumplido }, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
@@ -655,6 +657,13 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
               <option value="presentacion">Presentación</option>
               <option value="pericia">Pericia</option>
               <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
+            <select value={cumplido ? "cumplido" : "pendiente"} onChange={(e) => setCumplido(e.target.value === "cumplido")} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="pendiente">Pendiente</option>
+              <option value="cumplido">Cumplido</option>
             </select>
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}
