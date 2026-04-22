@@ -22,7 +22,9 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(studio_id: str, user_id: str, role: str) -> str:
+def create_access_token(
+    studio_id: str, user_id: str, role: str, is_superadmin: bool = False
+) -> str:
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
@@ -30,6 +32,7 @@ def create_access_token(studio_id: str, user_id: str, role: str) -> str:
         "sub": user_id,
         "studio_id": studio_id,
         "role": role,
+        "is_superadmin": is_superadmin,
         "exp": expire,
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)

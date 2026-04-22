@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, RequireFullAccess
 from app.models.expediente import (
     Expediente, ExpedienteAbogado, ExpedienteCliente, Movimiento, Vencimiento, RolEnExpediente
 )
@@ -93,7 +93,7 @@ def _generar_numero(db, tenant_id: str) -> str:
     return f"EXP-{year}-{count + 1:04d}"
 
 
-@router.post("", response_model=ExpedienteOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ExpedienteOut, status_code=status.HTTP_201_CREATED, dependencies=[RequireFullAccess])
 def crear_expediente(
     body: ExpedienteCreate,
     db: DbSession,

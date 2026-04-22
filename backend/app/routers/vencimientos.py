@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.core.deps import CurrentUser, DbSession
+from app.core.deps import CurrentUser, DbSession, RequireFullAccess
 from app.models.expediente import Expediente, Vencimiento
 from app.models.base import utcnow
 from app.services.resumen_invalidar import invalidar_resumen
@@ -43,7 +43,7 @@ def listar_vencimientos(
     return query.order_by(Vencimiento.fecha).all()
 
 
-@router.post("", response_model=VencimientoOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=VencimientoOut, status_code=status.HTTP_201_CREATED, dependencies=[RequireFullAccess])
 def crear_vencimiento(
     body: VencimientoCreate,
     db: DbSession,
@@ -100,26 +100,7 @@ def actualizar_vencimiento(
     if venc.expediente_id:
         from app.models.expediente import Movimiento
         if set(cambios.keys()) == {"cumplido"}:
-            texto = f"{'✅' if venc.cumplido else '↩️'} Vencimiento {'cumplido' if venc.cumplido else 'reabierto'}: {venc.descripcion}"
-            # Reemplazar el movimiento de estado anterior del mismo vencimiento (no acumular)
-            from sqlalchemy import or_
-            prev = db.query(Movimiento).filter(
-                Movimiento.expediente_id == venc.expediente_id,
-                Movimiento.tenant_id == venc.tenant_id,
-                or_(
-                    Movimiento.texto.like(f"%cumplido%: {venc.descripcion}"),
-                    Movimiento.texto.like(f"%reabierto%: {venc.descripcion}"),
-                ),
-            ).order_by(Movimiento.created_at.desc()).first()
-            if prev:
-                prev.texto = texto
-            else:
-                db.add(Movimiento(
-                    tenant_id=venc.tenant_id,
-                    expediente_id=venc.expediente_id,
-                    user_id=current_user["sub"],
-                    texto=texto,
-                ))
+            pass  # cambios de estado no se registran en bitácora
         else:
             texto = f"✏️ Vencimiento editado: {venc.descripcion}"
             if "fecha" in cambios:

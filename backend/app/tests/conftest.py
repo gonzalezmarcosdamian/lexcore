@@ -23,6 +23,9 @@ from app.models import documento as _m_documento  # noqa: F401
 from app.models import gasto as _m_gasto  # noqa: F401
 from app.models import tarea as _m_tarea  # noqa: F401
 from app.models import soporte as _m_soporte  # noqa: F401
+from app.models import subscription_event as _m_sub_event  # noqa: F401
+from app.models import plan_price as _m_plan_price  # noqa: F401
+from app.models import metrics_snapshot as _m_metrics  # noqa: F401
 
 SQLITE_URL = "sqlite:///file:testdb?mode=memory&cache=shared&uri=true"
 

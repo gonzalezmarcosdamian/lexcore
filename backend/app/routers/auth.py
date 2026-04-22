@@ -96,7 +96,8 @@ def register(body: RegisterRequest, db: DbSession):
     db.refresh(user)
 
     token = create_access_token(
-        studio_id=studio.id, user_id=user.id, role=user.role.value
+        studio_id=studio.id, user_id=user.id, role=user.role.value,
+        is_superadmin=user.is_superadmin,
     )
     return TokenResponse(
         access_token=token,
@@ -126,7 +127,8 @@ def login(body: LoginRequest, db: DbSession, request: Request):
     _clear_failures(ip)
 
     token = create_access_token(
-        studio_id=user.tenant_id, user_id=user.id, role=user.role.value
+        studio_id=user.tenant_id, user_id=user.id, role=user.role.value,
+        is_superadmin=user.is_superadmin,
     )
     return TokenResponse(
         access_token=token,
@@ -173,7 +175,8 @@ def google_auth(body: GoogleAuthRequest, db: DbSession):
         # Si todavía no completó el setup de estudio, reiniciar ese flujo
         still_pending = user.tenant_id == "pending"
         token = create_access_token(
-            studio_id=user.tenant_id, user_id=user.id, role=user.role.value
+            studio_id=user.tenant_id, user_id=user.id, role=user.role.value,
+            is_superadmin=user.is_superadmin,
         )
         return GoogleAuthResponse(
             access_token=token,

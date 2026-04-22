@@ -13,6 +13,14 @@ router = APIRouter(prefix="/invitaciones", tags=["invitaciones"])
 
 INVITE_EXPIRY_DAYS = 7
 
+PLAN_USER_LIMITS: dict[str, int | None] = {
+    "trial": 2,
+    "starter": 2,
+    "pro": 6,
+    "estudio": None,
+    "read_only": 0,
+}
+
 
 def _require_admin(current_user: dict):
     if current_user.get("role") not in (UserRole.admin, UserRole.socio):
@@ -41,6 +49,23 @@ def crear_invitacion(
 ):
     _require_admin(current_user)
     tenant_id = current_user["studio_id"]
+
+    # Verificar límite de usuarios por plan
+    from app.models.studio import Studio
+    from sqlalchemy import func
+    studio = db.query(Studio).filter(Studio.id == tenant_id).first()
+    if studio:
+        plan = studio.plan or "trial"
+        limite = PLAN_USER_LIMITS.get(plan)
+        if limite is not None:
+            activos = db.query(func.count(User.id)).filter(
+                User.tenant_id == tenant_id,
+            ).scalar() or 0
+            if activos >= limite:
+                raise HTTPException(
+                    status_code=403,
+                    detail={"code": "plan_limit", "plan": plan, "limit": limite, "current": activos},
+                )
 
     # Verificar que el email no esté ya en el tenant
     existing_user = db.query(User).filter(

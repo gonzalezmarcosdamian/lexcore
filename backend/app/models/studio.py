@@ -38,3 +38,17 @@ class Studio(Base):
     whatsapp_token: Mapped[str | None] = mapped_column(String(512), nullable=True)      # Bearer token permanente
     whatsapp_verify_token: Mapped[str | None] = mapped_column(String(128), nullable=True)  # Token de verificación webhook
     whatsapp_active: Mapped[bool] = mapped_column(default=False)
+
+    # Suscripción
+    plan: Mapped[str] = mapped_column(String(30), nullable=False, default="trial")
+    # trial | starter | pro | estudio | read_only
+    billing_cycle: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # monthly | annual
+    subscription_id: Mapped[str | None] = mapped_column(String(100), nullable=True)       # MP preapproval_id
+    subscription_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    # active | paused | cancelled | pending
+    next_billing_date: Mapped[str | None] = mapped_column(String(10), nullable=True)       # ISO date YYYY-MM-DD
+    plan_price_id: Mapped[str | None] = mapped_column(String(100), nullable=True)          # FK a plan_prices.id
+    subscription_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

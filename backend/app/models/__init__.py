@@ -10,6 +10,9 @@ from app.models.tarea import Tarea
 from app.models.resumen import ExpedienteResumen
 from app.models.soporte import SoporteTicket
 from app.models.feriado import FeriadoCache, DiaInhabil
+from app.models.subscription_event import SubscriptionEvent
+from app.models.plan_price import PlanPrice
+from app.models.metrics_snapshot import MetricsSnapshot
 
 __all__ = [
     "Studio", "User", "Cliente",
@@ -23,4 +26,7 @@ __all__ = [
     "ExpedienteResumen",
     "SoporteTicket",
     "FeriadoCache", "DiaInhabil",
+    "SubscriptionEvent",
+    "PlanPrice",
+    "MetricsSnapshot",
 ]

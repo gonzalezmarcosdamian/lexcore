@@ -40,3 +40,5 @@ class User(TenantModel):
     # Reset contraseña
     reset_password_token: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     reset_password_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    is_superadmin: Mapped[bool] = mapped_column(default=False, nullable=False)

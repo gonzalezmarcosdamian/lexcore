@@ -43,6 +43,8 @@ class UserProfile(BaseModel):
     auth_provider: str
     google_refresh_token: str | None = None  # True/None — no exponemos el token real
     google_calendar_id: str | None = None
+    studio_access_level: str = "full"
+    is_superadmin: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -58,18 +60,27 @@ class UserProfileUpdate(BaseModel):
 
 @router.get("/me", response_model=UserProfile)
 def get_my_profile(db: DbSession, current_user: CurrentUser):
-    """Devuelve el perfil del usuario autenticado con estado de Calendar."""
+    """Devuelve el perfil del usuario autenticado con estado de Calendar y access level."""
+    from app.models.studio import Studio
+    from app.services.subscription_service import get_studio_access_level
+
     user = db.query(User).filter(User.id == current_user["sub"]).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    studio = db.query(Studio).filter(Studio.id == current_user["studio_id"]).first()
+    access_level = get_studio_access_level(studio) if studio else "full"
+
     return UserProfile(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
         role=user.role,
         auth_provider=user.auth_provider.value if hasattr(user.auth_provider, "value") else str(user.auth_provider),
-        google_refresh_token="***" if user.google_refresh_token else None,  # no exponer el token
+        google_refresh_token="***" if user.google_refresh_token else None,
         google_calendar_id=user.google_calendar_id,
+        studio_access_level=access_level,
+        is_superadmin=user.is_superadmin,
     )
 
 
