@@ -133,7 +133,7 @@ def listar_planes(current_user: CurrentUser, db: DbSession):
             "monthly": float(m.amount) if m else defaults["monthly"],
             "annual_monthly": float(a.amount) if a else defaults["annual_monthly"],
         }
-    return {"planes": planes_out, "public_key": settings.MERCADOPAGO_PUBLIC_KEY}
+    return {"planes": planes_out, "public_key": settings.MERCADOPAGO_PUBLIC_KEY or ""}
 
 
 @router.post("/checkout", response_model=CheckoutResponse)
