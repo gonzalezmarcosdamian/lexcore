@@ -267,6 +267,70 @@ def sync_metrics(db: DbSession, current_user: CurrentUser):
     return {"snapshot_at": snap.snapshot_at.isoformat(), "data": data}
 
 
+@router.get("/studios/{studio_id}/detail")
+def studio_detail(studio_id: str, db: DbSession, current_user: CurrentUser):
+    """Detalle completo de un studio: usuarios, actividad, historial de suscripción."""
+    from app.models.studio import Studio
+    from app.models.user import User
+    from app.models.expediente import Expediente, Vencimiento
+    from app.models.documento import Documento
+    from app.models.tarea import Tarea
+    from app.models.subscription_event import SubscriptionEvent
+    from sqlalchemy import func
+
+    studio = db.query(Studio).filter(Studio.id == studio_id).first()
+    if not studio:
+        raise HTTPException(status_code=404, detail="Studio no encontrado")
+
+    users = db.query(User).filter(User.tenant_id == studio_id, User.is_active == True).all()
+
+    stats = {
+        "expedientes": db.query(func.count(Expediente.id)).filter(Expediente.tenant_id == studio_id).scalar() or 0,
+        "vencimientos": db.query(func.count(Vencimiento.id)).filter(Vencimiento.tenant_id == studio_id).scalar() or 0,
+        "tareas": db.query(func.count(Tarea.id)).filter(Tarea.tenant_id == studio_id).scalar() or 0,
+        "documentos": db.query(func.count(Documento.id)).filter(Documento.tenant_id == studio_id).scalar() or 0,
+    }
+
+    events = db.query(SubscriptionEvent).filter(
+        SubscriptionEvent.tenant_id == studio_id
+    ).order_by(SubscriptionEvent.created_at.desc()).limit(20).all()
+
+    return {
+        "studio": {
+            "id": studio.id,
+            "name": studio.name,
+            "slug": studio.slug,
+            "plan": studio.plan,
+            "billing_cycle": studio.billing_cycle,
+            "subscription_status": studio.subscription_status,
+            "trial_ends_at": studio.trial_ends_at.isoformat() if studio.trial_ends_at else None,
+            "created_at": studio.created_at.isoformat(),
+            "email_contacto": studio.email_contacto,
+        },
+        "users": [
+            {
+                "id": u.id,
+                "name": u.full_name,
+                "email": u.email,
+                "role": u.role,
+                "created_at": u.created_at.isoformat(),
+            }
+            for u in users
+        ],
+        "stats": stats,
+        "subscription_events": [
+            {
+                "event_type": e.event_type,
+                "plan": e.plan,
+                "billing_cycle": e.billing_cycle,
+                "created_at": e.created_at.isoformat(),
+                "metadata": json.loads(e.metadata_json) if e.metadata_json else {},
+            }
+            for e in events
+        ],
+    }
+
+
 @router.get("/metrics/history")
 def get_metrics_history(db: DbSession, current_user: CurrentUser):
     from app.models.metrics_snapshot import MetricsSnapshot
