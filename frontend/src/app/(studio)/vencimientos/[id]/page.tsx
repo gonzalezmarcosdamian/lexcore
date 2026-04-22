@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Vencimiento, Nota, Expediente } from "@/lib/api";
-import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
+import { DocumentosSection } from "@/components/ui/documentos-section";
 
 const TIPO_LABEL: Record<string, string> = {
   vencimiento: "Vencimiento", audiencia: "Audiencia",
@@ -241,7 +241,7 @@ export default function VencimientoDetailPage() {
       {/* Documentos */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
         <h2 className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">Documentos</h2>
-        <AdjuntosInline vencimientoId={id} token={token!} />
+        <DocumentosSection vencimientoId={id} token={token!} />
       </div>
 
       {/* Notas / Bitácora */}

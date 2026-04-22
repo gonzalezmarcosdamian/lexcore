@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, Nota, Expediente, TareaTipo } from "@/lib/api";
-import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
+import { DocumentosSection } from "@/components/ui/documentos-section";
 
 const ESTADO_CFG: Record<TareaEstado, { label: string; cls: string }> = {
   pendiente: { label: "Pendiente",  cls: "bg-yellow-100 text-yellow-700" },
@@ -259,7 +259,7 @@ export default function TareaDetailPage() {
       {/* Documentos */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
         <h2 className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">Documentos</h2>
-        <AdjuntosInline tareaId={id} token={token!} />
+        <DocumentosSection tareaId={id} token={token!} />
       </div>
 
       {/* Notas / Bitácora */}
