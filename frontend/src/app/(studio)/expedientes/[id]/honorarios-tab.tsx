@@ -364,7 +364,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                           Registrar pago
                         </button>
                         <button
-                          onClick={() => { if (confirm("¿Eliminar este honorario?")) eliminarHonorario(h.id); }}
+                          onClick={() => eliminarHonorario(h.id)}
                           className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-lg transition"
                         >
                           Eliminar
@@ -373,7 +373,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                     </div>}
                     {saldo <= 0 && pf.tipo !== "interes" && (
                       <button
-                        onClick={() => { if (confirm("¿Eliminar este honorario?")) eliminarHonorario(h.id); }}
+                        onClick={() => eliminarHonorario(h.id)}
                         className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-lg transition w-full"
                       >
                         Eliminar honorario
