@@ -32,6 +32,34 @@ interface StudioData {
   trial_ends_at?: string | null;
 }
 
+interface SuscripcionStatus {
+  plan: string;
+  plan_label: string;
+  subscription_status: string | null;
+  billing_cycle: string | null;
+  dias_restantes_trial: number | null;
+  next_billing_date: string | null;
+  next_billing_amount: number | null;
+  eventos: Array<{
+    id: string;
+    event_type: string;
+    plan: string | null;
+    amount: number | null;
+    created_at: string;
+  }>;
+}
+
+interface PlanInfo {
+  plan: string;
+  label: string;
+  description: string;
+  monthly_price: number;
+  annual_price: number;
+  currency: string;
+  max_users: number | null;
+  features: string[];
+}
+
 interface CalendarItem {
   id: string;
   summary: string;
@@ -150,6 +178,16 @@ function PerfilPageInner() {
   const [waActive, setWaActive] = useState(false);
   const [waDisconnecting, setWaDisconnecting] = useState(false);
 
+  // Suscripción
+  const [suscripcion, setSuscripcion] = useState<SuscripcionStatus | null>(null);
+  const [planes, setPlanes] = useState<PlanInfo[]>([]);
+  const [subsLoading, setSubsLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [subsMsg, setSubsMsg] = useState<{ text: string; type: "ok" | "err" } | null>(null);
+  const [selectedCycle, setSelectedCycle] = useState<"monthly" | "annual">("monthly");
+  const [subsSuccess, setSubsSuccess] = useState(searchParams.get("subs") === "ok");
+
   useEffect(() => {
     if (!token) return;
     api.get<ProfileData>("/users/me", token)
@@ -198,6 +236,21 @@ function PerfilPageInner() {
     if (studio.whatsapp_phone_id) setWaForm((f) => ({ ...f, phone_id: studio.whatsapp_phone_id ?? "" }));
   }, [studio]);
 
+  useEffect(() => {
+    if (!token) return;
+    setSubsLoading(true);
+    Promise.all([
+      api.get<SuscripcionStatus>("/suscripcion/status", token),
+      api.get<PlanInfo[]>("/suscripcion/planes", token),
+    ])
+      .then(([status, ps]) => {
+        setSuscripcion(status);
+        setPlanes(ps);
+      })
+      .catch(() => {})
+      .finally(() => setSubsLoading(false));
+  }, [token]);
+
   const isGoogleUser = profile?.auth_provider === "google" || (session?.user as any)?.authProvider === "google";
   // Conectado = tiene refresh_token guardado. Loading (profile null) asume true para Google users para evitar flicker.
   const isCalendarConnected = profile !== null ? Boolean(profile?.google_refresh_token) : isGoogleUser;
@@ -212,6 +265,36 @@ function PerfilPageInner() {
     : "";
 
   // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const handleCheckout = async (plan: string) => {
+    if (!token) return;
+    setCheckoutLoading(plan);
+    setSubsMsg(null);
+    try {
+      const res = await api.post<{ checkout_url: string }>("/suscripcion/checkout", { plan, billing_cycle: selectedCycle }, token);
+      window.location.href = res.checkout_url;
+    } catch (err: unknown) {
+      setSubsMsg({ text: err instanceof Error ? err.message : "Error al iniciar checkout", type: "err" });
+    } finally {
+      setCheckoutLoading(null);
+    }
+  };
+
+  const handleCancelSubs = async () => {
+    if (!token || !confirm("¿Confirmás que querés cancelar tu suscripción?")) return;
+    setCancelLoading(true);
+    setSubsMsg(null);
+    try {
+      await api.patch("/suscripcion/cancel", {}, token);
+      setSubsMsg({ text: "Suscripción cancelada. Tendrás acceso hasta el próximo vencimiento.", type: "ok" });
+      const updated = await api.get<SuscripcionStatus>("/suscripcion/status", token);
+      setSuscripcion(updated);
+    } catch (err: unknown) {
+      setSubsMsg({ text: err instanceof Error ? err.message : "Error al cancelar", type: "err" });
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   const handleSaveName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -622,56 +705,157 @@ function PerfilPageInner() {
         defaultOpen={false}
         icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>}
       >
-        {(() => {
-          const trialDays = studio?.trial_ends_at
-            ? Math.ceil((new Date(studio.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-            : null;
-          const isExpired = trialDays !== null && trialDays <= 0;
-          const isWarning = trialDays !== null && trialDays <= 5 && trialDays > 0;
-          return (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-ink-900">Plan Trial</span>
-                    {trialDays !== null && !isExpired && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
-                        isWarning
-                          ? "bg-red-50 text-red-700 border-red-100"
-                          : "bg-amber-50 text-amber-700 border-amber-100"
-                      }`}>
-                        {trialDays === 1 ? "1 día restante" : `${trialDays} días restantes`}
-                      </span>
-                    )}
-                    {isExpired && (
-                      <span className="text-xs bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">
-                        Vencido
-                      </span>
-                    )}
-                  </div>
-                  {studio?.trial_ends_at && (
-                    <p className="text-xs text-ink-400 mt-1">
-                      {isExpired
-                        ? "Tu período de prueba ha vencido. Contactanos para continuar."
-                        : isWarning
-                        ? "Tu trial está por vencer. Contactanos para continuar con acceso completo."
-                        : `Acceso completo hasta el ${new Date(studio.trial_ends_at).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}.`}
-                    </p>
+        {subsSuccess && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            ¡Suscripción activada! Bienvenido a LexCore.
+            <button onClick={() => setSubsSuccess(false)} className="ml-auto text-green-600 hover:text-green-800">✕</button>
+          </div>
+        )}
+
+        {subsLoading ? (
+          <div className="space-y-3">
+            <div className="h-8 bg-ink-100 rounded-xl animate-pulse w-48" />
+            <div className="h-20 bg-ink-100 rounded-xl animate-pulse" />
+          </div>
+        ) : suscripcion ? (
+          <div className="space-y-5">
+            {/* Estado actual */}
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-ink-900">{suscripcion.plan_label}</span>
+                  {suscripcion.subscription_status === "active" && (
+                    <span className="text-xs bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full font-medium">Activo</span>
                   )}
-                  {!studio?.trial_ends_at && (
-                    <p className="text-xs text-ink-400 mt-1">Acceso completo. Planes pago próximamente.</p>
+                  {suscripcion.subscription_status === "paused" && (
+                    <span className="text-xs bg-amber-50 text-amber-700 border border-amber-100 px-2 py-0.5 rounded-full font-medium">Pago pendiente</span>
+                  )}
+                  {suscripcion.plan === "trial" && suscripcion.dias_restantes_trial !== null && suscripcion.dias_restantes_trial > 0 && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+                      suscripcion.dias_restantes_trial <= 5
+                        ? "bg-red-50 text-red-700 border-red-100"
+                        : "bg-amber-50 text-amber-700 border-amber-100"
+                    }`}>
+                      {suscripcion.dias_restantes_trial === 1 ? "1 día restante" : `${suscripcion.dias_restantes_trial} días restantes`}
+                    </span>
+                  )}
+                  {suscripcion.plan === "trial" && (suscripcion.dias_restantes_trial === null || suscripcion.dias_restantes_trial <= 0) && !suscripcion.subscription_status && (
+                    <span className="text-xs bg-red-50 text-red-700 border border-red-100 px-2 py-0.5 rounded-full font-medium">Vencido</span>
                   )}
                 </div>
-                <a
-                  href="mailto:hola@lexcore.app?subject=Quiero%20continuar%20con%20LexCore"
-                  className="text-sm border border-brand-200 text-brand-600 hover:bg-brand-50 px-4 py-2 rounded-xl transition flex-shrink-0 ml-4"
-                >
-                  Contactanos
-                </a>
+                {suscripcion.subscription_status === "paused" && (
+                  <p className="text-xs text-amber-700 mt-1">Hay un problema con tu pago. Actualizá tu método de pago en MercadoPago.</p>
+                )}
+                {suscripcion.next_billing_date && suscripcion.subscription_status === "active" && (
+                  <p className="text-xs text-ink-400 mt-1">
+                    Próximo cobro: {new Date(suscripcion.next_billing_date).toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}
+                    {suscripcion.next_billing_amount ? ` · $${suscripcion.next_billing_amount.toLocaleString("es-AR")}` : ""}
+                  </p>
+                )}
               </div>
+              {suscripcion.subscription_status === "active" && (
+                <button
+                  onClick={handleCancelSubs}
+                  disabled={cancelLoading}
+                  className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-xl transition disabled:opacity-50 flex-shrink-0"
+                >
+                  {cancelLoading ? "Cancelando…" : "Cancelar suscripción"}
+                </button>
+              )}
             </div>
-          );
-        })()}
+
+            {subsMsg && <Toast msg={subsMsg.text} type={subsMsg.type} />}
+
+            {/* Planes — mostrar solo si no tiene suscripción activa */}
+            {suscripcion.subscription_status !== "active" && planes.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-1 bg-ink-100 rounded-xl p-1 w-fit">
+                  <button
+                    onClick={() => setSelectedCycle("monthly")}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${selectedCycle === "monthly" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+                  >
+                    Mensual
+                  </button>
+                  <button
+                    onClick={() => setSelectedCycle("annual")}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-medium transition ${selectedCycle === "annual" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+                  >
+                    Anual <span className="text-green-600 font-semibold">−20%</span>
+                  </button>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {planes.map((plan) => {
+                    const price = selectedCycle === "monthly" ? plan.monthly_price : plan.annual_price;
+                    const isCurrent = suscripcion.plan === plan.plan;
+                    return (
+                      <div
+                        key={plan.plan}
+                        className={`border rounded-2xl p-4 space-y-3 transition ${
+                          isCurrent ? "border-brand-400 bg-brand-50/30" : "border-ink-200 bg-white"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-ink-900">{plan.label}</span>
+                            {isCurrent && <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium">Actual</span>}
+                          </div>
+                          <p className="text-xs text-ink-400 mt-0.5">{plan.description}</p>
+                        </div>
+                        <div>
+                          <span className="text-xl font-bold text-ink-900">${price.toLocaleString("es-AR")}</span>
+                          <span className="text-xs text-ink-400">/{selectedCycle === "monthly" ? "mes" : "año"}</span>
+                        </div>
+                        <ul className="space-y-1">
+                          {plan.features.map((f, i) => (
+                            <li key={i} className="flex items-start gap-1.5 text-xs text-ink-600">
+                              <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          onClick={() => handleCheckout(plan.plan)}
+                          disabled={!!checkoutLoading || isCurrent}
+                          className={`w-full text-sm font-semibold py-2 rounded-xl transition disabled:opacity-50 ${
+                            isCurrent
+                              ? "bg-ink-100 text-ink-400 cursor-default"
+                              : "bg-brand-600 hover:bg-brand-700 text-white"
+                          }`}
+                        >
+                          {checkoutLoading === plan.plan ? "Redirigiendo…" : isCurrent ? "Plan actual" : "Suscribirme"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Historial de eventos */}
+            {suscripcion.eventos.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-ink-500 uppercase tracking-wide">Historial</p>
+                {suscripcion.eventos.slice(0, 5).map((ev) => (
+                  <div key={ev.id} className="flex items-center justify-between text-xs text-ink-600 py-1 border-b border-ink-50 last:border-0">
+                    <span className="capitalize">{ev.event_type.replace(/_/g, " ")}</span>
+                    <div className="flex items-center gap-3 text-ink-400">
+                      {ev.amount != null && <span>${ev.amount.toLocaleString("es-AR")}</span>}
+                      <span>{new Date(ev.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-ink-400">No se pudo cargar la información del plan.</p>
+        )}
       </SectionCard>
 
       {/* ── Google Calendar ── */}
