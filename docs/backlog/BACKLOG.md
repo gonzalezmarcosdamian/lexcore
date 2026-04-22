@@ -175,6 +175,40 @@
   - No hay prerequisito de login con Google — cualquier usuario puede conectar Calendar independientemente
 - **UX clave:** el selector de calendario muestra el nombre amigable (ej: "Agenda personal", "Trabajo", "LexCore Vencimientos") — no el ID técnico
 
+---
+
+## Feedback de usuarios (capturado 2026-04-22)
+
+### UX-DETAIL-001 · Vista de detalle de tarea/vencimiento (read-only con acción de editar)
+- **Estado:** `idea`
+- **Prioridad:** P1
+- **Fuente:** Martín (primer usuario beta)
+- **Como** abogado, **quiero** que al hacer click en una tarea o vencimiento (desde el dashboard, la agenda o cualquier lista) se abra una vista de **detalle read-only**, **para** ver la información completa sin accidentalmente modificarla.
+- **Criterios de aceptación:**
+  - [ ] CA1: Click en título de tarea → abre modal/panel de detalle con todos los campos (título, estado, tipo, expediente, cliente, fecha límite, hora, notas)
+  - [ ] CA2: Click en título de vencimiento → abre modal/panel de detalle (descripción, tipo, expediente, fecha, hora, estado cumplido/pendiente)
+  - [ ] CA3: La vista de detalle es read-only — no hay campos editables directo
+  - [ ] CA4: Hay un botón con ícono de lapicito/editar que abre el modal de edición existente
+  - [ ] CA5: Funciona desde: dashboard (cards del día), agenda (lista de eventos), cualquier lista futura
+- **Casos borde:** vencimiento sin expediente, tarea sin fecha límite
+- **Nota UX:** El detalle puede ser un slide-over panel o modal centrado. El usuario debe poder navegar al expediente desde el detalle.
+
+### UX-DASH-001 · Rediseño página de inicio — calendario semanal prominente
+- **Estado:** `in-progress` — implementación parcial en d69df03
+- **Prioridad:** P1
+- **Fuente:** Gonzalo (PO)
+- **Como** abogado, **quiero** que la página de inicio muestre el calendario semanal como protagonista y los KPIs contables debajo, **para** arrancar el día con foco en lo que pasa esta semana.
+- **Lo implementado:**
+  - ✅ Calendario semanal con columnas de altura 280px y pills de eventos visibles en desktop
+  - ✅ KPIs contables con selector de período compacto (dropdown inline)
+  - ✅ Eliminados: 4 stats, gráfico de expedientes, empty state
+- **Pendiente de validar con el usuario:**
+  - [ ] ¿El calendario semanal tiene la altura correcta?
+  - [ ] ¿Los pills de eventos son legibles?
+  - [ ] ¿El selector de período compacto es intuitivo?
+
+---
+
 ### VCT-001 · Vencimientos con push a Google Calendar
 - **Estado:** `idea`
 - **Sprint target:** Sprint 03
@@ -950,8 +984,131 @@ El `[?]` es un botón circular fijo `fixed bottom-6 right-6 z-50` con tooltip "A
   - [ ] CA2: Si hay novedad: crea movimiento automático + badge de notificación in-app
   - [ ] CA3: Email diario resumen "Novedades del día" si hay movimientos nuevos
 
-### MON-01 · Trial 30 días + modo lectura — `blocked`
-- **🚫 BLOQUEADO (2026-04-16):** Sin usuarios reales aún. No tiene sentido implementar un límite de trial sin clientes. Revisar cuando haya primeros estudios en producción.
+---
+
+## SUSCRIPCIÓN — Refinamiento completo (2026-04-22)
+
+### Contexto de negocio
+
+**Stack de pagos:** MercadoPago Subscriptions API (preapproval recurrente)
+**Moneda:** ARS
+**Ciclos:** mensual o anual (anual = 11 cuotas — 1 mes gratis)
+**Comisión MP:** ~4,83% por transacción (3,99% + IVA 21%)
+**Infra fija estimada:** ~USD 65/mes (~ARS 71.500 a dólar MEP)
+**Break-even:** ~8-9 clientes pagos
+
+### Tabla de planes
+
+| Plan | Usuarios incluidos | Mensual (ARS) | Anual (ARS) | Net tras MP/mes |
+|------|--------------------|---------------|-------------|-----------------|
+| **Starter** | Admin + 1 colaborador | 22.000 | 242.000 | 20.938 |
+| **Pro** | Admin + hasta 5 | 38.000 | 418.000 | 36.165 |
+| **Estudio** | Admin + ilimitados | 65.000 | 715.000 | 61.862 |
+
+> Anual = mensual × 11. El descuento es 1 mes gratis.
+> Precio por usuario adicional en Starter/Pro: se bloquea con CTA de upgrade (no se cobra extra por usuario).
+
+---
+
+### SUBS-001 · Modelo de datos de suscripción — `refined`
+
+- **Prioridad:** P0 (prereq de todo el módulo) | **Esfuerzo:** S (2pts)
+- **Como** sistema, **necesito** almacenar el estado de suscripción de cada estudio **para** poder evaluar acceso, ciclo de facturación y límites de plan.
+- **Criterios de aceptación:**
+  - [ ] CA1: Modelo `Studio` tiene los campos nuevos: `plan` (enum: `trial` | `starter` | `pro` | `estudio` | `read_only`), `billing_cycle` (enum: `monthly` | `annual`), `subscription_id` (MP preapproval_id, nullable), `subscription_status` (enum: `active` | `paused` | `cancelled` | `pending` | null), `next_billing_date` (date, nullable), `subscription_updated_at` (datetime, nullable)
+  - [ ] CA2: Tabla `subscription_events` con campos: `id`, `tenant_id`, `event_type` (string: `created`, `charge_success`, `charge_failed`, `cancelled`, `upgraded`, `downgraded`), `plan`, `amount`, `mp_payment_id` (nullable), `created_at` — historial inmutable de todos los eventos de pago
+  - [ ] CA3: Migración Alembic generada y aplicada sin romper datos existentes
+  - [ ] CA4: Al registrar un nuevo estudio, `plan = "trial"`, `trial_ends_at` se setea a `now + 30 días` (ya existe), `subscription_status = null`
+  - [ ] CA5: Schema Pydantic `StudioSubscriptionOut` expone: `plan`, `billing_cycle`, `subscription_status`, `next_billing_date`, `trial_ends_at`, `dias_restantes_trial` (int calculado), `plan_label` (string legible: "Trial", "Starter", etc.)
+- **Casos borde:** migración debe preservar `trial_ends_at` existente en estudios ya creados
+- **Notas técnicas:** `plan` como `sa.Enum` nativo de Postgres. `subscription_events` nunca se modifica (append-only).
+
+---
+
+### SUBS-002 · Checkout con MercadoPago Subscriptions API — `refined`
+
+- **Prioridad:** P0 | **Esfuerzo:** L (8pts)
+- **Como** admin del estudio, **quiero** suscribirme a un plan desde `/perfil` **para** mantener acceso completo al sistema después del trial.
+- **Criterios de aceptación:**
+  - [ ] CA1: En `/perfil → Mi plan`, el admin ve los 3 planes con precio mensual y anual, el plan actual destacado, y un CTA "Suscribirme" o "Cambiar plan"
+  - [ ] CA2: Al seleccionar plan + ciclo y hacer click en "Suscribirme", el frontend llama `POST /suscripcion/checkout` con `{ plan, billing_cycle }`
+  - [ ] CA3: El backend llama `POST https://api.mercadopago.com/preapproval` con: `reason` (nombre del plan), `auto_recurring.frequency = 1`, `auto_recurring.frequency_type = "months"` (o `"months"` con amount × 11 para anual), `auto_recurring.transaction_amount`, `auto_recurring.currency_id = "ARS"`, `back_url` apunta a `/perfil?subs=ok`, `payer_email` del admin
+  - [ ] CA4: El backend devuelve `{ checkout_url }` (campo `init_point` de la respuesta de MP). El frontend redirige al usuario al checkout de MercadoPago.
+  - [ ] CA5: Tras completar el pago, MP redirige a `/perfil?subs=ok`. La página muestra un banner "¡Suscripción activada! Bienvenido al plan [X]" y actualiza el estado vía revalidación de sesión.
+  - [ ] CA6: El endpoint `POST /suscripcion/webhook` recibe notificaciones de MP (tipo `preapproval`). Procesa: `authorized` → `subscription_status = active`, `plan = <plan elegido>`, `next_billing_date` actualizado. `charged` → crea `subscription_event` con monto y payment_id. `cancelled` → `subscription_status = cancelled`, `plan = read_only`.
+  - [ ] CA7: El webhook valida la firma de MP (`x-signature` header) antes de procesar. Responde 200 siempre (MP reintenta si no recibe 200).
+  - [ ] CA8: El webhook es idempotente — si llega el mismo `preapproval_id` + `status` dos veces, no duplica eventos.
+  - [ ] CA9: El endpoint `POST /suscripcion/checkout` solo es accesible para usuarios con `role = "admin"`. Devuelve 403 si es colaborador.
+- **Casos borde:** pago fallido en el primer intento → MP lo marca como `pending`, el estudio sigue en trial hasta que se resuelva. Suscripción creada pero nunca paga → queda en `pending`, cron la detecta a los 3 días y envía email.
+- **Notas técnicas:**
+  - Para ciclo anual: crear preapproval de 12 meses pero con `transaction_amount = precio_mensual × 11 / 12` (cobro mensual reducido) — O crear pago único anual con `frequency = 12`. Evaluar con MP docs qué soporta mejor.
+  - Credenciales MP: `MERCADOPAGO_ACCESS_TOKEN` en variables de entorno Railway. Nunca hardcodeado.
+  - URL del webhook: debe ser pública y registrada en el dashboard de MP. En Railway es automático con el dominio del backend.
+
+---
+
+### SUBS-003 · Modo lectura automático — `refined`
+
+- **Prioridad:** P0 | **Esfuerzo:** M (5pts)
+- **Como** sistema, **quiero** bloquear operaciones de escritura cuando el trial venció o el pago falló **para** incentivar la conversión sin borrar datos del estudio.
+- **Criterios de aceptación:**
+  - [ ] CA1: Función helper `get_studio_access_level(studio) -> "full" | "read_only" | "blocked"` evalúa: `trial activo y sin suscripción → full`, `suscripción active → full`, `trial vencido y sin suscripción → read_only`, `subscription_status = cancelled → read_only`, `subscription_status = paused (pago fallido) → read_only`
+  - [ ] CA2: Dependency FastAPI `RequireFullAccess` usa `get_studio_access_level` y lanza `HTTP 402 Payment Required` con body `{"detail": "read_only", "message": "Tu plan venció. Suscribite para seguir creando."}` si el nivel es `read_only`
+  - [ ] CA3: `RequireFullAccess` se aplica a todos los endpoints POST, PATCH, DELETE de: expedientes, clientes, vencimientos, tareas, honorarios, pagos_honorarios, documentos, gastos, ingresos, movimientos. GET siempre libre.
+  - [ ] CA4: El frontend intercepta el 402 en `lib/api.ts` y despacha un evento global `"access:read_only"`. El layout de studio escucha ese evento y muestra un banner bloqueante full-width: "Tu período de prueba venció. [Ver planes →]" con link a `/perfil#plan`.
+  - [ ] CA5: En modo lectura, los botones de creación (+ Nuevo expediente, + Tarea, etc.) muestran un tooltip "Suscribite para crear" en lugar de abrir el formulario. No se llama al backend.
+  - [ ] CA6: El estado del plan se expone en `GET /auth/me` (campo `studio_access_level`). El frontend lo lee al cargar y pre-deshabilita los CTAs sin esperar el 402.
+- **Casos borde:** un colaborador en modo read_only no puede hacer nada de escritura aunque el admin esté pagando (el bloqueo es a nivel de studio, no de usuario). Invitaciones no se pueden enviar en modo read_only.
+
+---
+
+### SUBS-004 · Límite de usuarios por plan — `refined`
+
+- **Prioridad:** P0 | **Esfuerzo:** S (3pts)
+- **Como** sistema, **quiero** bloquear la invitación de nuevos usuarios cuando el estudio alcanzó el límite de su plan **para** incentivar el upgrade en lugar de dar acceso gratuito extra.
+- **Criterios de aceptación:**
+  - [ ] CA1: Constante en backend `PLAN_USER_LIMITS = { "trial": 2, "starter": 2, "pro": 6, "estudio": None }` (None = ilimitado). Los valores incluyen al admin.
+  - [ ] CA2: Endpoint `POST /users/invite` verifica: `usuarios_activos = COUNT(users WHERE tenant_id = X AND activo = True)`. Si `usuarios_activos >= PLAN_USER_LIMITS[plan]` → HTTP 403 con body `{"detail": "plan_limit", "plan": "starter", "limit": 2, "current": 2}`.
+  - [ ] CA3: En el frontend, botón "+ Agregar al equipo" en `/perfil` o en el panel de equipo: si el estudio está en el límite, el botón muestra un modal de upgrade en lugar del formulario de invitación. El modal muestra el plan actual, el límite, y los planes disponibles con CTA "Cambiar plan".
+  - [ ] CA4: El modal de upgrade lista los beneficios del siguiente plan y tiene botón "Ver planes" que navega a `/perfil#plan`.
+  - [ ] CA5: Al hacer downgrade de plan (cancelación y re-suscripción a plan menor), si los usuarios activos superan el nuevo límite, el sistema no elimina usuarios sino que muestra un aviso al admin: "Tenés X usuarios activos, el plan Starter permite 2. Desactivá X usuarios para continuar." El downgrade queda en estado `pending_user_reduction` hasta que el admin resuelva.
+- **Casos borde:** usuario desactivado no cuenta para el límite. Admin siempre cuenta (no se puede desactivar a sí mismo).
+
+---
+
+### SUBS-005 · Alertas previas al cobro y fallo de pago — `refined`
+
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts)
+- **Como** admin del estudio, **quiero** recibir avisos antes de que se cobre y saber si un cobro falló **para** tener mi método de pago al día y no perder acceso inesperadamente.
+- **Criterios de aceptación:**
+  - [ ] CA1: Job diario (APScheduler, ya configurado) verifica estudios con `next_billing_date` en 7 días, 3 días, 1 día → envía email al admin con: plan, monto, fecha de cobro, link a gestionar método de pago en MP.
+  - [ ] CA2: Mismo job verifica estudios con `trial_ends_at` en 7 días, 3 días, 1 día y `subscription_status = null` → envía email de conversión con CTA "Suscribite antes de que venza tu prueba" + tabla de planes.
+  - [ ] CA3: Webhook MP evento `charge_failed` (o `preapproval` con `status = paused`) → backend: setea `subscription_status = "paused"`, crea `subscription_event` con `event_type = "charge_failed"`, envía email al admin: "No pudimos cobrar tu suscripción. Actualizá tu método de pago en MercadoPago para no perder acceso."
+  - [ ] CA4: Banner in-app en el layout de studio cuando `subscription_status = "paused"`: "⚠️ Pago fallido. Actualizá tu método de pago. [Ir a MercadoPago →]". Desaparece cuando el webhook confirma cobro exitoso.
+  - [ ] CA5: Tras 7 días de `subscription_status = "paused"` sin resolución → plan cambia a `read_only` automáticamente (mismo job diario). Se envía email final de aviso.
+  - [ ] CA6: Todos los emails de suscripción usan plantillas consistentes con el branding de LexCore (mismo estilo que los emails existentes de Resend).
+- **Casos borde:** si el email del admin no está verificado en Resend, el job loguea el error pero no falla. Job debe ser idempotente (no enviar el mismo email dos veces al mismo día).
+
+---
+
+### SUBS-006 · Portal de gestión de suscripción (admin) — `refined`
+
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts)
+- **Como** admin del estudio, **quiero** ver y gestionar mi suscripción desde `/perfil` **para** conocer mi estado de cuenta, cambiar de plan y cancelar si es necesario.
+- **Criterios de aceptación:**
+  - [ ] CA1: Sección "Mi plan" en `/perfil` muestra: badge con plan actual (Trial / Starter / Pro / Estudio), días restantes si está en trial, próxima fecha de cobro, monto próximo cobro, ciclo (mensual/anual), estado de suscripción (Activa / Pago fallido / Cancelada).
+  - [ ] CA2: Tabla comparativa de planes con el plan actual destacado y CTA "Cambiar a [Plan]" para upgrade. Downgrade solo disponible al vencimiento del ciclo actual (no refund — política simple).
+  - [ ] CA3: Botón "Cancelar suscripción" con modal de confirmación: "¿Seguro? Seguirás teniendo acceso hasta [fecha fin del ciclo]. Después pasarás a modo lectura." Al confirmar: `PATCH /suscripcion/cancel` → backend llama `PUT /preapproval/{id}` en MP con `status = cancelled`.
+  - [ ] CA4: Historial de pagos: tabla con fecha, concepto (Plan Pro · Mensual), monto, estado (✅ Cobrado / ❌ Fallido). Máximo últimos 12 registros. Datos de `subscription_events`.
+  - [ ] CA5: Link "Actualizar método de pago" que abre el portal de MP para gestionar la tarjeta (MP provee esta URL en la respuesta del preapproval: `summarized.charged_quantity` o via `GET /preapproval/{id}`).
+  - [ ] CA6: Toda la sección "Mi plan" es visible solo para usuarios con `role = "admin"`. Colaboradores ven solo su plan activo (nombre + estado), sin opciones de gestión.
+- **Casos borde:** estudio con `subscription_id = null` (solo trial) — mostrar solo tabla de planes y CTA "Suscribirme". Cancelación durante trial — no aplica (no hay preapproval activo).
+
+---
+
+### MON-01 · Trial 30 días + modo lectura — `superseded`
+- **Reemplazada por SUBS-001 a SUBS-006 (refinamiento 2026-04-22)**
+- Los items MON-02 a MON-06 quedan cubiertos por las historias SUBS.
 
 ### WHATSAPP-001 · Bot de WhatsApp para clientes y abogados — `blocked`
 - **🚫 BLOQUEADO (2026-04-21):** Decisión PO — no planificar. Post-MVP.
@@ -1087,18 +1244,23 @@ S3_BUCKET_NAME=lexcore-docs
 
 ---
 
-### 3. Trial y monetización
+### 3. Suscripción y monetización
 
-| # | Item | Estado | Notas |
-|---|------|--------|-------|
-| MON-01 | Campo `trial_ends_at` en modelo Studio | ✅ hecho | Se setea al registrar |
-| MON-02 | Middleware que evalúa estado del trial | ❌ pendiente | No implementado aún |
-| MON-03 | Email día 25 avisando fin de trial | ❌ pendiente | Requiere job/cron o trigger |
-| MON-04 | Modo lectura día 31 (no puede crear) | ❌ pendiente | Bloqueo en middleware o frontend |
-| MON-05 | Página de "plan vencido" con CTA pago | ❌ pendiente | Diseño y ruta pendientes |
-| MON-06 | Integración de pagos (MercadoPago u otro) | ❌ pendiente | Post-MVP si se valida primero manualmente |
+| # | Item | Estado | Historia |
+|---|------|--------|---------|
+| MON-01 | Campo `trial_ends_at` en Studio | ✅ hecho | SUBS-001 |
+| SUBS-001 | Modelo datos suscripción (plan, billing_cycle, subscription_id, events) | ❌ pendiente | refined |
+| SUBS-002 | Checkout MercadoPago Subscriptions API + webhook | ❌ pendiente | refined |
+| SUBS-003 | Modo lectura automático (trial vencido / pago fallido) | ❌ pendiente | refined |
+| SUBS-004 | Límite de usuarios por plan con CTA upgrade | ❌ pendiente | refined |
+| SUBS-005 | Alertas previas al cobro + notificación fallo de pago | ❌ pendiente | refined |
+| SUBS-006 | Portal de gestión de suscripción en /perfil | ❌ pendiente | refined |
 
-> **Decisión sugerida:** para el primer deploy, MON-02/03/04/05 pueden ser manuales (el admin extiende el trial a mano). MON-06 es definitivamente post-MVP.
+**Planes definidos (2026-04-22):**
+- Starter: ARS 22.000/mes · ARS 242.000/año (admin + 1 colaborador)
+- Pro: ARS 38.000/mes · ARS 418.000/año (admin + hasta 5)
+- Estudio: ARS 65.000/mes · ARS 715.000/año (ilimitado)
+- Break-even: ~8-9 clientes pagos
 
 ---
 
@@ -1317,6 +1479,129 @@ S3_BUCKET_NAME=lexcore-docs
 - **Resultado:** Todas las dependencias (FastAPI MIT, SQLAlchemy MIT, Next.js MIT, Tailwind MIT, Shadcn MIT, pypdf BSD-2, APScheduler MIT, Cloudinary SDK propietario-comercial-ok) **permiten uso comercial sin restricciones**.
 - **Código generado con IA (Claude):** Los ToS de Anthropic establecen que el output pertenece al usuario. Sin restricciones de uso comercial.
 - **Conclusión:** No hay riesgo de licenciamiento con el stack actual.
+
+---
+
+---
+
+## SUPERADMIN — Panel de administración LexCore (refinamiento 2026-04-22)
+
+### Contexto
+
+Panel privado exclusivo para el operador de LexCore. Permite gestionar precios, monitorear métricas de producto y métricas de negocio sin depender de queries manuales a la DB. Acceso restringido por `is_superadmin = true` en el modelo `User`.
+
+**Stack de métricas:** snapshots batch en JSONB (tabla `metrics_snapshots`). Sync manual desde el panel. Sin queries en tiempo real → sin impacto en la estabilidad del producto.
+
+**UX:** ruta `/superadmin` con layout propio. Botón `⚡` en el fondo del sidebar del estudio, visible solo si `is_superadmin = true`. Click navega a `/superadmin`.
+
+---
+
+### SADM-001 · Modelo y acceso superadmin — `refined`
+
+- **Prioridad:** P0 (prereq de todo el módulo) | **Esfuerzo:** S (2pts)
+- **Como** operador de LexCore, **quiero** un flag de superadmin en mi cuenta **para** acceder al panel de administración de forma escalable sin hardcodear emails.
+- **Criterios de aceptación:**
+  - [ ] CA1: Campo `is_superadmin: bool = False` en modelo `User`. Migración Alembic. Solo se puede setear directamente en DB o via script de seed — nunca por API pública.
+  - [ ] CA2: Dependency FastAPI `RequireSuperAdmin` que valida `current_user["is_superadmin"] == True`. Lanza HTTP 403 si no cumple. Se aplica a todos los endpoints `/admin/*`.
+  - [ ] CA3: El JWT incluye el campo `is_superadmin` (bool) para que el frontend lo lea sin llamada extra.
+  - [ ] CA4: En el sidebar del estudio, si `session.user.isSuperAdmin === true`, aparece un botón `⚡` en la parte inferior del sidebar con tooltip "Panel de administración". Click navega a `/superadmin`.
+  - [ ] CA5: `/superadmin` tiene su propio layout (sin sidebar del estudio, sin contexto de tenant). Header minimalista: logo LexCore + "Admin" + botón "Volver al estudio".
+  - [ ] CA6: Todas las rutas bajo `/superadmin/*` redirigen a `/dashboard` si `isSuperAdmin !== true` (protección en middleware Next.js).
+  - [ ] CA7: Script de seed/migración inicial que setea `is_superadmin = true` para `ingonzalezdamian@gmail.com`.
+- **Casos borde:** si el superadmin cierra sesión desde `/superadmin`, redirige a `/login` (no al dashboard del estudio).
+- **Notas técnicas:** `is_superadmin` se agrega al JWT en `create_access_token`. En el frontend, `session.user.isSuperAdmin` (boolean). El campo se agrega a `middleware.ts` para proteger las rutas `/superadmin/*`.
+
+---
+
+### SADM-002 · Gestión de precios con historial — `refined`
+
+- **Prioridad:** P0 | **Esfuerzo:** M (5pts)
+- **Como** operador de LexCore, **quiero** ajustar los precios de los planes y mantener historial inmutable **para** que cada suscripción quede atada al precio vigente al momento de contratar y pueda medir el impacto de cambios de precio.
+- **Criterios de aceptación:**
+  - [ ] CA1: Tabla `plan_prices` con campos: `id`, `plan` (enum: starter/pro/estudio), `monthly_price` (Decimal), `annual_price` (Decimal), `valid_from` (datetime), `valid_to` (datetime, nullable — null = vigente), `created_by` (user_id del superadmin), `created_at`. Append-only: nunca se modifica un registro existente.
+  - [ ] CA2: Al crear una nueva versión de precio para un plan, el sistema setea `valid_to = now()` en el registro anterior y crea uno nuevo con `valid_from = now()` y `valid_to = null`. Solo puede haber un registro con `valid_to = null` por plan.
+  - [ ] CA3: Tabla `studio_subscriptions` (o campo en `Studio`) referencia `plan_price_id` al momento de crear la suscripción. Así, aunque el precio cambie, la suscripción mantiene el precio original hasta que el estudio renueve o cambie de plan.
+  - [ ] CA4: Panel `/superadmin/precios` muestra: tabla con precio vigente de cada plan (mensual y anual), botón "Editar" por plan, historial de cambios de los últimos 12 meses con fecha, precio anterior, precio nuevo.
+  - [ ] CA5: Al hacer click en "Editar", modal con inputs de precio mensual y anual + campo "Motivo del cambio" (texto libre, para el historial). Validación: precio > 0, anual > mensual × 10 (evitar errores de tipeo).
+  - [ ] CA6: `POST /admin/precios` — crea nueva versión. `GET /admin/precios` — devuelve precio vigente por plan + historial. Solo accesible con `RequireSuperAdmin`.
+  - [ ] CA7: El router `suscripcion.py` siempre lee los precios de `plan_prices WHERE valid_to IS NULL` — nunca de constantes hardcodeadas. Si no hay registros en DB, fallback a los valores default del código (para el POC).
+- **Casos borde:** cambio de precio no afecta suscripciones activas (están atadas a `plan_price_id`). Si se elimina accidentalmente el precio vigente (no debería poder pasar — CA1 garantiza append-only), fallback al default del código.
+- **Notas técnicas:** `plan_prices` se puebla con una migración de datos inicial con los precios actuales (Starter 22.000, Pro 38.000, Estudio 65.000).
+
+---
+
+### SADM-003 · Métricas de producto — `refined`
+
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts)
+- **Como** operador de LexCore, **quiero** ver métricas de adopción y uso del producto en un snapshot actualizable manualmente **para** entender cómo los estudios usan LexCore sin impactar la performance.
+- **Criterios de aceptación:**
+  - [ ] CA1: Tabla `metrics_snapshots` con campos: `id`, `created_at`, `triggered_by` (user_id), `metrics` (JSONB). Cada sync crea un nuevo registro — se mantienen los últimos 90 días.
+  - [ ] CA2: `POST /admin/metrics/sync` dispara el cálculo y persiste un snapshot. Devuelve el snapshot creado. Solo `RequireSuperAdmin`. El cálculo corre en el request (no background) — si tarda >30s agregar timeout y task async.
+  - [ ] CA3: El snapshot incluye las siguientes métricas agrupadas:
+
+    **Estudios:**
+    - `studios_total`: total de estudios registrados
+    - `studios_trial`: en trial activo (trial_ends_at > hoy)
+    - `studios_trial_vencido`: trial vencido sin suscripción
+    - `studios_activos`: con suscripción `active`
+    - `studios_read_only`: en modo lectura
+    - `studios_nuevos_30d`: registrados en los últimos 30 días
+
+    **Usuarios:**
+    - `users_total`: total de usuarios en todos los estudios
+    - `users_avg_per_studio`: promedio de usuarios por estudio
+    - `users_by_role`: `{ admin: N, socio: N, asociado: N, pasante: N }`
+
+    **Uso por estudio (top 10 más activos + promedio global):**
+    - `expedientes_total` / `expedientes_avg`
+    - `tareas_total` / `tareas_avg`
+    - `vencimientos_total` / `vencimientos_avg`
+    - `documentos_total` / `documentos_avg`
+    - `honorarios_total` / `honorarios_avg`
+    - `colaboradores_avg`: promedio de colaboradores por estudio
+
+    **Actividad:**
+    - `studios_activos_30d`: estudios con al menos 1 movimiento/tarea/vencimiento creado en los últimos 30 días
+    - `retention_rate`: `studios_activos_30d / studios_total * 100`
+
+  - [ ] CA4: `GET /admin/metrics/latest` devuelve el snapshot más reciente + metadata (cuándo fue creado, por quién).
+  - [ ] CA5: Panel `/superadmin/metricas` muestra el snapshot en cards organizadas por categoría (Estudios / Usuarios / Uso / Actividad). Badge "Actualizado hace X horas/días". Botón "Sincronizar ahora" (spinner mientras corre). Comparación con snapshot anterior si existe (flecha ↑↓ + delta).
+  - [ ] CA6: Histórico de snapshots: tabla con fecha + resumen de 3 métricas clave (studios_activos, users_total, retention_rate). Click en fila expande el JSON completo.
+- **Casos borde:** primer sync sin snapshot anterior → no mostrar comparación. Sync con DB vacía → métricas en 0, no error.
+
+---
+
+### SADM-004 · Métricas de negocio — `refined`
+
+- **Prioridad:** P1 | **Esfuerzo:** M (5pts)
+- **Como** operador de LexCore, **quiero** ver métricas financieras y de conversión del negocio **para** tomar decisiones informadas sobre precios, canales y retención.
+- **Criterios de aceptación:**
+  - [ ] CA1: Las métricas de negocio se calculan a partir de `subscription_events` (tabla de SUBS-001). Se incluyen en el mismo snapshot de `metrics_snapshots` bajo una clave `business`.
+  - [ ] CA2: Métricas incluidas en el snapshot `business`:
+
+    **Revenue:**
+    - `mrr`: suma de `amount` de suscripciones `active` del mes en curso (en ARS)
+    - `arr`: `mrr × 12`
+    - `revenue_mes_actual`: cobros exitosos (`event_type = charge_success`) del mes en curso
+    - `revenue_historico`: array de `{ mes: "2026-04", amount: N }` últimos 12 meses
+
+    **Por plan:**
+    - `revenue_by_plan`: `{ starter: { studios: N, mrr: N }, pro: { studios: N, mrr: N }, estudio: { studios: N, mrr: N } }`
+
+    **Conversión:**
+    - `trial_to_paid_rate`: `studios con subscription_status=active / studios con trial_ends_at <= hoy * 100`
+    - `avg_days_trial_to_paid`: promedio de días entre registro y primer pago exitoso
+
+    **Retención:**
+    - `churn_rate_30d`: suscripciones canceladas en los últimos 30 días / suscripciones activas al inicio del período
+    - `pagos_fallidos_activos`: estudios con `subscription_status = paused` actualmente
+    - `recuperacion_rate`: pagos que volvieron de `paused` a `active` en los últimos 30 días / total que cayeron a `paused`
+
+  - [ ] CA3: Panel `/superadmin/negocio` muestra: KPIs destacados (MRR, ARR, conversión, churn) + gráfico de barras de revenue mensual últimos 12 meses + tabla por plan + alertas si churn > 10% o pagos fallidos > 3.
+  - [ ] CA4: Los KPIs tienen color semántico: verde si mejoran vs snapshot anterior, rojo si empeoran, gris si igual.
+  - [ ] CA5: Sección "Alertas activas": lista de estudios con `subscription_status = paused` con nombre del estudio, plan, días en paused, email del admin. Permite al superadmin copiar el email para contactar manualmente.
+- **Casos borde:** sin suscripciones aún (MVP temprano) → métricas en 0 y mensaje "Sin suscripciones activas todavía". Revenue histórico vacío → gráfico muestra 0 en todos los meses.
+- **Notas técnicas:** el gráfico de revenue usa una librería ligera — Recharts (ya en el stack de Next.js) o Chart.js. Sin dependencias nuevas si Recharts ya está instalado.
 
 ---
 
