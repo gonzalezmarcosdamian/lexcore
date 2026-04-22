@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Tarea, TareaEstado, Nota, Expediente } from "@/lib/api";
+import { api, Tarea, TareaEstado, Nota, Expediente, TareaTipo } from "@/lib/api";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 
 const ESTADO_CFG: Record<TareaEstado, { label: string; cls: string }> = {
@@ -44,6 +44,9 @@ export default function TareaDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ titulo: "", tipo: "judicial" as TareaTipo, fecha_limite: "", hora: "", descripcion: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -60,6 +63,32 @@ export default function TareaDetailPage() {
     }).catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id, token]);
+
+  const openEdit = () => {
+    if (!tarea) return;
+    setEditForm({ titulo: tarea.titulo, tipo: tarea.tipo, fecha_limite: tarea.fecha_limite ?? "", hora: tarea.hora ?? "", descripcion: tarea.descripcion ?? "" });
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!token || !tarea) return;
+    setSavingEdit(true);
+    try {
+      const updated = await api.patch<Tarea>(`/tareas/${id}`, {
+        titulo: editForm.titulo,
+        tipo: editForm.tipo,
+        fecha_limite: editForm.fecha_limite || null,
+        hora: editForm.hora || null,
+        descripcion: editForm.descripcion || null,
+      }, token);
+      setTarea(updated);
+      setEditing(false);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const handleToggleEstado = async () => {
     if (!token || !tarea) return;
@@ -128,6 +157,7 @@ export default function TareaDetailPage() {
   const vencida = tarea.fecha_limite && tarea.fecha_limite < new Date().toISOString().split("T")[0] && tarea.estado !== "hecha";
 
   return (
+    <>
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-5">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-ink-400">
@@ -165,13 +195,13 @@ export default function TareaDetailPage() {
               </h1>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Link
-                href={`/tareas/${id}/editar`}
+              <button
+                onClick={openEdit}
                 className="flex items-center gap-1.5 text-xs font-semibold border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-lg transition"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 Editar
-              </Link>
+              </button>
               {confirmDelete ? (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
@@ -293,5 +323,48 @@ export default function TareaDetailPage() {
         <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">{error}</div>
       )}
     </div>
+    {/* Modal editar */}
+    {editing && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-ink-900">Editar tarea</h2>
+            <button onClick={() => setEditing(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Título *</label>
+            <input autoFocus value={editForm.titulo} onChange={e => setEditForm(f => ({ ...f, titulo: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={editForm.tipo} onChange={e => setEditForm(f => ({ ...f, tipo: e.target.value as TareaTipo }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="judicial">⚖️ Judicial</option>
+              <option value="extrajudicial">🤝 Extrajudicial</option>
+              <option value="administrativa">🏢 Administrativa</option>
+              <option value="operativa">🔧 Operativa</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha límite</label>
+              <input type="date" value={editForm.fecha_limite} onChange={e => setEditForm(f => ({ ...f, fecha_limite: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={editForm.hora} onChange={e => setEditForm(f => ({ ...f, hora: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
+            <textarea value={editForm.descripcion} onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))} rows={3} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400 resize-none" placeholder="Opcional" />
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button onClick={() => setEditing(false)} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+            <button onClick={handleSaveEdit} disabled={savingEdit || !editForm.titulo.trim()} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{savingEdit ? "Guardando…" : "Guardar"}</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

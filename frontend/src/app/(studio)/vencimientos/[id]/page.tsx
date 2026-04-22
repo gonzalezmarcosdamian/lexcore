@@ -44,6 +44,9 @@ export default function VencimientoDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ descripcion: "", fecha: "", hora: "", tipo: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -60,6 +63,31 @@ export default function VencimientoDetailPage() {
     }).catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [id, token]);
+
+  const openEdit = () => {
+    if (!venc) return;
+    setEditForm({ descripcion: venc.descripcion, fecha: venc.fecha, hora: venc.hora ?? "", tipo: venc.tipo ?? "vencimiento" });
+    setEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!token || !venc) return;
+    setSavingEdit(true);
+    try {
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${id}`, {
+        descripcion: editForm.descripcion,
+        fecha: editForm.fecha,
+        hora: editForm.hora || null,
+        tipo: editForm.tipo,
+      }, token);
+      setVenc(updated);
+      setEditing(false);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
 
   const handleToggleCumplido = async () => {
     if (!token || !venc) return;
@@ -128,6 +156,7 @@ export default function VencimientoDetailPage() {
   const headerCls = venc.cumplido ? "bg-green-50/40" : vencida ? "bg-red-50/40" : urgente ? "bg-amber-50/40" : "";
 
   return (
+    <>
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-5">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-ink-400">
@@ -168,13 +197,13 @@ export default function VencimientoDetailPage() {
               </h1>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Link
-                href={`/vencimientos/${id}/editar`}
+              <button
+                onClick={openEdit}
                 className="flex items-center gap-1.5 text-xs font-semibold border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-lg transition"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                 Editar
-              </Link>
+              </button>
               {confirmDelete ? (
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
@@ -274,5 +303,46 @@ export default function VencimientoDetailPage() {
         <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">{error}</div>
       )}
     </div>
+
+    {/* Modal editar */}
+    {editing && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
+            <button onClick={() => setEditing(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción *</label>
+            <input autoFocus value={editForm.descripcion} onChange={e => setEditForm(f => ({ ...f, descripcion: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
+            <select value={editForm.tipo} onChange={e => setEditForm(f => ({ ...f, tipo: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+              <option value="vencimiento">Vencimiento</option>
+              <option value="audiencia">Audiencia</option>
+              <option value="presentacion">Presentación</option>
+              <option value="pericia">Pericia</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
+              <input type="date" value={editForm.fecha} onChange={e => setEditForm(f => ({ ...f, fecha: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
+              <input type="time" value={editForm.hora} onChange={e => setEditForm(f => ({ ...f, hora: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button onClick={() => setEditing(false)} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
+            <button onClick={handleSaveEdit} disabled={savingEdit || !editForm.descripcion.trim() || !editForm.fecha} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{savingEdit ? "Guardando…" : "Guardar"}</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
