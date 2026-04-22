@@ -76,6 +76,32 @@
   - [ ] CA3: Los movimientos se muestran en orden cronológico inverso
 - **Casos borde:** expediente nuevo sin movimientos
 
+### Sprint 15 — COMPLETADO (2026-04-22)
+
+#### AUTH-005 · Google OAuth sin re-prompt de permisos — `done`
+- `prompt: "select_account"` en NextAuth GoogleProvider
+- El consent screen aparece solo la primera vez — logins siguientes van directo al account picker
+
+#### UX-010 · Selector de expediente con búsqueda de texto — `done`
+- Nuevo componente `ExpedienteSelect` (`components/ui/expediente-select.tsx`)
+- Reemplaza todos los `<select>` nativos en: dashboard (×3), agenda (×3), vencimientos/nuevo
+- Filtra en tiempo real por número, carátula y cliente
+
+#### UX-011 · Documentos completos en detalle de tarea y vencimiento — `done`
+- Nuevo componente genérico `DocumentosSection` (`components/ui/documentos-section.tsx`)
+- Drag-drop, preview, descarga, reordenar, label editable, eliminar
+- Reemplaza `AdjuntosInline` en `/tareas/{id}` y `/vencimientos/{id}`
+
+#### FIX-007 · No se podía borrar honorario — `done`
+- Doble `confirm()` (botón + handler) impedía ejecutar el delete
+- Fix: confirm solo en el handler `eliminarHonorario`
+
+#### FIX-008 · Orden cronológico en calendar semanal del dashboard — `done`
+- `eventosPorFecha` del dashboard no tenía sort por hora
+- Fix: agregar bloque sort al `useMemo` del dashboard
+
+---
+
 ### Sprint 11 — COMPLETADO (2026-04-21)
 
 #### US-21 · Perfil completo del estudio — `done`

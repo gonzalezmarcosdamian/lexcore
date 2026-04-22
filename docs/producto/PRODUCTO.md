@@ -5,8 +5,8 @@
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
 **Última actualización:** 2026-04-22
-**Sprint activo:** Sprint 14 — COMPLETADO
-**Versión:** 0.16.0 · `git tag v0.16.0` · **ESTABLE**
+**Sprint activo:** Sprint 15 — COMPLETADO
+**Versión:** 0.17.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -21,7 +21,7 @@
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
 **Versión estable taggeada:** `v0.16.0` — 2026-04-22
 
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos, navegación desde todos los puntos de la app.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos (drag-drop, preview, reordenar), navegación desde todos los puntos de la app. Google OAuth sin re-prompt de permisos. Selector de expediente con búsqueda de texto en todos los modales.**
 
 ---
 
@@ -36,11 +36,16 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 - **CORS:** configurado para `localhost:3001`
 - **Health check:** `GET /health` responde `{"status": "ok", "version": "0.3.0"}`
 
-### Auth ✓ (Sprint 01 — 2026-04-15)
+### Auth ✓ (Sprint 01 — 2026-04-15 / Sprint 15 — 2026-04-22)
 - [x] AUTH-001: Registro de estudio y primer usuario admin → `POST /auth/register`
 - [x] AUTH-002: Login con email y contraseña → `POST /auth/login`
 - [x] AUTH-003: Middleware de protección de rutas frontend → `src/middleware.ts`
 - [x] AUTH-004: Google OAuth → NextAuth.js + `POST /auth/google`
+- [x] AUTH-005: Google OAuth sin re-prompt → `prompt: "select_account"` en NextAuth config
+
+### Componentes UI reutilizables ✓ (Sprint 15 — 2026-04-22)
+- [x] `ExpedienteSelect` — selector con búsqueda de texto (reemplaza todos los `<select>` de expediente)
+- [x] `DocumentosSection` — sección completa de documentos para tarea/vencimiento (drag-drop, preview, reordenar)
 
 **Páginas:** `/login`, `/register`
 **Migración:** `b4278af0ab0b`
