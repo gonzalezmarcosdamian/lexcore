@@ -179,6 +179,31 @@
 
 ## Feedback de usuarios (capturado 2026-04-22)
 
+### GCAL-FIX-001 · Google Calendar: mostrar número de expediente (no UUID) en notas del evento
+- **Estado:** `idea`
+- **Prioridad:** P1
+- **Fuente:** Martín (beta) — 2026-04-22
+- **Bug:** Las notas del evento en Google Calendar muestran el UUID interno del expediente (`5f442de2-...`) en lugar del número legible (`EXP-2026-0001`).
+- **Como** abogado, **quiero** que el evento de Calendar muestre el número y carátula del expediente en las notas, **para** poder identificarlo de un vistazo sin abrir LexCore.
+- **Criterios de aceptación:**
+  - [ ] CA1: Las notas del evento incluyen `Expediente: EXP-2026-NNNN — Carátula del caso`
+  - [ ] CA2: Si el vencimiento no tiene expediente asociado, omite ese campo
+  - [ ] CA3: Los eventos ya sincronizados se actualizan al re-sincronizar (no se duplican)
+- **Técnico:** En el router de sync de Calendar, al construir el body del evento, resolver `expediente_id` → `expediente.numero + expediente.caratula` haciendo join/lookup en DB antes de crear el evento.
+
+### GCAL-FIX-002 · Google Calendar: configurar dos alertas por evento (medianoche + 1h antes)
+- **Estado:** `idea`
+- **Prioridad:** P1
+- **Fuente:** Martín (beta) — 2026-04-22
+- **Bug/mejora:** Actualmente el evento se crea con una sola alerta genérica ("El día del evento 09:00"). Martín pide dos alertas específicas.
+- **Como** abogado, **quiero** recibir dos notificaciones por cada vencimiento: una a las 00:00 del día del evento y otra 1 hora antes, **para** no olvidarme ni a último momento.
+- **Criterios de aceptación:**
+  - [ ] CA1: Alerta 1 — a las 00:00 del día del evento (reminders: `{ method: "popup", minutes: X }` calculado desde medianoche)
+  - [ ] CA2: Alerta 2 — 60 minutos antes de la hora del evento (si `hora` está seteada) o 60 min antes de las 09:00 por defecto
+  - [ ] CA3: Si el vencimiento es "todo el día" (sin hora), la segunda alerta va 1h antes de las 09:00 (es decir, 08:00 = 60 min antes)
+  - [ ] CA4: Los eventos ya sincronizados se actualizan con las nuevas alertas al re-sync
+- **Técnico:** En el payload de la API de Google Calendar, setear `reminders: { useDefault: false, overrides: [{method: "popup", minutes: minutesUntilMidnight}, {method: "popup", minutes: 60}] }`.
+
 ### UX-DETAIL-001 · Vista de detalle de tarea/vencimiento (read-only con acción de editar)
 - **Estado:** `idea`
 - **Prioridad:** P1
