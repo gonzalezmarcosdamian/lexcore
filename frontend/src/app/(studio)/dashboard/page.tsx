@@ -740,7 +740,7 @@ function AgendaWidget({
               <button
                 key={fecha}
                 onClick={() => setDiaSeleccionado(fecha)}
-                className={`flex flex-col items-stretch text-left transition group min-h-[280px] ${
+                className={`flex flex-col items-stretch text-left transition group min-h-[72px] lg:min-h-[280px] ${
                   esSel ? "bg-brand-50/60" : esHoy ? "bg-brand-50/30" : "hover:bg-ink-50/40"
                 }`}
               >
