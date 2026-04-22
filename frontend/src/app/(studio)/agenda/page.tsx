@@ -131,11 +131,11 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
-          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
         </div>
         <div className="space-y-4">
           <div>
@@ -192,11 +192,11 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-ink-900">Editar tarea</h2>
-          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
         </div>
         <div className="space-y-4">
           <div>
@@ -803,11 +803,11 @@ export default function AgendaPage() {
 
       {/* Modal Nuevo Vencimiento */}
       {showVencimientoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowVencimientoModal(false); }}>
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-ink-900">Nuevo vencimiento</h2>
-              <button onClick={() => setShowVencimientoModal(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
+              <button onClick={() => setShowVencimientoModal(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
             </div>
             <form onSubmit={handleCrearVencimiento} className="space-y-4">
               <div>
