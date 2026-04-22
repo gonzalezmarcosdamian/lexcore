@@ -123,91 +123,51 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
     }
   };
 
-  // ── Usuario sin Google: invitar a conectar ────────────────────────────────
+  // ── Usuario sin Google: invitar a conectar (muy discreto) ───────────────
   if (!isGoogleUser) {
-    if (variant === "banner") {
-      return (
-        <div className="flex items-center justify-between bg-white border border-ink-100 rounded-2xl px-4 py-3 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-              <CalIcon />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-ink-800">Google Calendar</p>
-              {error
-                ? <p className="text-xs text-red-500">{error}</p>
-                : <p className="text-xs text-ink-400">Conectá tu calendario para sincronizar vencimientos</p>
-              }
-            </div>
-          </div>
-          <button
-            onClick={handleConnect}
-            disabled={connecting}
-            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 border border-blue-200 hover:border-blue-300 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 flex-shrink-0"
-          >
-            {connecting ? "Redirigiendo…" : "Conectar"}
-          </button>
-        </div>
-      );
-    }
     return (
-      <button
-        onClick={handleConnect}
-        disabled={connecting}
-        title="Conectar Google Calendar"
-        className="flex items-center gap-1.5 text-xs font-medium text-ink-400 hover:text-blue-600 border border-ink-200 hover:border-blue-300 px-3 py-2 rounded-xl transition disabled:opacity-50"
-      >
+      <div className="flex items-center gap-2 text-xs text-ink-400">
         <CalIcon />
-        {connecting ? "…" : "Sync Calendar"}
-      </button>
+        <span>Google Calendar no conectado</span>
+        <button
+          onClick={handleConnect}
+          disabled={connecting}
+          className="text-blue-500 hover:text-blue-700 font-medium underline underline-offset-2 transition disabled:opacity-50"
+        >
+          {connecting ? "…" : "Conectar"}
+        </button>
+      </div>
     );
   }
 
-  // ── Usuario Google: sync directo ──────────────────────────────────────────
-  const subtitle = () => {
-    if (justSynced) return (
-      <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-        <CheckIcon />
-        {justSynced.synced} evento{justSynced.synced !== 1 ? "s" : ""} sincronizado{justSynced.synced !== 1 ? "s" : ""}
-      </span>
-    );
-    if (error) return (
-      <p className="text-xs text-red-500">
-        {error.includes("calendar_id") || error.includes("configurado") || error.includes("elegir")
-          ? <Link href="/perfil" className="underline">Elegí tu calendario en Perfil</Link>
-          : error}
-      </p>
-    );
-    if (lastSync) return (
-      <span className="flex items-center gap-1 text-xs text-ink-400">
-        <CheckIcon />
-        <span>{lastSync.synced} evento{lastSync.synced !== 1 ? "s" : ""} · {formatLastSync(lastSync.ts)}</span>
-      </span>
-    );
-    return <p className="text-xs text-ink-400">Sincronizá vencimientos y tareas con tu calendario</p>;
-  };
-
+  // ── Usuario Google: sync directo (muy discreto) ───────────────────────────
   if (variant === "banner") {
+    const statusText = justSynced
+      ? `✓ ${justSynced.synced} evento${justSynced.synced !== 1 ? "s" : ""} sincronizados`
+      : error
+      ? error
+      : lastSync
+      ? `✓ ${lastSync.synced} evento${lastSync.synced !== 1 ? "s" : ""} · ${formatLastSync(lastSync.ts)}`
+      : "Sin sincronizar";
+
+    const statusColor = justSynced ? "text-green-600" : error ? "text-red-500" : "text-ink-400";
+
     return (
-      <div className="flex items-center justify-between bg-white border border-ink-100 rounded-2xl px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <CalIcon />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-ink-800">Google Calendar</p>
-            {subtitle()}
-          </div>
-        </div>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          title="Sincronizar con Google Calendar"
-          className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 border border-brand-200 hover:border-brand-300 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition disabled:opacity-50 flex-shrink-0"
-        >
-          <SyncIcon spinning={syncing} />
-          {syncing ? "Sync…" : "Sincronizar"}
-        </button>
+      <div className="flex items-center gap-2">
+        <CalIcon />
+        <span className={`text-xs ${statusColor}`}>{statusText}</span>
+        {error?.includes("calendar_id") || error?.includes("elegir") ? (
+          <Link href="/perfil" className="text-xs text-blue-500 underline underline-offset-2">Configurar</Link>
+        ) : (
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            title="Sincronizar con Google Calendar"
+            className="text-xs text-ink-400 hover:text-brand-600 transition disabled:opacity-40 flex items-center gap-1"
+          >
+            <SyncIcon spinning={syncing} />
+          </button>
+        )}
       </div>
     );
   }
