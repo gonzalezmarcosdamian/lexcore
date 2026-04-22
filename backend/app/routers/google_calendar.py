@@ -28,7 +28,7 @@ from googleapiclient.errors import HttpError
 
 from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
-from app.models.expediente import Vencimiento
+from app.models.expediente import Expediente, Vencimiento
 from app.models.tarea import Tarea, TareaEstado
 from app.models.user import User
 
@@ -251,6 +251,46 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
     synced = 0
     errors = 0
 
+    # Pre-cargar expedientes del tenant para resolver numero+caratula sin N+1
+    expedientes_map: dict = {
+        e.id: e for e in db.query(Expediente).filter(Expediente.tenant_id == tenant_id).all()
+    }
+
+    def _exp_label(expediente_id: str | None) -> str:
+        if not expediente_id:
+            return "Sin expediente"
+        exp = expedientes_map.get(expediente_id)
+        if not exp:
+            return "Sin expediente"
+        return f"{exp.numero} — {exp.caratula}"
+
+    def _reminders(fecha: str, hora: str | None) -> dict:
+        """Dos alertas: medianoche del día del evento + 1h antes de la hora (o 1h antes de 09:00)."""
+        from datetime import datetime, timezone, timedelta
+        # Minutos desde medianoche del día del evento hasta 00:00 de ese día
+        # Google Calendar: minutes = minutos ANTES del inicio del evento
+        # Si el evento es "all day" (date, no dateTime), Google considera inicio = 00:00
+        # → alerta "a medianoche del día" = 0 min antes del evento (mínimo 0)
+        # → alerta "1h antes de las 09:00" = 9*60 - 60 = 480 min antes del inicio (00:00)
+        if hora:
+            h, m = int(hora[:2]), int(hora[3:5])
+            mins_from_midnight = h * 60 + m  # minutos desde 00:00 hasta la hora del evento
+            alerta_medianoche = mins_from_midnight   # popup justo a las 00:00 del día
+            alerta_1h_antes = 60                      # 60 min antes del evento
+        else:
+            # Sin hora: evento todo el día, base 09:00
+            alerta_medianoche = 9 * 60   # 540 min antes de 09:00 = 00:00 del día
+            alerta_1h_antes = 8 * 60     # 480 min antes de 09:00 = 01:00 del día... ajustamos a 60 min antes de 09:00
+            alerta_1h_antes = 60         # 60 min antes del tiempo por defecto del evento todo-el-día
+
+        return {
+            "useDefault": False,
+            "overrides": [
+                {"method": "popup", "minutes": alerta_medianoche},
+                {"method": "popup", "minutes": alerta_1h_antes},
+            ],
+        }
+
     # Vencimientos pendientes
     vencimientos = (
         db.query(Vencimiento)
@@ -258,22 +298,21 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
         .all()
     )
     for v in vencimientos:
+        hora = getattr(v, "hora", None)
+        exp_label = _exp_label(v.expediente_id)
         event = {
             "summary": f"📅 {v.descripcion}",
-            "description": f"Tipo: {v.tipo}\nExpediente: {v.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
+            "description": f"Tipo: {v.tipo}\nExpediente: {exp_label}\nGenerado por LexCore",
             "start": {"date": v.fecha},
             "end": {"date": v.fecha},
-            "reminders": {"useDefault": False, "overrides": [
-                {"method": "email", "minutes": 24 * 60},
-                {"method": "popup", "minutes": 60},
-            ]},
+            "reminders": _reminders(v.fecha, hora),
         }
         if _insert_event(service, cal_id, event):
             synced += 1
         else:
             errors += 1
 
-    # Tareas pendientes con fecha límite (del usuario actual o del estudio)
+    # Tareas pendientes con fecha límite
     tareas = (
         db.query(Tarea)
         .filter(
@@ -284,14 +323,14 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
         .all()
     )
     for t in tareas:
+        hora = getattr(t, "hora", None)
+        exp_label = _exp_label(t.expediente_id)
         event = {
             "summary": f"✅ {t.titulo}",
-            "description": f"Tarea\nExpediente: {t.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
+            "description": f"Tarea\nExpediente: {exp_label}\nGenerado por LexCore",
             "start": {"date": t.fecha_limite},
             "end": {"date": t.fecha_limite},
-            "reminders": {"useDefault": False, "overrides": [
-                {"method": "popup", "minutes": 60},
-            ]},
+            "reminders": _reminders(t.fecha_limite, hora),
         }
         if _insert_event(service, cal_id, event):
             synced += 1
