@@ -4,9 +4,9 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-21
-**Sprint activo:** Sprint 13 — en curso
-**Versión:** 0.13.0
+**Última actualización:** 2026-04-22
+**Sprint activo:** Sprint 14 — en curso
+**Versión:** 0.14.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -345,6 +345,71 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 ---
 
 ## Changelog
+
+### v0.14.0 — 2026-04-22
+
+**Sprint 14 — Monetización, superadmin, UX fixes prod**
+
+#### SUBS-001 · Modelo de suscripción en Studio y User
+- Campos `plan`, `billing_cycle`, `subscription_id`, `subscription_status`, `next_billing_date`, `plan_price_id`, `subscription_updated_at` en `studios`
+- Campo `is_superadmin` en `users` (default `false`)
+- Tablas nuevas: `subscription_events` (audit append-only), `plan_prices` (historial de precios), `metrics_snapshots`
+- Migración `9da2c898a171`
+
+#### SUBS-002 · Checkout MercadoPago + webhook
+- `POST /suscripcion/checkout` — crea preapproval en MP, guarda estado en DB, devuelve `checkout_url`
+- `GET /suscripcion/status` — plan actual, días de trial, próximo cobro, últimos 12 eventos
+- `GET /suscripcion/planes` — planes vigentes con precios (plan_prices DB o PLANES hardcoded)
+- `PATCH /suscripcion/cancel` — cancela suscripción en MP + actualiza DB
+- `POST /suscripcion/webhook` — procesa eventos MP (authorized/paused/cancelled) con idempotencia
+- Credenciales de prueba en `.env`; producción se carga en Railway al tener dominio definitivo
+
+#### SUBS-003 · Access level y modo lectura
+- `get_studio_access_level(studio)` en `subscription_service.py` → `"full"` o `"read_only"`
+- `RequireFullAccess` dependency en POST/PATCH/DELETE de expedientes, vencimientos — HTTP 402 si `read_only`
+- Superadmin bypasea todas las restricciones de plan
+- `/auth/me` incluye `studio_access_level` y `is_superadmin`
+
+#### SUBS-004 · Límite de usuarios por plan
+- `PLAN_USER_LIMITS = {trial: 2, starter: 2, pro: 6, estudio: None}` en `invitaciones.py`
+- HTTP 403 `{"code": "plan_limit"}` al intentar invitar superando el límite
+- Superadmin no tiene límite
+
+#### SUBS-006 · Portal de suscripción en /perfil
+- Sección "Mi plan" reemplaza hardcode "Contactanos"
+- Muestra plan actual + días de trial o estado activo/pausado
+- Toggle mensual/anual con -20% para plan anual
+- Cards de 3 planes con precios y CTA "Suscribirme" → checkout MP
+- Historial de eventos de pago
+- Botón cancelar suscripción
+- Banner de éxito al volver de MP con `?subs=ok`
+
+#### SADM-001 · Superadmin backend
+- `GET /superadmin/studios` — lista todos los estudios con plan/status
+- `PATCH /superadmin/studios/{id}/override` — override parcial de plan/trial/status + audit event
+- `GET/POST /superadmin/plan-prices` — gestión de precios históricos
+- `SuperAdminRequired` dependency — 403 si `is_superadmin` no está en JWT
+- DB prod: `ingonzalezdamian@gmail.com` tiene `is_superadmin=True`
+
+#### PROD-001 · Fix crítico login prod
+- Creado `backend/entrypoint.sh` que corre `alembic upgrade head` antes de arrancar uvicorn
+- `mercadopago==2.3.0` agregado a `requirements.txt`
+- Trial de estudio LexCore Dev extendido 30 días en prod
+
+#### UX-014 · Dashboard navegación
+- Click en título de tarea/vencimiento → navega a `/agenda`
+- Click en número de expediente en la row → navega al expediente
+- Modal editar tarea: opción "Hecha" agregada al estado
+- Modal editar vencimiento: campo "Estado" (Pendiente/Cumplido) agregado
+
+#### BIT-003 · Bitácora limpia
+- Eliminados movimientos "✏️ editado" al editar vencimiento/tarea — la card ya muestra estado actual
+- Bitácora lee estado en tiempo real desde el modelo (cumplido, estado)
+
+#### AGENDA-001 · Kanban tablero
+- Vista Tablero (Kanban) con columnas Pendiente / En curso / Hecho
+- Toggle ⊞ Tablero / 📅 Calendario en `/agenda`
+- Drag & drop de tareas entre columnas
 
 ### v0.13.0 — 2026-04-21
 
