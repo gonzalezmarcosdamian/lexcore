@@ -446,5 +446,13 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             created_at=d.created_at,
         ))
 
-    items.sort(key=lambda x: x.created_at, reverse=True)
+    def _sort_key(item: ActividadItem) -> str:
+        m = item.meta or {}
+        if item.tipo == "vencimiento" and m.get("fecha"):
+            return str(m["fecha"]) + "T23:59:59"
+        if item.tipo == "tarea" and m.get("fecha_limite"):
+            return str(m["fecha_limite"]) + "T23:59:59"
+        return item.created_at
+
+    items.sort(key=_sort_key, reverse=True)
     return items
