@@ -218,6 +218,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
   const notifRef = useRef<HTMLDivElement>(null);
   const [studioConfigured, setStudioConfigured] = useState<boolean | null>(null);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [studioLogoUrl, setStudioLogoUrl] = useState<string | null>(null);
   const [studioForm, setStudioForm] = useState({ name: "", email_contacto: "" });
   const [studioSaving, setStudioSaving] = useState(false);
@@ -242,6 +243,9 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => setStudioConfigured(true)); // en caso de error, no bloquear
+    api.get<{ is_superadmin: boolean }>("/users/me", token)
+      .then((u) => setIsSuperadmin(u.is_superadmin ?? false))
+      .catch(() => {});
   }, [token]);
   const urgentes = urgentesList.length;
 
@@ -367,6 +371,25 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+
+        {/* Superadmin link */}
+        {isSuperadmin && (
+          <div className="px-3 pb-2">
+            <Link
+              href="/superadmin"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
+                pathname.startsWith("/superadmin")
+                  ? "bg-amber-500/20 text-amber-300"
+                  : "text-amber-400/70 hover:text-amber-300 hover:bg-amber-500/10"
+              }`}
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Superadmin
+            </Link>
+          </div>
+        )}
 
         {/* User section */}
         <div className="px-3 py-4 border-t border-ink-800 flex-shrink-0">
