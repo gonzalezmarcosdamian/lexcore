@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Cliente, Expediente, Movimiento, Vencimiento, Honorario, Tarea, Documento, ActividadItem, EstadoExpediente, RolEnExpediente } from "@/lib/api";
@@ -985,18 +985,23 @@ interface ActividadRowProps {
 }
 
 function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, deletingMovId, onEditStart, onEditSave, onEditCancel, onEditChange, onFechaChange, onDeleteConfirm, onDeleteCancel, onDelete }: ActividadRowProps) {
+  const router = useRouter();
   const cfg = ACTIVIDAD_CONFIG[item.tipo] ?? { color: "text-ink-600", bg: "bg-ink-100", icon: "•" };
   const meta = item.meta as Record<string, string | number | boolean | null | undefined>;
   const isEditing = editingMovId === item.id;
   const isDeleting = deletingMovId === item.id;
   const isMovimiento = item.tipo === "movimiento";
+  const isNavigable = (item.tipo === "tarea" || item.tipo === "vencimiento") && !isEditing && !isDeleting;
 
   return (
     <div className="relative flex items-start gap-3 pl-8">
       <div className={`absolute left-0 top-1 w-9 h-9 rounded-full ${cfg.bg} flex items-center justify-center text-base flex-shrink-0 z-10`}>
         {cfg.icon}
       </div>
-      <div className={`flex-1 min-w-0 rounded-xl px-4 py-3 border group ${isEditing ? "bg-white border-brand-200 ring-1 ring-brand-300" : "bg-ink-50 border-ink-100"}`}>
+      <div
+        onClick={isNavigable ? () => router.push(`/${item.tipo === "tarea" ? "tareas" : "vencimientos"}/${item.id}`) : undefined}
+        className={`flex-1 min-w-0 rounded-xl px-4 py-3 border group ${isEditing ? "bg-white border-brand-200 ring-1 ring-brand-300" : "bg-ink-50 border-ink-100"} ${isNavigable ? "cursor-pointer hover:border-brand-300 hover:bg-brand-50 transition" : ""}`}
+      >
         {isEditing ? (
           <div className="space-y-2">
             <textarea
@@ -1044,13 +1049,7 @@ function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, de
                      item.tipo === "pago" ? "Pago" : item.tipo}
                   </span>
                 )}
-                {item.tipo === "tarea" || item.tipo === "vencimiento" ? (
-                  <Link href={`/${item.tipo === "tarea" ? "tareas" : "vencimientos"}/${item.id}`} className="text-sm text-ink-900 font-medium leading-snug hover:text-brand-600 transition">
-                    {item.descripcion}
-                  </Link>
-                ) : (
-                  <p className="text-sm text-ink-900 font-medium leading-snug">{item.descripcion}</p>
-                )}
+                <p className="text-sm text-ink-900 font-medium leading-snug">{item.descripcion}</p>
 
                 {/* Detalles por tipo */}
                 {item.tipo === "tarea" && (
