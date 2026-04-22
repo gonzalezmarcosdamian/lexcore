@@ -243,10 +243,10 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => setStudioConfigured(true)); // en caso de error, no bloquear
-    api.get<{ is_superadmin: boolean }>("/users/me", token)
-      .then((u) => setIsSuperadmin(u.is_superadmin ?? false))
+    api.get<{ is_superadmin: boolean; studio_access_level: string }>("/users/me", token)
+      .then((u) => { if (u.is_superadmin) setIsSuperadmin(true); })
       .catch(() => {});
-  }, [token]);
+  }, [token, session?.user?.email]);
   const urgentes = urgentesList.length;
 
   const userName = (session?.user?.name ?? "") as string;
