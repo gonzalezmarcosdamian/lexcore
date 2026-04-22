@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, Tarea, TareaEstado, StudioUser } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
+import { TareaDetailModal } from "@/components/features/evento-detail-modal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ function nextEstado(e: TareaEstado): TareaEstado {
 
 // ── Componente TareaCard ──────────────────────────────────────────────────────
 
-function TareaCard({ tarea, onToggle }: { tarea: Tarea; onToggle: (t: Tarea) => void }) {
+function TareaCard({ tarea, onToggle, onDetail }: { tarea: Tarea; onToggle: (t: Tarea) => void; onDetail: (t: Tarea) => void }) {
   const vencida = esVencida(tarea.fecha_limite, tarea.estado);
   const dias = diasRestantes(tarea.fecha_limite);
   const hecha = tarea.estado === "hecha";
@@ -69,9 +70,9 @@ function TareaCard({ tarea, onToggle }: { tarea: Tarea; onToggle: (t: Tarea) => 
       {/* Contenido */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2 flex-wrap">
-          <p className={`text-sm font-medium leading-snug ${hecha ? "line-through text-ink-400" : "text-ink-900"}`}>
+          <button onClick={() => onDetail(tarea)} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${hecha ? "line-through text-ink-400" : "text-ink-900"}`}>
             {tarea.titulo}
-          </p>
+          </button>
           {/* Badge estado */}
           <span className={`
             inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0
@@ -176,6 +177,7 @@ export default function TareasPage() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [miembros, setMiembros] = useState<StudioUser[]>([]);
+  const [detailT, setDetailT] = useState<Tarea | null>(null);
 
   const [filtroEstado, setFiltroEstado] = useState<TareaEstado | "">("");
   const [filtroResponsable, setFiltroResponsable] = useState("");
@@ -222,6 +224,9 @@ export default function TareasPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+      {detailT && (
+        <TareaDetailModal t={detailT} onClose={() => setDetailT(null)} onEdit={() => setDetailT(null)} />
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -313,7 +318,7 @@ export default function TareasPage() {
 
           {/* Activas */}
           {activas.map(t => (
-            <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} />
+            <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} onDetail={setDetailT} />
           ))}
 
           {/* Completadas */}
@@ -327,7 +332,7 @@ export default function TareasPage() {
               </summary>
               <div className="mt-2 space-y-2">
                 {hechas.map(t => (
-                  <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} />
+                  <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} onDetail={setDetailT} />
                 ))}
               </div>
             </details>
