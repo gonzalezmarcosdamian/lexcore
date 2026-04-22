@@ -1044,7 +1044,13 @@ function ActividadRow({ item, editingMovId, editingMovTexto, editingMovFecha, de
                      item.tipo === "pago" ? "Pago" : item.tipo}
                   </span>
                 )}
-                <p className="text-sm text-ink-900 font-medium leading-snug">{item.descripcion}</p>
+                {item.tipo === "tarea" || item.tipo === "vencimiento" ? (
+                  <Link href={`/${item.tipo === "tarea" ? "tareas" : "vencimientos"}/${item.id}`} className="text-sm text-ink-900 font-medium leading-snug hover:text-brand-600 transition">
+                    {item.descripcion}
+                  </Link>
+                ) : (
+                  <p className="text-sm text-ink-900 font-medium leading-snug">{item.descripcion}</p>
+                )}
 
                 {/* Detalles por tipo */}
                 {item.tipo === "tarea" && (

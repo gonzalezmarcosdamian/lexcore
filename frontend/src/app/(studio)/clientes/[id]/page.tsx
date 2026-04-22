@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Vencimiento } from "@/lib/api";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
-import { VencimientoDetailModal, TareaDetailModal } from "@/components/features/evento-detail-modal";
 
 const ESTADO_EXP_COLORS: Record<EstadoExpediente, string> = {
   activo: "bg-green-50 text-green-700",
@@ -64,8 +63,6 @@ export default function ClienteDetailPage() {
   const [tareasPorExp, setTareasPorExp] = useState<Record<string, Tarea[]>>({});
   const [vencPorExp, setVencPorExp] = useState<Record<string, Vencimiento[]>>({});
   const [tareasCliente, setTareasCliente] = useState<Tarea[]>([]);
-  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
-  const [detailT, setDetailT] = useState<Tarea | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     nombre: "",
@@ -209,12 +206,6 @@ export default function ClienteDetailPage() {
 
   return (
     <div className="max-w-4xl">
-      {detailV && (
-        <VencimientoDetailModal v={detailV} exp={expLookup[detailV.expediente_id]} onClose={() => setDetailV(null)} onEdit={() => setDetailV(null)} />
-      )}
-      {detailT && (
-        <TareaDetailModal t={detailT} exp={detailT.expediente_id ? expLookup[detailT.expediente_id] : undefined} onClose={() => setDetailT(null)} onEdit={() => setDetailT(null)} />
-      )}
       <div className="flex items-center gap-2 text-sm mb-4">
         <Link href="/clientes" className="text-ink-400 hover:text-ink-600 transition">
           Clientes
@@ -407,14 +398,14 @@ export default function ClienteDetailPage() {
                       {(vencsPend.length > 0 || tareasPend.length > 0) && (
                         <div className="border-t border-ink-50 px-3 py-2 space-y-1 bg-ink-50/30">
                           {vencsPend.slice(0, 3).map(v => (
-                            <button key={v.id} onClick={() => setDetailV(v)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
+                            <button key={v.id} onClick={() => router.push(`/vencimientos/${v.id}`)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
                               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
                               <span className="text-xs text-ink-600 truncate group-hover/item:text-brand-600">{v.descripcion}</span>
                               <span className="text-[10px] text-ink-400 flex-shrink-0 ml-auto">{new Date(v.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}</span>
                             </button>
                           ))}
                           {tareasPend.slice(0, 3).map(t => (
-                            <button key={t.id} onClick={() => setDetailT(t)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
+                            <button key={t.id} onClick={() => router.push(`/tareas/${t.id}`)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
                               <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
                               <span className="text-xs text-ink-600 truncate group-hover/item:text-brand-600">{t.titulo}</span>
                               {t.fecha_limite && <span className="text-[10px] text-ink-400 flex-shrink-0 ml-auto">{new Date(t.fecha_limite + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}</span>}
@@ -437,7 +428,7 @@ export default function ClienteDetailPage() {
                   const exp = t.expediente_id ? expLookup[t.expediente_id] : undefined;
                   const vencida = t.fecha_limite && t.fecha_limite < new Date().toISOString().split("T")[0];
                   return (
-                    <button key={t.id} onClick={() => setDetailT(t)} className="w-full flex items-center gap-2 text-left p-2 rounded-lg hover:bg-ink-50 transition group/t">
+                    <button key={t.id} onClick={() => router.push(`/tareas/${t.id}`)} className="w-full flex items-center gap-2 text-left p-2 rounded-lg hover:bg-ink-50 transition group/t">
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.estado === "hecha" ? "bg-green-400" : t.estado === "en_curso" ? "bg-blue-400" : "bg-ink-300"}`} />
                       <div className="min-w-0 flex-1">
                         <p className={`text-xs font-medium truncate group-hover/t:text-brand-600 transition ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-800"}`}>{t.titulo}</p>
