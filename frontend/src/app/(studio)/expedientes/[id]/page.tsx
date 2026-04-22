@@ -952,6 +952,7 @@ export default function ExpedienteDetailPage() {
           {/* Tareas */}
           <SectionCollapsible
             title="Tareas"
+            count={tareas.length}
             defaultOpen={false}
             badge={pendientasTareas > 0 ? (
               <span className="text-xs text-brand-600 font-medium">{pendientasTareas} pendiente{pendientasTareas !== 1 ? "s" : ""}</span>
