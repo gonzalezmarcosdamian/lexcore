@@ -1,8 +1,11 @@
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
+from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession, RequireFullAccess
 from app.models.expediente import Expediente, Vencimiento
+from app.models.nota import Nota
+from app.models.user import User
 from app.models.base import utcnow
 from app.services.resumen_invalidar import invalidar_resumen
 from app.services.calendar_push import push_vencimiento, delete_vencimiento
@@ -171,3 +174,62 @@ def eliminar_vencimiento(
     db.delete(venc)
     db.commit()
     delete_vencimiento(db, venc_id, tenant_id)
+
+
+# ── Notas (bitácora) ──────────────────────────────────────────────────────────
+
+class NotaCreate(BaseModel):
+    texto: str
+
+
+class NotaOut(BaseModel):
+    id: str
+    texto: str
+    autor_nombre: str | None = None
+    created_at: str
+
+    model_config = {"from_attributes": True}
+
+    @classmethod
+    def from_nota(cls, n: Nota) -> "NotaOut":
+        return cls(id=n.id, texto=n.texto, autor_nombre=n.autor_nombre, created_at=n.created_at.isoformat())
+
+
+@router.get("/{vencimiento_id}/notas", response_model=List[NotaOut])
+def listar_notas_vencimiento(vencimiento_id: str, db: DbSession, current_user: CurrentUser):
+    tenant_id = current_user["studio_id"]
+    venc = db.query(Vencimiento).filter(Vencimiento.id == vencimiento_id, Vencimiento.tenant_id == tenant_id).first()
+    if not venc:
+        raise HTTPException(status_code=404, detail="Vencimiento no encontrado")
+    notas = db.query(Nota).filter(Nota.vencimiento_id == vencimiento_id, Nota.tenant_id == tenant_id).order_by(Nota.created_at.asc()).all()
+    return [NotaOut.from_nota(n) for n in notas]
+
+
+@router.post("/{vencimiento_id}/notas", response_model=NotaOut, status_code=201)
+def crear_nota_vencimiento(vencimiento_id: str, body: NotaCreate, db: DbSession, current_user: CurrentUser):
+    tenant_id = current_user["studio_id"]
+    venc = db.query(Vencimiento).filter(Vencimiento.id == vencimiento_id, Vencimiento.tenant_id == tenant_id).first()
+    if not venc:
+        raise HTTPException(status_code=404, detail="Vencimiento no encontrado")
+    user = db.query(User).filter(User.id == current_user["sub"]).first()
+    nota = Nota(
+        tenant_id=tenant_id,
+        vencimiento_id=vencimiento_id,
+        autor_id=current_user["sub"],
+        autor_nombre=user.full_name if user else None,
+        texto=body.texto.strip(),
+    )
+    db.add(nota)
+    db.commit()
+    db.refresh(nota)
+    return NotaOut.from_nota(nota)
+
+
+@router.delete("/{vencimiento_id}/notas/{nota_id}", status_code=204)
+def eliminar_nota_vencimiento(vencimiento_id: str, nota_id: str, db: DbSession, current_user: CurrentUser):
+    tenant_id = current_user["studio_id"]
+    nota = db.query(Nota).filter(Nota.id == nota_id, Nota.vencimiento_id == vencimiento_id, Nota.tenant_id == tenant_id).first()
+    if not nota:
+        raise HTTPException(status_code=404, detail="Nota no encontrada")
+    db.delete(nota)
+    db.commit()

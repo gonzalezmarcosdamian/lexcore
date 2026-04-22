@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente, Cliente } from "@/lib/api";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
-import { VencimientoDetailModal, TareaDetailModal } from "@/components/features/evento-detail-modal";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -535,6 +535,7 @@ type Vista = "tablero" | "calendario";
 export default function AgendaPage() {
   const { data: session } = useSession();
   const token = session?.user?.backendToken;
+  const router = useRouter();
 
   const now2 = new Date();
   const [periodoValue, setPeriodoValue] = useState<PeriodoValue>({
@@ -555,8 +556,6 @@ export default function AgendaPage() {
 
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
-  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
-  const [detailT, setDetailT] = useState<Tarea | null>(null);
 
   const [filtroTipoVenc, setFiltroTipoVenc] = useState<string>("");
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
@@ -738,12 +737,6 @@ export default function AgendaPage() {
       {editingT && token && (
         <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
       )}
-      {detailV && (
-        <VencimientoDetailModal v={detailV} exp={expLookup[detailV.expediente_id]} onClose={() => setDetailV(null)} onEdit={() => { setDetailV(null); setEditingV(detailV); }} />
-      )}
-      {detailT && (
-        <TareaDetailModal t={detailT} exp={detailT.expediente_id ? expLookup[detailT.expediente_id] : undefined} onClose={() => setDetailT(null)} onEdit={() => { setDetailT(null); setEditingT(detailT); }} />
-      )}
 
       {diaPickerFecha && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
@@ -916,8 +909,8 @@ export default function AgendaPage() {
             onEditTarea={setEditingT}
             onDeleteVenc={deleteVencimiento}
             onDeleteTarea={deleteTarea}
-            onDetailVenc={setDetailV}
-            onDetailTarea={setDetailT}
+            onDetailVenc={(v) => router.push(`/vencimientos/${v.id}`)}
+            onDetailTarea={(t) => router.push(`/tareas/${t.id}`)}
           />
         )
       )}

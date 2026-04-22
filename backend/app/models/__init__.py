@@ -13,6 +13,7 @@ from app.models.feriado import FeriadoCache, DiaInhabil
 from app.models.subscription_event import SubscriptionEvent
 from app.models.plan_price import PlanPrice
 from app.models.metrics_snapshot import MetricsSnapshot
+from app.models.nota import Nota
 
 __all__ = [
     "Studio", "User", "Cliente",
@@ -29,4 +30,5 @@ __all__ = [
     "SubscriptionEvent",
     "PlanPrice",
     "MetricsSnapshot",
+    "Nota",
 ]

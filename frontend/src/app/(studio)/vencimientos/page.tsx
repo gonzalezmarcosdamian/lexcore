@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Vencimiento, Expediente } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
-import { VencimientoDetailModal } from "@/components/features/evento-detail-modal";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -302,6 +302,7 @@ function VencimientoRow({
 export default function VencimientosPage() {
   const { data: session } = useSession();
   const token = session?.user?.backendToken;
+  const router = useRouter();
 
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
@@ -314,7 +315,6 @@ export default function VencimientosPage() {
   const [marcando, setMarcando] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editing, setEditing] = useState<Vencimiento | null>(null);
-  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
@@ -441,14 +441,6 @@ export default function VencimientosPage() {
           token={token}
           onSaved={handleSaved}
           onClose={() => setEditing(null)}
-        />
-      )}
-      {detailV && (
-        <VencimientoDetailModal
-          v={detailV}
-          exp={expedientes.find(e => e.id === detailV.expediente_id)}
-          onClose={() => setDetailV(null)}
-          onEdit={() => { setDetailV(null); setEditing(detailV); }}
         />
       )}
 
@@ -618,7 +610,7 @@ export default function VencimientosPage() {
               </div>
               <div className="divide-y divide-red-100">
                 {urgentes.map((v) => (
-                  <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={marcarCumplido} onEdit={setEditing} onDelete={handleDelete} onDetail={setDetailV} marcando={marcando} deleting={deleting} />
+                  <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={marcarCumplido} onEdit={setEditing} onDelete={handleDelete} onDetail={(v) => router.push(`/vencimientos/${v.id}`)} marcando={marcando} deleting={deleting} />
                 ))}
               </div>
             </div>
@@ -631,7 +623,7 @@ export default function VencimientosPage() {
               </h2>
               <div className="bg-white rounded-2xl border border-ink-100 shadow-sm divide-y divide-ink-50">
                 {items.map((v) => (
-                  <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={marcarCumplido} onEdit={setEditing} onDelete={handleDelete} onDetail={setDetailV} marcando={marcando} deleting={deleting} />
+                  <VencimientoRow key={v.id} v={v} exp={expLookup[v.expediente_id]} onCumplido={marcarCumplido} onEdit={setEditing} onDelete={handleDelete} onDetail={(v) => router.push(`/vencimientos/${v.id}`)} marcando={marcando} deleting={deleting} />
                 ))}
               </div>
             </div>

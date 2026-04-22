@@ -295,6 +295,13 @@ export interface Tarea {
   updated_at: string;
 }
 
+export interface Nota {
+  id: string;
+  texto: string;
+  autor_nombre?: string | null;
+  created_at: string;
+}
+
 export interface ActividadItem {
   id: string;
   tipo: "movimiento" | "honorario" | "pago" | "vencimiento" | "tarea" | "documento";

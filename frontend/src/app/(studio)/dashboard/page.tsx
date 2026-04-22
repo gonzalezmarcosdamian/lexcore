@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea, TareaTipo } from "@/lib/api";
 import Link from "next/link";
 import { PageHelp } from "@/components/ui/page-help";
@@ -9,7 +10,6 @@ import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
-import { TareaDetailModal, VencimientoDetailModal } from "@/components/features/evento-detail-modal";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -41,6 +41,7 @@ function formatFechaLarga(fecha: string) {
 export default function DashboardPage() {
   const { data: session } = useSession();
   const token = session?.user?.backendToken;
+  const router = useRouter();
 
   const [proximos, setProximos] = useState<Vencimiento[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -52,8 +53,6 @@ export default function DashboardPage() {
   const [deletingT, setDeletingT] = useState<string | null>(null);
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
-  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
-  const [detailT, setDetailT] = useState<Tarea | null>(null);
   const [showNewTarea, setShowNewTarea] = useState(false);
   const [showNewVenc, setShowNewVenc] = useState(false);
   const [expLookup, setExpLookup] = useState<Record<string, Expediente>>({});
@@ -193,8 +192,6 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-20 lg:pb-6">
       {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
-      {detailT && <TareaDetailModal t={detailT} exp={expLookup[detailT.expediente_id ?? ""]} onClose={() => setDetailT(null)} onEdit={() => setEditingT(detailT)} />}
-      {detailV && <VencimientoDetailModal v={detailV} exp={expLookup[detailV.expediente_id ?? ""]} onClose={() => setDetailV(null)} onEdit={() => setEditingV(detailV)} />}
       {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} clientes={clientes} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
       {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
@@ -242,11 +239,11 @@ export default function DashboardPage() {
             onShowNewTarea={() => setShowNewTarea(true)}
             onShowNewVenc={() => setShowNewVenc(true)}
             onCumplido={handleCumplido}
-            onDetailV={setDetailV}
+            onDetailV={(v) => router.push(`/vencimientos/${v.id}`)}
             onEditV={setEditingV}
             onDeleteV={handleDeleteVencimiento}
             onHecha={handleTareaHecha}
-            onDetailT={setDetailT}
+            onDetailT={(t) => router.push(`/tareas/${t.id}`)}
             onEditT={setEditingT}
             onDeleteT={handleDeleteTarea}
           />

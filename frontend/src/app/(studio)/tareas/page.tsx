@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, Tarea, TareaEstado, StudioUser } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
-import { TareaDetailModal } from "@/components/features/evento-detail-modal";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -33,7 +32,7 @@ function nextEstado(e: TareaEstado): TareaEstado {
 
 // ── Componente TareaCard ──────────────────────────────────────────────────────
 
-function TareaCard({ tarea, onToggle, onDetail }: { tarea: Tarea; onToggle: (t: Tarea) => void; onDetail: (t: Tarea) => void }) {
+function TareaCard({ tarea, onToggle, onDetail }: { tarea: Tarea; onToggle: (t: Tarea) => void; onDetail: (t: Tarea) => void; }) {
   const vencida = esVencida(tarea.fecha_limite, tarea.estado);
   const dias = diasRestantes(tarea.fecha_limite);
   const hecha = tarea.estado === "hecha";
@@ -177,7 +176,6 @@ export default function TareasPage() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [miembros, setMiembros] = useState<StudioUser[]>([]);
-  const [detailT, setDetailT] = useState<Tarea | null>(null);
 
   const [filtroEstado, setFiltroEstado] = useState<TareaEstado | "">("");
   const [filtroResponsable, setFiltroResponsable] = useState("");
@@ -224,9 +222,6 @@ export default function TareasPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
-      {detailT && (
-        <TareaDetailModal t={detailT} onClose={() => setDetailT(null)} onEdit={() => setDetailT(null)} />
-      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -318,7 +313,7 @@ export default function TareasPage() {
 
           {/* Activas */}
           {activas.map(t => (
-            <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} onDetail={setDetailT} />
+            <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} onDetail={(t) => router.push(`/tareas/${t.id}`)} />
           ))}
 
           {/* Completadas */}
@@ -332,7 +327,7 @@ export default function TareasPage() {
               </summary>
               <div className="mt-2 space-y-2">
                 {hechas.map(t => (
-                  <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} onDetail={setDetailT} />
+                  <TareaCard key={t.id} tarea={t} onToggle={toggleEstado} onDetail={(t) => router.push(`/tareas/${t.id}`)} />
                 ))}
               </div>
             </details>
