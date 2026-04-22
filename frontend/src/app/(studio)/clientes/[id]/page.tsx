@@ -63,6 +63,7 @@ export default function ClienteDetailPage() {
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [tareasPorExp, setTareasPorExp] = useState<Record<string, Tarea[]>>({});
   const [vencPorExp, setVencPorExp] = useState<Record<string, Vencimiento[]>>({});
+  const [tareasCliente, setTareasCliente] = useState<Tarea[]>([]);
   const [detailV, setDetailV] = useState<Vencimiento | null>(null);
   const [detailT, setDetailT] = useState<Tarea | null>(null);
   const [editing, setEditing] = useState(false);
@@ -91,12 +92,19 @@ export default function ClienteDetailPage() {
       .then(async ([c, exps]) => {
         setCliente(c);
         setExpedientes(exps);
-        // Fetch tareas y vencimientos de todos los expedientes en paralelo
-        if (exps.length > 0) {
-          const [tareasArr, vencArr] = await Promise.all([
+        // Fetch tareas del cliente (sin expediente) + tareas/vencimientos por expediente
+        const fetchPromises: [Promise<Tarea[]>, ...Promise<unknown>[]] = [
+          api.get<Tarea[]>("/tareas", token!, { cliente_id: id }),
+          ...(exps.length > 0 ? [
             Promise.all(exps.map(e => api.get<Tarea[]>("/tareas", token!, { expediente_id: e.id }))),
             Promise.all(exps.map(e => api.get<Vencimiento[]>("/vencimientos", token!, { expediente_id: e.id }))),
-          ]);
+          ] : []),
+        ];
+        const results = await Promise.all(fetchPromises);
+        setTareasCliente(results[0] as Tarea[]);
+        if (exps.length > 0) {
+          const tareasArr = results[1] as Tarea[][];
+          const vencArr = results[2] as Vencimiento[][];
           const tMap: Record<string, Tarea[]> = {};
           const vMap: Record<string, Vencimiento[]> = {};
           exps.forEach((e, i) => { tMap[e.id] = tareasArr[i]; vMap[e.id] = vencArr[i]; });
@@ -197,7 +205,6 @@ export default function ClienteDetailPage() {
     );
   }
 
-  const todasTareas = expedientes.flatMap(e => tareasPorExp[e.id] ?? []);
   const expLookup = Object.fromEntries(expedientes.map(e => [e.id, e]));
 
   return (
@@ -422,11 +429,11 @@ export default function ClienteDetailPage() {
             )}
           </div>
 
-          {todasTareas.length > 0 && (
+          {tareasCliente.length > 0 && (
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
               <h2 className="text-sm font-semibold text-ink-600 mb-3 uppercase tracking-wide">Tareas</h2>
               <div className="space-y-1.5">
-                {todasTareas.map(t => {
+                {tareasCliente.map(t => {
                   const exp = t.expediente_id ? expLookup[t.expediente_id] : undefined;
                   const vencida = t.fecha_limite && t.fecha_limite < new Date().toISOString().split("T")[0];
                   return (

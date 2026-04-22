@@ -57,6 +57,7 @@ def listar_tareas(
     db: DbSession,
     current_user: CurrentUser,
     expediente_id: Optional[str] = Query(None),
+    cliente_id: Optional[str] = Query(None),
     estado: Optional[TareaEstado] = Query(None),
     responsable_id: Optional[str] = Query(None),
 ):
@@ -64,6 +65,8 @@ def listar_tareas(
     q = db.query(Tarea).filter(Tarea.tenant_id == tenant_id)
     if expediente_id:
         q = q.filter(Tarea.expediente_id == expediente_id)
+    if cliente_id:
+        q = q.filter(Tarea.cliente_id == cliente_id, Tarea.expediente_id.is_(None))
     if estado:
         q = q.filter(Tarea.estado == estado)
     if responsable_id:
