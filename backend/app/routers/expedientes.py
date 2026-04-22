@@ -406,7 +406,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=v.id, tipo="vencimiento", subtipo="creado",
             descripcion=f"Vencimiento: {v.descripcion}",
-            meta={"fecha": str(v.fecha), "tipo": str(v.tipo), "cumplido": bool(v.cumplido)},
+            meta={"fecha": str(v.fecha), "hora": str(v.hora) if v.hora else None, "tipo": str(v.tipo), "cumplido": bool(v.cumplido)},
             created_at=v.created_at,
         ))
 

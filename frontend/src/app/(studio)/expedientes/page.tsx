@@ -407,8 +407,43 @@ export default function ExpedientesPage() {
           <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">{error}</div>
         )}
 
-        {/* Tabla */}
-        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+        {/* Vista mobile: cards */}
+        <div className="lg:hidden space-y-2">
+          {loading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-ink-100 p-4 animate-pulse space-y-2">
+                <div className="h-3 bg-ink-100 rounded w-1/4" />
+                <div className="h-4 bg-ink-100 rounded w-3/4" />
+              </div>
+            ))
+          ) : sorted.length === 0 ? (
+            <div className="bg-white rounded-xl border border-ink-100 p-8 text-center">
+              <p className="text-sm text-ink-500">{q || estadoFiltro || fueroFiltro ? "Sin resultados" : "Todavía no hay expedientes"}</p>
+              {!q && !estadoFiltro && !fueroFiltro && (
+                <Link href="/expedientes/nuevo" className="mt-3 inline-block bg-brand-600 text-white rounded-xl px-4 py-2 text-sm font-semibold">Crear expediente</Link>
+              )}
+            </div>
+          ) : sorted.map((e) => (
+            <div
+              key={e.id}
+              onClick={() => router.push(`/expedientes/${e.id}`)}
+              className="bg-white rounded-xl border border-ink-100 shadow-sm px-4 py-3.5 flex items-center gap-3 active:bg-brand-50 transition-colors cursor-pointer"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-mono text-xs font-bold text-ink-500">{e.numero}</span>
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ESTADO_BADGE[e.estado]}`}>{ESTADO_LABELS[e.estado]}</span>
+                </div>
+                <p className="text-sm font-semibold text-ink-900 truncate">{e.caratula}</p>
+                {e.cliente_nombre && <p className="text-xs text-ink-400 truncate mt-0.5">{e.cliente_nombre}</p>}
+              </div>
+              <svg className="w-4 h-4 text-ink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabla desktop */}
+        <div className="hidden lg:block bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">
             <thead>
