@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Cliente, Expediente, TipoCliente, EstadoExpediente } from "@/lib/api";
+import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Vencimiento } from "@/lib/api";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
+import { VencimientoDetailModal, TareaDetailModal } from "@/components/features/evento-detail-modal";
 
 const ESTADO_EXP_COLORS: Record<EstadoExpediente, string> = {
   activo: "bg-green-50 text-green-700",
@@ -60,6 +61,10 @@ export default function ClienteDetailPage() {
 
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  const [tareasPorExp, setTareasPorExp] = useState<Record<string, Tarea[]>>({});
+  const [vencPorExp, setVencPorExp] = useState<Record<string, Vencimiento[]>>({});
+  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
+  const [detailT, setDetailT] = useState<Tarea | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     nombre: "",
@@ -83,9 +88,21 @@ export default function ClienteDetailPage() {
       api.get<Cliente>(`/clientes/${id}`, token),
       api.get<Expediente[]>("/expedientes", token, { cliente_id: id }),
     ])
-      .then(([c, exps]) => {
+      .then(async ([c, exps]) => {
         setCliente(c);
         setExpedientes(exps);
+        // Fetch tareas y vencimientos de todos los expedientes en paralelo
+        if (exps.length > 0) {
+          const [tareasArr, vencArr] = await Promise.all([
+            Promise.all(exps.map(e => api.get<Tarea[]>("/tareas", token!, { expediente_id: e.id }))),
+            Promise.all(exps.map(e => api.get<Vencimiento[]>("/vencimientos", token!, { expediente_id: e.id }))),
+          ]);
+          const tMap: Record<string, Tarea[]> = {};
+          const vMap: Record<string, Vencimiento[]> = {};
+          exps.forEach((e, i) => { tMap[e.id] = tareasArr[i]; vMap[e.id] = vencArr[i]; });
+          setTareasPorExp(tMap);
+          setVencPorExp(vMap);
+        }
         setForm({
           nombre: c.nombre,
           tipo: c.tipo,
@@ -180,8 +197,17 @@ export default function ClienteDetailPage() {
     );
   }
 
+  const todasTareas = expedientes.flatMap(e => tareasPorExp[e.id] ?? []);
+  const expLookup = Object.fromEntries(expedientes.map(e => [e.id, e]));
+
   return (
     <div className="max-w-4xl">
+      {detailV && (
+        <VencimientoDetailModal v={detailV} exp={expLookup[detailV.expediente_id]} onClose={() => setDetailV(null)} onEdit={() => setDetailV(null)} />
+      )}
+      {detailT && (
+        <TareaDetailModal t={detailT} exp={detailT.expediente_id ? expLookup[detailT.expediente_id] : undefined} onClose={() => setDetailT(null)} onEdit={() => setDetailT(null)} />
+      )}
       <div className="flex items-center gap-2 text-sm mb-4">
         <Link href="/clientes" className="text-ink-400 hover:text-ink-600 transition">
           Clientes
@@ -356,29 +382,71 @@ export default function ClienteDetailPage() {
             {expedientes.length === 0 ? (
               <p className="text-xs text-ink-400 py-2">Sin expedientes asociados</p>
             ) : (
-              <div className="space-y-2">
-                {expedientes.map((exp) => (
-                  <Link
-                    key={exp.id}
-                    href={`/expedientes/${exp.id}`}
-                    className="flex items-center justify-between gap-2 p-2.5 rounded-xl hover:bg-ink-50 transition group"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-mono font-medium text-ink-800 group-hover:text-brand-600 transition truncate">
-                        {exp.numero}
-                      </p>
-                      <p className="text-xs text-ink-400 truncate">{exp.caratula}</p>
+              <div className="space-y-3">
+                {expedientes.map((exp) => {
+                  const vencsPend = (vencPorExp[exp.id] ?? []).filter(v => !v.cumplido);
+                  const tareasPend = (tareasPorExp[exp.id] ?? []).filter(t => t.estado !== "hecha");
+                  return (
+                    <div key={exp.id} className="rounded-xl border border-ink-100 overflow-hidden">
+                      <Link href={`/expedientes/${exp.id}`} className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-ink-50 transition group">
+                        <div className="min-w-0">
+                          <p className="text-sm font-mono font-medium text-ink-800 group-hover:text-brand-600 transition truncate">{exp.numero}</p>
+                          <p className="text-xs text-ink-400 truncate">{exp.caratula}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${ESTADO_EXP_COLORS[exp.estado]}`}>
+                          {ESTADO_EXP_LABELS[exp.estado]}
+                        </span>
+                      </Link>
+                      {(vencsPend.length > 0 || tareasPend.length > 0) && (
+                        <div className="border-t border-ink-50 px-3 py-2 space-y-1 bg-ink-50/30">
+                          {vencsPend.slice(0, 3).map(v => (
+                            <button key={v.id} onClick={() => setDetailV(v)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
+                              <span className="text-xs text-ink-600 truncate group-hover/item:text-brand-600">{v.descripcion}</span>
+                              <span className="text-[10px] text-ink-400 flex-shrink-0 ml-auto">{new Date(v.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}</span>
+                            </button>
+                          ))}
+                          {tareasPend.slice(0, 3).map(t => (
+                            <button key={t.id} onClick={() => setDetailT(t)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                              <span className="text-xs text-ink-600 truncate group-hover/item:text-brand-600">{t.titulo}</span>
+                              {t.fecha_limite && <span className="text-[10px] text-ink-400 flex-shrink-0 ml-auto">{new Date(t.fecha_limite + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${ESTADO_EXP_COLORS[exp.estado]}`}
-                    >
-                      {ESTADO_EXP_LABELS[exp.estado]}
-                    </span>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
+
+          {todasTareas.length > 0 && (
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+              <h2 className="text-sm font-semibold text-ink-600 mb-3 uppercase tracking-wide">Tareas</h2>
+              <div className="space-y-1.5">
+                {todasTareas.map(t => {
+                  const exp = t.expediente_id ? expLookup[t.expediente_id] : undefined;
+                  const vencida = t.fecha_limite && t.fecha_limite < new Date().toISOString().split("T")[0];
+                  return (
+                    <button key={t.id} onClick={() => setDetailT(t)} className="w-full flex items-center gap-2 text-left p-2 rounded-lg hover:bg-ink-50 transition group/t">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.estado === "hecha" ? "bg-green-400" : t.estado === "en_curso" ? "bg-blue-400" : "bg-ink-300"}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs font-medium truncate group-hover/t:text-brand-600 transition ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-800"}`}>{t.titulo}</p>
+                        {exp && <p className="text-[10px] text-ink-400 truncate">{exp.numero}</p>}
+                      </div>
+                      {t.fecha_limite && (
+                        <span className={`text-[10px] flex-shrink-0 font-medium ${vencida && t.estado !== "hecha" ? "text-red-500" : "text-ink-400"}`}>
+                          {new Date(t.fecha_limite + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
             <h2 className="text-sm font-semibold text-ink-600 mb-3 uppercase tracking-wide">
