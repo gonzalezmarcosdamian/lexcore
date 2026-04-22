@@ -179,6 +179,20 @@
 
 ## Feedback de usuarios (capturado 2026-04-22)
 
+### AUTH-GCAL-001 · Login con Google no debería pedir permisos de Calendar en cada sesión
+- **Estado:** `idea`
+- **Prioridad:** P1
+- **Fuente:** Gonzalo (PO) — 2026-04-22
+- **Bug:** Al iniciar sesión con Google OAuth, se muestra la pantalla de permisos de Calendar en cada ingreso, en lugar de solo pedirlo una vez al conectar explícitamente desde /perfil.
+- **Causa probable:** El flow de login OAuth incluye el scope de Calendar (`calendar`) mezclado con los scopes de autenticación (`openid email profile`), forzando el consent en cada login.
+- **Como** usuario, **quiero** que el login con Google solo pida permisos básicos (email/perfil) y la conexión de Calendar sea un paso separado y voluntario desde /perfil, **para** no ver una pantalla de permisos intimidante cada vez que inicio sesión.
+- **Criterios de aceptación:**
+  - [ ] CA1: El flow de login Google solo solicita scopes `openid email profile` — sin calendar
+  - [ ] CA2: El flow de conexión de Calendar (`/auth/google-calendar/connect`) solicita el scope de calendar por separado
+  - [ ] CA3: Un usuario que ya conectó Calendar no vuelve a ver la pantalla de permisos al hacer login
+  - [ ] CA4: Un usuario nuevo puede hacer login sin conectar Calendar (flujos completamente independientes)
+- **Técnico:** Revisar `routers/auth.py` — el scope del login Google no debe incluir calendar. Asegurarse que `google_calendar.py` use un flow completamente separado.
+
 ### GCAL-FIX-001 · Google Calendar: mostrar número de expediente (no UUID) en notas del evento
 - **Estado:** `idea`
 - **Prioridad:** P1
