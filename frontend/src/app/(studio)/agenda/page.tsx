@@ -737,7 +737,7 @@ export default function AgendaPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 space-y-5">
+    <div className="max-w-5xl mx-auto py-4 px-3 sm:px-4 sm:py-6 space-y-4 pb-24">
       {editingV && token && (
         <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setVencimientos(prev => prev.map(x => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />
       )}
@@ -828,65 +828,77 @@ export default function AgendaPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
-          <p className="text-sm text-ink-500 mt-0.5">
-            {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
-            {urgentes > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap justify-end items-center">
-          {/* Toggle vista */}
-          <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
-            <button
-              onClick={() => setVista("tablero")}
-              className={`px-3 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
-            >
-              ⊞ Tablero
-            </button>
-            <button
-              onClick={() => setVista("calendario")}
-              className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
-            >
-              📅 Calendario
-            </button>
+      <div className="space-y-3">
+        {/* Title row */}
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
+            <p className="text-sm text-ink-500 mt-0.5">
+              {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
+              {urgentes > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
+            </p>
           </div>
+          <CalendarSyncButton variant="compact" />
+        </div>
+
+        {/* Vista toggle — full width on mobile */}
+        <div className="flex rounded-xl border border-ink-200 overflow-hidden text-sm font-semibold">
+          <button
+            onClick={() => setVista("tablero")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+            Tablero
+          </button>
+          <button
+            onClick={() => setVista("calendario")}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            Calendario
+          </button>
+        </div>
+
+        {/* Action buttons */}
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => { setTareaForm(f => ({ ...f, fecha_limite: "" })); setShowTareaModal(true); setTareaError(""); }}
-            className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition"
+            className="flex items-center justify-center gap-1.5 text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-xl font-semibold transition"
           >
-            + Tarea
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Tarea
           </button>
           <button
             onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }}
-            className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition"
+            className="flex items-center justify-center gap-1.5 text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 rounded-xl font-semibold transition"
           >
-            + Vencimiento
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+            Vencimiento
           </button>
-          <CalendarSyncButton variant="compact" />
         </div>
       </div>
 
       {/* Filtros — solo en tablero */}
       {vista === "tablero" && !loading && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-medium text-ink-500">Vencimientos:</span>
+          <div className="overflow-x-auto -mx-3 px-3">
+            <div className="flex items-center gap-1.5 min-w-max pb-1">
+              <span className="text-xs font-medium text-ink-500 flex-shrink-0">Vencimientos:</span>
               {(["", "vencimiento", "audiencia", "presentacion", "pericia", "otro"] as const).map(t => (
                 <button key={t} onClick={() => setFiltroTipoVenc(t)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoVenc === t ? "bg-purple-600 text-white border-purple-600" : "bg-white text-ink-500 border-ink-200 hover:border-purple-300"}`}>
+                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium flex-shrink-0 ${filtroTipoVenc === t ? "bg-purple-600 text-white border-purple-600" : "bg-white text-ink-500 border-ink-200 hover:border-purple-300"}`}>
                   {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-medium text-ink-500">Tareas:</span>
+          </div>
+          <div className="overflow-x-auto -mx-3 px-3">
+            <div className="flex items-center gap-1.5 min-w-max pb-1">
+              <span className="text-xs font-medium text-ink-500 flex-shrink-0">Tareas:</span>
               {(["", "judicial", "extrajudicial", "administrativa", "operativa"] as const).map(t => (
                 <button key={t} onClick={() => setFiltroTipoTarea(t)}
-                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoTarea === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-ink-500 border-ink-200 hover:border-blue-300"}`}>
+                  className={`text-xs px-2.5 py-1 rounded-full border transition font-medium flex-shrink-0 ${filtroTipoTarea === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-ink-500 border-ink-200 hover:border-blue-300"}`}>
                   {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
