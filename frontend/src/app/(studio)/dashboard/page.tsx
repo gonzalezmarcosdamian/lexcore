@@ -912,19 +912,16 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, marking, deletin
   const vencida = isVencida(v.fecha);
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
-      <button
-        onClick={() => onCumplido(v.id)}
-        disabled={marking === v.id}
-        className={`flex-shrink-0 w-5 h-5 rounded-full border-2 transition disabled:opacity-50 ${
-          marking === v.id ? "bg-purple-100 border-purple-300" : "border-purple-300 hover:border-purple-500 hover:bg-purple-50"
-        }`}
-      />
+      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.cumplido ? "bg-green-500" : urg || vencida ? "bg-red-400" : warning ? "bg-amber-400" : "bg-purple-300"}`} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
+        {exp
+          ? <Link href={`/expedientes/${exp.id}`} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{v.descripcion}</Link>
+          : <p className="text-sm text-ink-900 font-medium truncate">{v.descripcion}</p>
+        }
         {exp ? (
-          <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate block max-w-[180px]">
+          <span className="text-xs text-ink-400 truncate block max-w-[180px]">
             {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-          </Link>
+          </span>
         ) : (
           <p className="text-xs text-ink-400 truncate">{v.tipo}</p>
         )}
