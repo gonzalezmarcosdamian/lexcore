@@ -282,7 +282,7 @@ def studio_detail(studio_id: str, db: DbSession, current_user: CurrentUser):
     if not studio:
         raise HTTPException(status_code=404, detail="Studio no encontrado")
 
-    users = db.query(User).filter(User.tenant_id == studio_id, User.is_active == True).all()
+    users = db.query(User).filter(User.tenant_id == studio_id).all()
 
     stats = {
         "expedientes": db.query(func.count(Expediente.id)).filter(Expediente.tenant_id == studio_id).scalar() or 0,
