@@ -157,7 +157,7 @@ export default function VencimientoDetailPage() {
 
   return (
     <>
-    <div className="max-w-3xl mx-auto py-4 px-3 sm:px-4 sm:py-6 space-y-4 pb-24">
+    <div className="max-w-3xl mx-auto py-4 px-3 sm:px-4 sm:py-6 space-y-4 pb-28">
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-xs text-ink-400">

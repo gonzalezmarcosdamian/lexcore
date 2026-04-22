@@ -158,97 +158,80 @@ export default function TareaDetailPage() {
 
   return (
     <>
-    <div className="max-w-3xl mx-auto py-6 px-4 space-y-5">
+    <div className="max-w-3xl mx-auto py-4 px-3 sm:px-4 sm:py-6 space-y-4 pb-28">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-ink-400">
+      <nav className="flex items-center gap-1.5 text-xs text-ink-400 flex-wrap">
         {exp ? (
           <>
             <Link href="/expedientes" className="hover:text-ink-600 transition">Expedientes</Link>
             <span>/</span>
-            <Link href={`/expedientes/${exp.id}`} className="hover:text-ink-600 transition truncate max-w-[160px]">{exp.numero}</Link>
+            <Link href={`/expedientes/${exp.id}`} className="hover:text-ink-600 transition truncate max-w-[120px]">{exp.numero}</Link>
           </>
         ) : (
           <Link href="/tareas" className="hover:text-ink-600 transition">Tareas</Link>
         )}
         <span>/</span>
-        <span className="text-ink-700 font-medium truncate">{tarea.titulo}</span>
+        <span className="text-ink-700 font-medium truncate max-w-[160px]">{tarea.titulo}</span>
       </nav>
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-        <div className={`px-5 py-4 border-b border-ink-50 ${tarea.estado === "hecha" ? "bg-green-50/40" : vencida ? "bg-red-50/40" : tarea.estado === "en_curso" ? "bg-blue-50/30" : ""}`}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                <button
-                  onClick={handleToggleEstado}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition hover:opacity-80 ${cfg.cls}`}
-                  title="Cambiar estado"
-                >
-                  {cfg.label}
-                </button>
-                <span className="text-xs text-ink-400">{TIPO_LABEL[tarea.tipo] ?? tarea.tipo}</span>
-                {vencida && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Vencida</span>}
-              </div>
-              <h1 className={`text-xl font-bold leading-snug ${tarea.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>
-                {tarea.titulo}
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={openEdit}
-                className="flex items-center gap-1.5 text-xs font-semibold border border-ink-200 text-ink-600 hover:bg-ink-50 px-3 py-1.5 rounded-lg transition"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                Editar
+        <div className={`px-4 py-4 border-b border-ink-50 ${tarea.estado === "hecha" ? "bg-green-50/40" : vencida ? "bg-red-50/40" : tarea.estado === "en_curso" ? "bg-blue-50/30" : ""}`}>
+          {/* Badges + acciones en una fila */}
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button onClick={handleToggleEstado} className={`text-xs font-semibold px-2.5 py-1 rounded-full transition active:scale-95 ${cfg.cls}`}>
+                {cfg.label}
               </button>
-              {confirmDelete ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-                  <button onClick={handleDelete} disabled={deleting} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition disabled:opacity-50">Sí</button>
-                  <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2.5 py-1.5 rounded-lg hover:bg-ink-50 transition">No</button>
-                </div>
-              ) : (
-                <button onClick={() => setConfirmDelete(true)} className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
-              )}
+              <span className="text-xs text-ink-400">{TIPO_LABEL[tarea.tipo] ?? tarea.tipo}</span>
+              {vencida && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Vencida</span>}
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button onClick={openEdit} className="p-2 rounded-lg border border-ink-200 text-ink-500 hover:bg-ink-50 active:bg-ink-100 transition">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+              </button>
+              <button onClick={() => setConfirmDelete(true)} className="p-2 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 active:bg-red-100 transition">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              </button>
             </div>
           </div>
+          <h1 className={`text-lg font-bold leading-snug ${tarea.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>
+            {tarea.titulo}
+          </h1>
         </div>
 
         {/* Fields */}
-        <div className="px-5 py-4 space-y-3 divide-y divide-ink-50">
+        <div className="px-4 py-3 space-y-0 divide-y divide-ink-50">
           {tarea.fecha_limite && (
-            <div className="flex justify-between items-center pt-3 first:pt-0">
-              <span className="text-sm text-ink-400">Fecha límite</span>
-              <span className={`text-sm font-medium ${vencida ? "text-red-600" : "text-ink-900"}`}>
+            <div className="flex justify-between items-start gap-3 py-2.5 first:pt-0">
+              <span className="text-sm text-ink-400 flex-shrink-0">Fecha límite</span>
+              <span className={`text-sm font-medium text-right ${vencida ? "text-red-600" : "text-ink-900"}`}>
                 {formatFecha(tarea.fecha_limite)}{tarea.hora ? ` · ${tarea.hora}` : ""}
               </span>
             </div>
           )}
           {tarea.responsable_nombre && (
-            <div className="flex justify-between items-center pt-3 first:pt-0">
-              <span className="text-sm text-ink-400">Responsable</span>
-              <span className="text-sm font-medium text-ink-900">{tarea.responsable_nombre}</span>
+            <div className="flex justify-between items-center gap-3 py-2.5">
+              <span className="text-sm text-ink-400 flex-shrink-0">Responsable</span>
+              <span className="text-sm font-medium text-ink-900 text-right">{tarea.responsable_nombre}</span>
             </div>
           )}
           {exp && (
-            <div className="flex justify-between items-center pt-3 first:pt-0">
-              <span className="text-sm text-ink-400">Expediente</span>
-              <Link href={`/expedientes/${exp.id}`} className="text-sm font-medium text-brand-600 hover:underline">
+            <div className="flex justify-between items-start gap-3 py-2.5">
+              <span className="text-sm text-ink-400 flex-shrink-0">Expediente</span>
+              <Link href={`/expedientes/${exp.id}`} className="text-sm font-medium text-brand-600 text-right leading-snug">
                 {exp.numero}{exp.caratula ? ` · ${exp.caratula}` : ""}
               </Link>
             </div>
           )}
           {tarea.cliente_nombre && (
-            <div className="flex justify-between items-center pt-3 first:pt-0">
-              <span className="text-sm text-ink-400">Cliente</span>
-              <span className="text-sm font-medium text-ink-900">{tarea.cliente_nombre}</span>
+            <div className="flex justify-between items-center gap-3 py-2.5">
+              <span className="text-sm text-ink-400 flex-shrink-0">Cliente</span>
+              <span className="text-sm font-medium text-ink-900 text-right">{tarea.cliente_nombre}</span>
             </div>
           )}
           {tarea.descripcion && (
-            <div className="pt-3 first:pt-0">
+            <div className="py-2.5">
               <span className="text-sm text-ink-400 block mb-1">Descripción</span>
               <p className="text-sm text-ink-800 whitespace-pre-line leading-relaxed">{tarea.descripcion}</p>
             </div>
@@ -256,39 +239,48 @@ export default function TareaDetailPage() {
         </div>
       </div>
 
+      {/* Confirm delete modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 space-y-4">
+            <p className="text-sm font-semibold text-ink-900">¿Eliminar esta tarea?</p>
+            <p className="text-xs text-ink-500">Esta acción no se puede deshacer.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDelete(false)} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium">Cancelar</button>
+              <button onClick={handleDelete} disabled={deleting} className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded-xl py-2.5 text-sm font-semibold disabled:opacity-50">{deleting ? "Eliminando…" : "Eliminar"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Documentos */}
-      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
-        <h2 className="text-sm font-semibold text-ink-600 uppercase tracking-wide mb-3">Documentos</h2>
+      <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
+        <h2 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3">Documentos</h2>
         <DocumentosSection tareaId={id} token={token!} />
       </div>
 
-      {/* Notas / Bitácora */}
+      {/* Notas */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-ink-50 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink-600 uppercase tracking-wide">Notas</h2>
+        <div className="px-4 py-3.5 border-b border-ink-50 flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Notas</h2>
           <span className="text-xs text-ink-400">{notas.length} nota{notas.length !== 1 ? "s" : ""}</span>
         </div>
 
-        {/* Lista de notas */}
         {notas.length > 0 && (
           <div className="divide-y divide-ink-50">
             {notas.map(n => (
-              <div key={n.id} className="px-5 py-3.5 flex gap-3 group">
+              <div key={n.id} className="px-4 py-3 flex gap-3">
                 <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                   {n.autor_nombre ? n.autor_nombre.charAt(0).toUpperCase() : "?"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="text-xs font-semibold text-ink-700">{n.autor_nombre ?? "Usuario"}</span>
                     <span className="text-xs text-ink-400">{formatTs(n.created_at)}</span>
                   </div>
                   <p className="text-sm text-ink-800 whitespace-pre-line leading-relaxed">{n.texto}</p>
                 </div>
-                <button
-                  onClick={() => handleDeleteNota(n.id)}
-                  disabled={deletingNota === n.id}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-ink-300 hover:text-red-500 transition flex-shrink-0 disabled:opacity-50"
-                >
+                <button onClick={() => handleDeleteNota(n.id)} disabled={deletingNota === n.id} className="p-1.5 rounded text-ink-300 hover:text-red-500 active:text-red-600 transition flex-shrink-0 disabled:opacity-50">
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -296,26 +288,23 @@ export default function TareaDetailPage() {
           </div>
         )}
 
-        {/* Agregar nota */}
-        <div className="px-5 py-4 bg-ink-50/30 border-t border-ink-50">
+        <div className="px-4 py-3.5 bg-ink-50/30 border-t border-ink-50">
           <textarea
             ref={textareaRef}
             value={notaTexto}
             onChange={e => setNotaTexto(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAddNota(); }}
-            placeholder="Agregar nota o minuta… (Ctrl+Enter para guardar)"
+            placeholder="Agregar nota o minuta…"
             rows={3}
-            className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition resize-none"
+            className="w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 transition resize-none"
           />
-          <div className="flex justify-end mt-2">
-            <button
-              onClick={handleAddNota}
-              disabled={savingNota || !notaTexto.trim()}
-              className="text-sm font-semibold bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl transition disabled:opacity-40"
-            >
-              {savingNota ? "Guardando…" : "Guardar nota"}
-            </button>
-          </div>
+          <button
+            onClick={handleAddNota}
+            disabled={savingNota || !notaTexto.trim()}
+            className="mt-2 w-full sm:w-auto sm:float-right text-sm font-semibold bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white px-4 py-2.5 rounded-xl transition disabled:opacity-40"
+          >
+            {savingNota ? "Guardando…" : "Guardar nota"}
+          </button>
         </div>
       </div>
 

@@ -756,7 +756,7 @@ export default function AgendaPage() {
   }, [vFiltradas, tFiltradas]);
 
   return (
-    <div className="max-w-5xl mx-auto py-4 px-3 sm:px-4 sm:py-6 space-y-4 pb-24">
+    <div className="max-w-5xl mx-auto py-4 px-3 sm:px-4 sm:py-6 space-y-4 pb-28">
       {editingV && token && (
         <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setVencimientos(prev => prev.map(x => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />
       )}
