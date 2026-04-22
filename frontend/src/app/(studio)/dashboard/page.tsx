@@ -10,6 +10,7 @@ import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
+import { ExpedienteSelect } from "@/components/ui/expediente-select";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -344,10 +345,7 @@ function NewTareaModal({ token, expedientes, clientes, onCreated, onClose }: { t
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
-            <select value={expedienteId} onChange={e => setExpedienteId(e.target.value)} className={inputCls}>
-              <option value="">— Sin expediente —</option>
-              {expedientes.map(ex => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
-            </select>
+            <ExpedienteSelect expedientes={expedientes} value={expedienteId} onChange={setExpedienteId} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -418,10 +416,7 @@ function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Expediente *</label>
-            <select value={expedienteId} onChange={e => setExpedienteId(e.target.value)} className={inputCls}>
-              <option value="">— Seleccioná —</option>
-              {expedientes.map(ex => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
-            </select>
+            <ExpedienteSelect expedientes={expedientes} value={expedienteId} onChange={setExpedienteId} placeholder="— Seleccioná —" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -494,10 +489,7 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
-            <select value={expedienteId} onChange={(e) => setExpedienteId(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-              <option value="">— Sin expediente —</option>
-              {expedientes.map((ex) => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
-            </select>
+            <ExpedienteSelect expedientes={expedientes} value={expedienteId} onChange={setExpedienteId} />
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}
         </div>

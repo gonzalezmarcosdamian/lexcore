@@ -9,6 +9,7 @@ import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
+import { ExpedienteSelect } from "@/components/ui/expediente-select";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -222,10 +223,7 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
-            <select value={expedienteId} onChange={(e) => setExpedienteId(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-              <option value="">— Sin expediente —</option>
-              {expedientes.map((ex) => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
-            </select>
+            <ExpedienteSelect expedientes={expedientes} value={expedienteId} onChange={setExpedienteId} />
           </div>
           {err && <p className="text-xs text-red-500">{err}</p>}
         </div>
@@ -817,10 +815,7 @@ export default function AgendaPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
-                <select value={vencimientoForm.expediente_id} onChange={(e) => setVencimientoForm(f => ({ ...f, expediente_id: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                  <option value="">— Sin expediente —</option>
-                  {expedientes.map((ex) => <option key={ex.id} value={ex.id}>{ex.numero} · {ex.cliente_nombre ?? ex.caratula}</option>)}
-                </select>
+                <ExpedienteSelect expedientes={expedientes} value={vencimientoForm.expediente_id} onChange={id => setVencimientoForm(f => ({ ...f, expediente_id: id }))} ringColor="focus-within:ring-purple-400" />
               </div>
               {vencimientoError && <p className="text-xs text-red-500">{vencimientoError}</p>}
               <div className="flex gap-3 mt-6">
@@ -973,10 +968,7 @@ export default function AgendaPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-ink-700 mb-1.5">Expediente</label>
-                <select value={tareaForm.expediente_id} onChange={(e) => setTareaForm({ ...tareaForm, expediente_id: e.target.value })} className="w-full bg-white border border-ink-200 rounded-xl px-4 py-3 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition">
-                  <option value="">Sin expediente</option>
-                  {expedientes.map((exp) => <option key={exp.id} value={exp.id}>{exp.numero} — {exp.caratula}</option>)}
-                </select>
+                <ExpedienteSelect expedientes={expedientes} value={tareaForm.expediente_id} onChange={id => setTareaForm(f => ({ ...f, expediente_id: id }))} placeholder="Sin expediente" ringColor="focus-within:ring-blue-400" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

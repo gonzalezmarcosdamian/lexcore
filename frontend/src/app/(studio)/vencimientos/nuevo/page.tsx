@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Expediente } from "@/lib/api";
+import { ExpedienteSelect } from "@/components/ui/expediente-select";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -119,19 +120,7 @@ function NuevoVencimientoPageInner() {
             {loadingExp ? (
               <div className="h-10 bg-ink-100 rounded-xl animate-pulse" />
             ) : (
-              <select
-                required
-                value={form.expediente_id}
-                onChange={(e) => setForm({ ...form, expediente_id: e.target.value })}
-                className={inputClass}
-              >
-                <option value="">Seleccionar expediente…</option>
-                {expedientes.map((exp) => (
-                  <option key={exp.id} value={exp.id}>
-                    {exp.numero} — {exp.caratula}
-                  </option>
-                ))}
-              </select>
+              <ExpedienteSelect expedientes={expedientes} value={form.expediente_id} onChange={id => setForm(f => ({ ...f, expediente_id: id }))} placeholder="Seleccionar expediente…" ringColor="focus-within:ring-purple-400" />
             )}
           </div>
         )}
