@@ -76,15 +76,31 @@ def _usuarios_con_cal(db, tenant_id: str):
     ).all()
 
 
+def _caratula_expediente(db, expediente_id: str | None) -> str | None:
+    if not expediente_id:
+        return None
+    from app.models.expediente import Expediente
+    exp = db.query(Expediente).filter(Expediente.id == expediente_id).first()
+    if not exp:
+        return None
+    return f"{exp.numero}{' · ' + exp.caratula if exp.caratula else ''}"
+
+
 def push_vencimiento(db, vencimiento, user_id: str) -> bool:
     """Crea o actualiza el evento de un vencimiento en el calendario de todos los usuarios del tenant."""
     event_id = _make_event_id("vcto", vencimiento.id)
     fecha = vencimiento.fecha
 
+    exp_label = _caratula_expediente(db, vencimiento.expediente_id)
+    desc_parts = [f"Tipo: {vencimiento.tipo or 'vencimiento'}"]
+    if exp_label:
+        desc_parts.append(f"Expediente: {exp_label}")
+    desc_parts.append("Generado por LexCore")
+
     event: dict = {
         "id": event_id,
         "summary": f"📅 {vencimiento.descripcion}",
-        "description": f"Tipo: {vencimiento.tipo}\nExpediente: {vencimiento.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
+        "description": "\n".join(desc_parts),
         "start": {"date": fecha},
         "end": {"date": fecha},
         "reminders": {"useDefault": False, "overrides": [
@@ -132,10 +148,18 @@ def push_tarea(db, tarea, user_id: str) -> bool:
     event_id = _make_event_id("tarea", tarea.id)
     fecha = tarea.fecha_limite
 
+    exp_label = _caratula_expediente(db, tarea.expediente_id)
+    desc_parts = [f"Tipo: {tarea.tipo or 'tarea'}"]
+    if tarea.descripcion:
+        desc_parts.append(tarea.descripcion)
+    if exp_label:
+        desc_parts.append(f"Expediente: {exp_label}")
+    desc_parts.append("Generado por LexCore")
+
     event: dict = {
         "id": event_id,
         "summary": f"✅ {tarea.titulo}",
-        "description": f"Tarea\nExpediente: {tarea.expediente_id or 'Sin expediente'}\nGenerado por LexCore",
+        "description": "\n".join(desc_parts),
         "start": {"date": fecha},
         "end": {"date": fecha},
         "reminders": {"useDefault": False, "overrides": [
