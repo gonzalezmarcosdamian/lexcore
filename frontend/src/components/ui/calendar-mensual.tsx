@@ -29,6 +29,7 @@ interface Props {
   onPrevMes: () => void;
   onNextMes: () => void;
   onClickDia: (fecha: string) => void;
+  onClickEvento?: (ev: CalEvent) => void;
 }
 
 const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -36,7 +37,7 @@ const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "
 
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
-export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, onNextMes, onClickDia }: Props) {
+export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, onNextMes, onClickDia, onClickEvento }: Props) {
   const hoy = new Date().toISOString().split("T")[0];
 
   const { semanas, primerDia } = useMemo(() => {
@@ -139,7 +140,8 @@ export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, on
                             key={ev.id}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (ev.expediente_id) window.location.href = `/expedientes/${ev.expediente_id}`;
+                              if (onClickEvento) onClickEvento(ev);
+                              else if (ev.expediente_id) window.location.href = `/expedientes/${ev.expediente_id}`;
                             }}
                             title={ev.titulo + (ev.hora ? ` · ${ev.hora}` : "")}
                             className={`

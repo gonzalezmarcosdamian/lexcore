@@ -925,6 +925,7 @@ export default function AgendaPage() {
           onPrevMes={handlePrevMes}
           onNextMes={handleNextMes}
           onClickDia={handleClickDia}
+          onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
         />
       )}
 
