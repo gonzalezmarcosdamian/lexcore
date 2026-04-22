@@ -687,6 +687,14 @@ function AgendaWidget({
       if (!map[f]) map[f] = [];
       map[f].push(e);
     }
+    for (const f of Object.keys(map)) {
+      map[f].sort((a, b) => {
+        if (a.hora && b.hora) return a.hora.localeCompare(b.hora);
+        if (a.hora) return -1;
+        if (b.hora) return 1;
+        return 0;
+      });
+    }
     return map;
   }, [eventos]);
 
