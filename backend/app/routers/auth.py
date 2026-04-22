@@ -155,13 +155,16 @@ class GoogleAuthResponse(TokenResponse):
 
 @router.post("/google", response_model=GoogleAuthResponse)
 def google_auth(body: GoogleAuthRequest, db: DbSession):
-    user = (
+    # Buscar por google_id primero, luego por email
+    # Priorizar usuario con studio real sobre registros "pending" incompletos
+    candidates = (
         db.query(User)
         .filter(
             (User.google_id == body.google_id) | (User.email == body.email)
         )
-        .first()
+        .all()
     )
+    user = next((u for u in candidates if u.tenant_id != "pending"), None) or (candidates[0] if candidates else None)
 
     if user:
         # Usuario existente — actualizar refresh token si llegó uno nuevo
@@ -170,6 +173,13 @@ def google_auth(body: GoogleAuthRequest, db: DbSession):
         if not user.google_id:
             user.google_id = body.google_id
             user.auth_provider = AuthProvider.google
+        # Limpiar registros pending huérfanos del mismo email
+        if user.tenant_id != "pending":
+            db.query(User).filter(
+                User.email == body.email,
+                User.tenant_id == "pending",
+                User.id != user.id,
+            ).delete()
         db.commit()
 
         # Si todavía no completó el setup de estudio, reiniciar ese flujo
