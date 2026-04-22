@@ -901,6 +901,7 @@ export default function ExpedienteDetailPage() {
           {/* Honorarios */}
           <SectionCollapsible
             title="Honorarios"
+            count={honorarios.length}
             defaultOpen={false}
             badge={totalHonorariosARS > 0 ? (
               <span className="text-xs text-ink-500 font-normal">
