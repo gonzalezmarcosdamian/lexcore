@@ -50,22 +50,23 @@ def crear_invitacion(
     _require_admin(current_user)
     tenant_id = current_user["studio_id"]
 
-    # Verificar límite de usuarios por plan
-    from app.models.studio import Studio
-    from sqlalchemy import func
-    studio = db.query(Studio).filter(Studio.id == tenant_id).first()
-    if studio:
-        plan = studio.plan or "trial"
-        limite = PLAN_USER_LIMITS.get(plan)
-        if limite is not None:
-            activos = db.query(func.count(User.id)).filter(
-                User.tenant_id == tenant_id,
-            ).scalar() or 0
-            if activos >= limite:
-                raise HTTPException(
-                    status_code=403,
-                    detail={"code": "plan_limit", "plan": plan, "limit": limite, "current": activos},
-                )
+    # Verificar límite de usuarios por plan (superadmin no tiene límite)
+    if not current_user.get("is_superadmin"):
+        from app.models.studio import Studio
+        from sqlalchemy import func
+        studio = db.query(Studio).filter(Studio.id == tenant_id).first()
+        if studio:
+            plan = studio.plan or "trial"
+            limite = PLAN_USER_LIMITS.get(plan)
+            if limite is not None:
+                activos = db.query(func.count(User.id)).filter(
+                    User.tenant_id == tenant_id,
+                ).scalar() or 0
+                if activos >= limite:
+                    raise HTTPException(
+                        status_code=403,
+                        detail={"code": "plan_limit", "plan": plan, "limit": limite, "current": activos},
+                    )
 
     # Verificar que el email no esté ya en el tenant
     existing_user = db.query(User).filter(

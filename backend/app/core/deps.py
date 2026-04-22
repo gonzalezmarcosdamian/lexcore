@@ -41,6 +41,9 @@ def require_full_access(
     from app.models.studio import Studio
     from app.services.subscription_service import get_studio_access_level
 
+    if current_user.get("is_superadmin"):
+        return
+
     studio_id = current_user.get("studio_id")
     studio = db.query(Studio).filter(Studio.id == studio_id).first()
     if studio and get_studio_access_level(studio) == "read_only":
