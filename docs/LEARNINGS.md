@@ -199,6 +199,55 @@ vercel --prod --yes
 **Razón:** La página `/tareas/{id}` necesita obtener un único recurso. Estaba ausente en el router original — se usaba solo el listado filtrado por expediente. Cualquier entidad con página de detalle necesita su endpoint individual.
 **Fix aplicado:** `GET /tareas/{id}` en `backend/app/routers/tareas.py` usando el helper `_get_tarea_or_404` + `_enriquecer` existentes.
 
+## 2026-04-22 (sesión 010-011 — UX, fixes, componentes reutilizables)
+
+### Doble `confirm()` silencia el delete
+**Decisión:** Nunca poner `confirm()` en el `onClick` del botón Y dentro de la función handler. Solo en uno de los dos.
+**Razón:** El usuario ve dos dialogs. Si acepta el primero y cancela el segundo (o viceversa), la acción no se ejecuta. El síntoma es "no puedo borrar" sin error visible.
+**Fix aplicado:** Eliminar el `confirm` del botón y dejarlo solo dentro de `eliminarHonorario()`.
+**Regla:** El confirm vive en el handler, nunca en el JSX.
+
+### `eventosPorFecha` duplicado: siempre incluir el sort
+**Decisión:** Cualquier `useMemo` que construya un `Record<string, CalEvent[]>` debe incluir el sort por hora al final.
+**Razón:** El dashboard tenía su propio `eventosPorFecha` inline (distinto al de `calendar-mensual.tsx`) sin el sort. Los eventos dentro de cada día aparecían en orden de carga, no cronológico.
+**Síntoma:** VI 24 mostraba 09:00, 11:00, 10:00 en lugar de 09:00, 10:00, 11:00.
+**Regla:** Siempre que se duplique lógica de mapa de eventos, copiar también el sort. Mejor aún: extraer a un hook.
+
+```tsx
+for (const f of Object.keys(map)) {
+  map[f].sort((a, b) => {
+    if (a.hora && b.hora) return a.hora.localeCompare(b.hora);
+    if (a.hora) return -1;
+    if (b.hora) return 1;
+    return 0;
+  });
+}
+```
+
+### Selectores escalables: reemplazar `<select>` con búsqueda de texto
+**Decisión:** Todo selector de expediente en la app usa `ExpedienteSelect` (`components/ui/expediente-select.tsx`), no un `<select>` nativo.
+**Razón:** Con decenas de expedientes, un `<select>` no escala — el usuario tiene que scrollear. El componente muestra un input de búsqueda por número, carátula o cliente.
+**Archivos afectados:** `dashboard/page.tsx` (×3), `agenda/page.tsx` (×3), `vencimientos/nuevo/page.tsx`.
+**Regla:** Si aparece un nuevo selector de expediente en cualquier pantalla, usar `ExpedienteSelect`. No agregar `<select>` nuevos.
+**Prop:** `ringColor` para matchear el color de foco del módulo (brand, purple, blue).
+
+### Documentos: componente genérico `DocumentosSection`
+**Decisión:** `components/ui/documentos-section.tsx` reemplaza `AdjuntosInline` en tareas y vencimientos.
+**Razón:** `AdjuntosInline` era un chip minimalista sin capacidades de upload/preview/delete. `DocumentosSection` acepta `tareaId`, `vencimientoId` o `expedienteId` y reutiliza exactamente la misma UI que `DocumentosTab`.
+**Props:** `{ token, expedienteId?, tareaId?, vencimientoId?, onCreated? }` — exactamente uno de los tres IDs debe estar presente.
+**Backend:** El endpoint `GET /documentos` ya soporta los tres parámetros. `POST /documentos/upload` acepta `tarea_id` y `vencimiento_id` como form fields.
+**Regla:** `DocumentosTab` queda para expedientes. `DocumentosSection` para tareas y vencimientos. Cualquier nueva entidad que necesite adjuntos usa `DocumentosSection`.
+
+### Vercel deploy: el CWD persiste entre comandos Bash
+**Decisión:** Siempre que se haga `cd X` en un Bash tool call, en la próxima llamada el CWD sigue siendo `X`.
+**Razón:** El estado del shell persiste entre comandos. Un `cd frontend` dejó el CWD en `frontend/`, y el siguiente `vercel deploy` falló porque Vercel lo interpretó como `frontend/frontend`.
+**Fix:** Usar rutas absolutas explícitas: `cd "c:/..../lexcore" && vercel deploy --prod --yes`.
+**Regla:** Siempre arrancar comandos de deploy con `cd "c:/Users/gonza/OneDrive/Documentos/lexcore"` como prefijo.
+
+### Deploy Vercel con `npx vercel deploy`, no `vercel`
+**Decisión:** Usar `npx vercel deploy --prod --yes` en lugar de `vercel --prod --yes`.
+**Razón:** La instalación global de `vercel` CLI puede estar desactualizada o no disponible. `npx` usa la versión local del proyecto (devDependency) o la más reciente, garantizando consistencia.
+
 ---
 
 ### pydantic[email] obligatorio

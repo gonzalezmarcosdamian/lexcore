@@ -4,6 +4,52 @@
 
 ---
 
+## Sesión 011 — 2026-04-22
+
+**Sprint:** Sprint 15+
+
+### Qué se hizo
+
+**Fix: no se podía borrar honorario — doble confirm**
+- El botón tenía `confirm()` en el JSX y la función `eliminarHonorario` también tenía otro. Dos dialogs seguidos → el usuario cancela el segundo.
+- Fix: eliminar confirm del `onClick`, mantenerlo solo en el handler.
+
+**Fix: orden cronológico en calendar semanal del dashboard**
+- El dashboard tenía su propio `eventosPorFecha` inline sin el sort por hora que sí tiene `calendar-mensual.tsx`.
+- Eventos dentro de un día aparecían en orden de carga, no de hora.
+- Fix: agregar el mismo bloque `sort()` al `useMemo` del dashboard.
+
+**Feat: selector de expediente con búsqueda de texto — `ExpedienteSelect`**
+- Nuevo componente `components/ui/expediente-select.tsx`
+- Dropdown con input de búsqueda: filtra por número, carátula y cliente en tiempo real
+- Reemplazó todos los `<select>` nativos de expediente en: `dashboard/page.tsx` (×3), `agenda/page.tsx` (×3), `vencimientos/nuevo/page.tsx`
+- Prop `ringColor` para adaptar el color de foco al módulo
+
+**Feat: documentos completos en detalle de tarea y vencimiento**
+- Nuevo componente genérico `components/ui/documentos-section.tsx`
+- Misma UX que `DocumentosTab` (drag-drop, preview, descarga, reordenar, label editable, eliminar)
+- Acepta `tareaId`, `vencimientoId` o `expedienteId`
+- Reemplazó `AdjuntosInline` en `/tareas/[id]` y `/vencimientos/[id]`
+
+### Errores encontrados y cómo se resolvieron
+
+| Error | Causa | Fix |
+|-------|-------|-----|
+| "No puedo borrar honorario" | Doble `confirm()` en botón y handler | Dejar confirm solo en el handler |
+| Eventos del día desordenados | `eventosPorFecha` del dashboard sin sort | Agregar bloque sort al useMemo |
+| `vercel deploy` falla con path `frontend/frontend` | CWD quedó en `frontend/` tras `cd frontend` en Bash tool | Usar rutas absolutas en todos los comandos de deploy |
+
+### Decisiones tomadas
+- `ExpedienteSelect` es el único componente válido para seleccionar expediente en cualquier modal/formulario. No crear `<select>` nuevos.
+- `DocumentosSection` para tareas/vencimientos. `DocumentosTab` solo para expedientes.
+
+### Pendiente (próxima sesión)
+- **Cuenta corriente cliente (Opción B)**: campo `cliente_id` en `Ingreso`, sección en detalle del cliente con todos los ingresos asociados
+- **Mejorar row de honorarios**: mostrar cantidad de pagos, fecha último pago, saldo más prominente
+- Mejorar row de honorarios en expediente (estético)
+
+---
+
 ## Sesión 010 — 2026-04-22
 
 **Sprint:** Sprint 15 / Versión estable v0.16.0
