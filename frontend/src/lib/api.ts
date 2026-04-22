@@ -39,7 +39,9 @@ async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
       throw new Error("Sesión expirada");
     }
     const error = await res.json().catch(() => ({ detail: "Error desconocido" }));
-    throw new Error(error.detail ?? "Error del servidor");
+    if (res.status === 402) throw new Error("Tu plan venció. Suscribite para continuar.");
+    const detail = error.detail;
+    throw new Error(typeof detail === "string" ? detail : detail?.message ?? JSON.stringify(detail) ?? "Error del servidor");
   }
 
   if (res.status === 204) return undefined as T;
