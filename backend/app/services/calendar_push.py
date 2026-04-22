@@ -92,7 +92,7 @@ def push_vencimiento(db, vencimiento, user_id: str) -> bool:
     fecha = vencimiento.fecha
 
     exp_label = _caratula_expediente(db, vencimiento.expediente_id)
-    desc_parts = [f"Tipo: {vencimiento.tipo or 'vencimiento'}"]
+    desc_parts = [f"Tipo: {str(vencimiento.tipo.value if hasattr(vencimiento.tipo, 'value') else vencimiento.tipo) or 'vencimiento'}"]
     if exp_label:
         desc_parts.append(f"Expediente: {exp_label}")
     desc_parts.append("Generado por LexCore")
@@ -149,7 +149,7 @@ def push_tarea(db, tarea, user_id: str) -> bool:
     fecha = tarea.fecha_limite
 
     exp_label = _caratula_expediente(db, tarea.expediente_id)
-    desc_parts = [f"Tipo: {tarea.tipo or 'tarea'}"]
+    desc_parts = [f"Tipo: {str(tarea.tipo.value if hasattr(tarea.tipo, 'value') else tarea.tipo) or 'tarea'}"]
     if tarea.descripcion:
         desc_parts.append(tarea.descripcion)
     if exp_label:
