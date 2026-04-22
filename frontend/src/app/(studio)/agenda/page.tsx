@@ -892,6 +892,16 @@ export default function AgendaPage() {
           </button>
         </div>
 
+        {/* Vista calendario — mobile */}
+        {vista === "calendario" && (
+          <CalendarioMensual
+            anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
+            onPrevMes={handlePrevMes} onNextMes={handleNextMes}
+            onClickDia={handleClickDia}
+            onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
+          />
+        )}
+
         {/* Vista lista */}
         {vista === "tablero" && (
           loading ? <Skeleton /> : (
@@ -935,15 +945,6 @@ export default function AgendaPage() {
           )
         )}
 
-        {/* Vista calendario */}
-        {vista === "calendario" && (
-          <CalendarioMensual
-            anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
-            onPrevMes={handlePrevMes} onNextMes={handleNextMes}
-            onClickDia={handleClickDia}
-            onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
-          />
-        )}
       </div>
 
       {/* ════════════════════════════════════════════
@@ -996,6 +997,16 @@ export default function AgendaPage() {
           </div>
         )}
 
+        {/* Calendario desktop */}
+        {vista === "calendario" && (
+          <CalendarioMensual
+            anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
+            onPrevMes={handlePrevMes} onNextMes={handleNextMes}
+            onClickDia={handleClickDia}
+            onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
+          />
+        )}
+
         {/* Tablero desktop */}
         {vista === "tablero" && (
           loading ? (
@@ -1012,30 +1023,7 @@ export default function AgendaPage() {
           )
         )}
 
-        {/* Calendario desktop */}
-        {vista === "calendario" && (
-          <CalendarioMensual
-            anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
-            onPrevMes={handlePrevMes} onNextMes={handleNextMes}
-            onClickDia={handleClickDia}
-            onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
-          />
-        )}
       </div>
-
-      {/* Vista Calendario */}
-      {vista === "calendario" && (
-        <CalendarioMensual
-          anio={calAnio}
-          mes={calMes}
-          eventos={eventosCalendario}
-          inhabiles={inhabiles}
-          onPrevMes={handlePrevMes}
-          onNextMes={handleNextMes}
-          onClickDia={handleClickDia}
-          onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
-        />
-      )}
 
 
       {/* Modal: Nueva tarea */}

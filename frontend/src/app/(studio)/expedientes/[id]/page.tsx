@@ -136,14 +136,38 @@ function SectionCollapsible({ title, count, badge, children, defaultOpen = false
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const LOCALIDADES_ARG = [
-  "Buenos Aires, CABA","La Plata, Buenos Aires","Mar del Plata, Buenos Aires","Quilmes, Buenos Aires",
-  "Lomas de Zamora, Buenos Aires","Morón, Buenos Aires","San Isidro, Buenos Aires","San Martín, Buenos Aires",
-  "Lanús, Buenos Aires","Bahía Blanca, Buenos Aires","Córdoba, Córdoba","Rosario, Santa Fe",
-  "Santa Fe, Santa Fe","Mendoza, Mendoza","Tucumán, Tucumán","Salta, Salta","Resistencia, Chaco",
-  "Corrientes, Corrientes","Posadas, Misiones","Neuquén, Neuquén","Río Gallegos, Santa Cruz",
-  "Ushuaia, Tierra del Fuego","Rawson, Chubut","Viedma, Río Negro","Santa Rosa, La Pampa",
-  "San Luis, San Luis","San Juan, San Juan","La Rioja, La Rioja","Catamarca, Catamarca",
-  "Santiago del Estero, Santiago del Estero","Jujuy, Jujuy","Formosa, Formosa","Paraná, Entre Ríos",
+  // Córdoba (provincia)
+  "Córdoba, Córdoba",
+  "Alta Gracia, Córdoba","Arroyito, Córdoba","Bell Ville, Córdoba","Capilla del Monte, Córdoba",
+  "Carlos Paz, Córdoba","Colonia Caroya, Córdoba","Cosquín, Córdoba","Cruz del Eje, Córdoba",
+  "Dean Funes, Córdoba","Hernando, Córdoba","Jesús María, Córdoba","La Carlota, Córdoba",
+  "La Falda, Córdoba","Laboulaye, Córdoba","Leones, Córdoba","Malagueño, Córdoba",
+  "Marcos Juárez, Córdoba","Mendiolaza, Córdoba","Mina Clavero, Córdoba","Monte Cristo, Córdoba",
+  "Morteros, Córdoba","Oliva, Córdoba","Oncativo, Córdoba","Pilar, Córdoba","Río Ceballos, Córdoba",
+  "Río Cuarto, Córdoba","Río Primero, Córdoba","Río Segundo, Córdoba","Río Tercero, Córdoba",
+  "Salsipuedes, Córdoba","San Francisco, Córdoba","San Marcos Sierras, Córdoba",
+  "Unquillo, Córdoba","Villa Allende, Córdoba","Villa del Rosario, Córdoba",
+  "Villa Dolores, Córdoba","Villa General Belgrano, Córdoba","Villa María, Córdoba",
+  // Buenos Aires
+  "Buenos Aires, CABA","La Plata, Buenos Aires","Mar del Plata, Buenos Aires",
+  "Quilmes, Buenos Aires","Lomas de Zamora, Buenos Aires","Morón, Buenos Aires",
+  "San Isidro, Buenos Aires","San Martín, Buenos Aires","Lanús, Buenos Aires",
+  "Bahía Blanca, Buenos Aires","Tigre, Buenos Aires","Berazategui, Buenos Aires",
+  "Florencio Varela, Buenos Aires","Merlo, Buenos Aires","Moreno, Buenos Aires",
+  "Tres de Febrero, Buenos Aires","Vicente López, Buenos Aires","Avellaneda, Buenos Aires",
+  "Almirante Brown, Buenos Aires","Esteban Echeverría, Buenos Aires","Tandil, Buenos Aires",
+  "Pergamino, Buenos Aires","Junín, Buenos Aires","San Nicolás, Buenos Aires","Zárate, Buenos Aires",
+  // Resto del país
+  "Rosario, Santa Fe","Santa Fe, Santa Fe","Rafaela, Santa Fe","Venado Tuerto, Santa Fe",
+  "Mendoza, Mendoza","San Rafael, Mendoza","Godoy Cruz, Mendoza",
+  "Tucumán, Tucumán","Salta, Salta","Resistencia, Chaco","Corrientes, Corrientes",
+  "Posadas, Misiones","Neuquén, Neuquén","Cipolletti, Río Negro","Bariloche, Río Negro",
+  "Río Gallegos, Santa Cruz","Caleta Olivia, Santa Cruz","Ushuaia, Tierra del Fuego",
+  "Rawson, Chubut","Comodoro Rivadavia, Chubut","Trelew, Chubut",
+  "Viedma, Río Negro","Santa Rosa, La Pampa","General Pico, La Pampa",
+  "San Luis, San Luis","San Juan, San Juan","La Rioja, La Rioja",
+  "Catamarca, Catamarca","Santiago del Estero, Santiago del Estero",
+  "Jujuy, Jujuy","Formosa, Formosa","Paraná, Entre Ríos","Concordia, Entre Ríos",
 ];
 
 const ESTADO_BADGE: Record<EstadoExpediente, string> = {
@@ -507,9 +531,9 @@ export default function ExpedienteDetailPage() {
               </span>
             </div>
             <p className="text-base text-ink-600 mt-1">{expediente.caratula}</p>
-            {(expediente.fuero || expediente.juzgado) && (
+            {(expediente.juzgado || expediente.localidad || expediente.fuero) && (
               <p className="text-sm text-ink-400 mt-0.5">
-                {[expediente.fuero, expediente.juzgado].filter(Boolean).join(" · ")}
+                {[expediente.juzgado, expediente.localidad, expediente.fuero].filter(Boolean).join(" · ")}
               </p>
             )}
           </div>
