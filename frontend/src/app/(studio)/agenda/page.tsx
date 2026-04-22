@@ -8,6 +8,7 @@ import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
+import { VencimientoDetailModal, TareaDetailModal } from "@/components/features/evento-detail-modal";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -240,7 +241,7 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
 // ── Tarjeta Vencimiento ───────────────────────────────────────────────────────
 
 function VencimientoCard({
-  v, exp, token, onToggle, onEdit, onDelete, draggable: isDraggable, onDragStart,
+  v, exp, token, onToggle, onEdit, onDelete, onDetail, draggable: isDraggable, onDragStart,
 }: {
   v: Vencimiento;
   exp?: Expediente;
@@ -248,6 +249,7 @@ function VencimientoCard({
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDetail?: () => void;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
 }) {
@@ -276,7 +278,7 @@ function VencimientoCard({
           {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
           {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
         </div>
-        <p className={`text-sm font-medium leading-snug ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</p>
+        <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</button>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-xs text-ink-400">{formatFecha(v.fecha)}{v.hora ? ` · ${v.hora}` : ""}</span>
           {exp ? (
@@ -315,7 +317,7 @@ function VencimientoCard({
 const TIPO_TAREA_LABEL: Record<string, string> = { judicial: "⚖️", extrajudicial: "🤝", administrativa: "🏢", operativa: "🔧" };
 
 function TareaCard({
-  t, exp, token, onToggle, onEdit, onDelete, draggable: isDraggable, onDragStart,
+  t, exp, token, onToggle, onEdit, onDelete, onDetail, draggable: isDraggable, onDragStart,
 }: {
   t: Tarea;
   exp?: Expediente;
@@ -323,6 +325,7 @@ function TareaCard({
   onToggle: (estado: TareaEstado) => void;
   onEdit: () => void;
   onDelete: () => void;
+  onDetail?: () => void;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
 }) {
@@ -349,7 +352,7 @@ function TareaCard({
           </span>
           {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencida</span>}
         </div>
-        <p className={`text-sm font-medium leading-snug ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>{t.titulo}</p>
+        <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>{t.titulo}</button>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           {t.fecha_limite && <span className="text-xs text-ink-400">{formatFecha(t.fecha_limite)}{t.hora ? ` · ${t.hora}` : ""}</span>}
           {t.responsable_nombre && (
@@ -414,6 +417,7 @@ function AgendaTablero({
   onToggleVenc, onToggleTarea,
   onEditVenc, onEditTarea,
   onDeleteVenc, onDeleteTarea,
+  onDetailVenc, onDetailTarea,
 }: {
   vencimientos: Vencimiento[];
   tareas: Tarea[];
@@ -425,6 +429,8 @@ function AgendaTablero({
   onEditTarea: (t: Tarea) => void;
   onDeleteVenc: (id: string) => void;
   onDeleteTarea: (id: string) => void;
+  onDetailVenc: (v: Vencimiento) => void;
+  onDetailTarea: (t: Tarea) => void;
 }) {
   const [dragOver, setDragOver] = useState<KanbanCol | null>(null);
   const dragRef = useRef<{ type: "v" | "t"; id: string } | null>(null);
@@ -494,6 +500,7 @@ function AgendaTablero({
                   onToggle={() => onToggleVenc(v)}
                   onEdit={() => onEditVenc(v)}
                   onDelete={() => onDeleteVenc(v.id)}
+                  onDetail={() => onDetailVenc(v)}
                 />
               ))}
               {ts.map(t => (
@@ -507,6 +514,7 @@ function AgendaTablero({
                   onToggle={(estado) => onToggleTarea(t, estado)}
                   onEdit={() => onEditTarea(t)}
                   onDelete={() => onDeleteTarea(t.id)}
+                  onDetail={() => onDetailTarea(t)}
                 />
               ))}
               {total === 0 && (
@@ -547,6 +555,8 @@ export default function AgendaPage() {
 
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
+  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
+  const [detailT, setDetailT] = useState<Tarea | null>(null);
 
   const [filtroTipoVenc, setFiltroTipoVenc] = useState<string>("");
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
@@ -728,6 +738,12 @@ export default function AgendaPage() {
       {editingT && token && (
         <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
       )}
+      {detailV && (
+        <VencimientoDetailModal v={detailV} exp={expLookup[detailV.expediente_id]} onClose={() => setDetailV(null)} onEdit={() => { setDetailV(null); setEditingV(detailV); }} />
+      )}
+      {detailT && (
+        <TareaDetailModal t={detailT} exp={detailT.expediente_id ? expLookup[detailT.expediente_id] : undefined} onClose={() => setDetailT(null)} onEdit={() => { setDetailT(null); setEditingT(detailT); }} />
+      )}
 
       {diaPickerFecha && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
@@ -900,6 +916,8 @@ export default function AgendaPage() {
             onEditTarea={setEditingT}
             onDeleteVenc={deleteVencimiento}
             onDeleteTarea={deleteTarea}
+            onDetailVenc={setDetailV}
+            onDetailTarea={setDetailT}
           />
         )
       )}

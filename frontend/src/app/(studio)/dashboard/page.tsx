@@ -9,6 +9,7 @@ import { SplashScreen } from "@/components/ui/splash-screen";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
+import { TareaDetailModal, VencimientoDetailModal } from "@/components/features/evento-detail-modal";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -51,6 +52,8 @@ export default function DashboardPage() {
   const [deletingT, setDeletingT] = useState<string | null>(null);
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
+  const [detailV, setDetailV] = useState<Vencimiento | null>(null);
+  const [detailT, setDetailT] = useState<Tarea | null>(null);
   const [showNewTarea, setShowNewTarea] = useState(false);
   const [showNewVenc, setShowNewVenc] = useState(false);
   const [expLookup, setExpLookup] = useState<Record<string, Expediente>>({});
@@ -190,6 +193,8 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-20 lg:pb-6">
       {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
+      {detailT && <TareaDetailModal t={detailT} exp={expLookup[detailT.expediente_id ?? ""]} onClose={() => setDetailT(null)} onEdit={() => setEditingT(detailT)} />}
+      {detailV && <VencimientoDetailModal v={detailV} exp={expLookup[detailV.expediente_id ?? ""]} onClose={() => setDetailV(null)} onEdit={() => setEditingV(detailV)} />}
       {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} clientes={clientes} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
       {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
@@ -237,9 +242,11 @@ export default function DashboardPage() {
             onShowNewTarea={() => setShowNewTarea(true)}
             onShowNewVenc={() => setShowNewVenc(true)}
             onCumplido={handleCumplido}
+            onDetailV={setDetailV}
             onEditV={setEditingV}
             onDeleteV={handleDeleteVencimiento}
             onHecha={handleTareaHecha}
+            onDetailT={setDetailT}
             onEditT={setEditingT}
             onDeleteT={handleDeleteTarea}
           />
@@ -562,12 +569,13 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
   );
 }
 
-function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: {
+function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, onDetail, marking, deleting }: {
   tarea: Tarea;
   exp?: Expediente;
   onHecha: (id: string) => void;
   onEdit: (t: Tarea) => void;
   onDelete: (id: string) => void;
+  onDetail: (t: Tarea) => void;
   marking: string | null;
   deleting: string | null;
 }) {
@@ -580,7 +588,7 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, marking, deleting }: 
         tarea.estado === "hecha" ? "bg-green-500" : tarea.estado === "en_curso" ? "bg-blue-400" : "bg-ink-300"
       }`} />
       <div className="flex-1 min-w-0">
-        <Link href="/agenda" className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{tarea.titulo}</Link>
+        <button onClick={() => onDetail(tarea)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{tarea.titulo}</button>
         {exp && (
           <Link href={`/expedientes/${exp.id}`} className="text-xs text-ink-400 truncate block max-w-[180px] hover:text-brand-600 transition">
             {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
@@ -625,6 +633,7 @@ function AgendaWidget({
   eventos, inhabiles, vencimientosHoy, urgentes, tareasHoy, expLookup,
   marking, markingTarea, deletingV, deletingT,
   onShowNewTarea, onShowNewVenc, onCumplido, onEditV, onDeleteV, onHecha, onEditT, onDeleteT,
+  onDetailV, onDetailT,
 }: {
   eventos: CalEvent[];
   inhabiles: DiaInhabil[];
@@ -637,6 +646,7 @@ function AgendaWidget({
   onShowNewTarea: () => void; onShowNewVenc: () => void;
   onCumplido: (id: string) => void; onEditV: (v: Vencimiento) => void; onDeleteV: (id: string) => void;
   onHecha: (id: string) => void; onEditT: (t: Tarea) => void; onDeleteT: (id: string) => void;
+  onDetailV: (v: Vencimiento) => void; onDetailT: (t: Tarea) => void;
 }) {
   const hoy = new Date();
   const todayStr = hoy.toISOString().split("T")[0];
@@ -751,10 +761,21 @@ function AgendaWidget({
                         e.color === "purple" ? "bg-purple-400" :
                         e.color === "blue"   ? "bg-blue-400" : "bg-amber-400";
                       return (
-                        <div key={j} className={`flex items-center gap-1 px-1.5 py-1 rounded-md border text-[10px] font-medium truncate ${colorCls}`}>
+                        <button
+                          key={j}
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            if (e.tipo === "vencimiento") {
+                              onDetailV({ id: e.id, descripcion: e.titulo, fecha: (e as any).fecha, tipo: "", cumplido: e.cumplido ?? false, expediente_id: e.expediente_id ?? "", hora: e.hora } as Vencimiento);
+                            } else {
+                              onDetailT({ id: e.id, titulo: e.titulo, estado: (e.estado ?? "pendiente") as Tarea["estado"], fecha_limite: (e as any).fecha_limite, expediente_id: e.expediente_id, hora: e.hora } as Tarea);
+                            }
+                          }}
+                          className={`w-full flex items-center gap-1 px-1.5 py-1 rounded-md border text-[10px] font-medium truncate text-left hover:opacity-80 transition ${colorCls}`}
+                        >
                           <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotCls}`} />
                           <span className="truncate">{e.hora ? `${e.hora} ` : ""}{e.titulo}</span>
-                        </div>
+                        </button>
                       );
                     })}
                     {evs.length > 4 && (
@@ -806,10 +827,10 @@ function AgendaWidget({
             {eventosDelDia.map(ev => {
               if (ev.tipo === "vencimiento") {
                 const v = { id: ev.id, descripcion: ev.titulo, fecha: (ev as any).fecha, tipo: "", cumplido: ev.cumplido ?? false, expediente_id: ev.expediente_id ?? "", hora: ev.hora } as Vencimiento;
-                return <VencimientoRow key={ev.id} v={v} exp={expLookup[ev.expediente_id ?? ""]} onCumplido={onCumplido} onEdit={onEditV} onDelete={onDeleteV} marking={marking} deleting={deletingV} />;
+                return <VencimientoRow key={ev.id} v={v} exp={expLookup[ev.expediente_id ?? ""]} onCumplido={onCumplido} onEdit={onEditV} onDelete={onDeleteV} onDetail={onDetailV} marking={marking} deleting={deletingV} />;
               } else {
                 const t = { id: ev.id, titulo: ev.titulo, estado: (ev.estado ?? "pendiente") as Tarea["estado"], fecha_limite: (ev as any).fecha_limite, expediente_id: ev.expediente_id, hora: ev.hora } as Tarea;
-                return <TareaRow key={ev.id} tarea={t} exp={expLookup[ev.expediente_id ?? ""]} onHecha={onHecha} onEdit={onEditT} onDelete={onDeleteT} marking={markingTarea} deleting={deletingT} />;
+                return <TareaRow key={ev.id} tarea={t} exp={expLookup[ev.expediente_id ?? ""]} onHecha={onHecha} onEdit={onEditT} onDelete={onDeleteT} onDetail={onDetailT} marking={markingTarea} deleting={deletingT} />;
               }
             })}
           </div>
@@ -819,12 +840,13 @@ function AgendaWidget({
   );
 }
 
-function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, marking, deleting }: {
+function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, marking, deleting }: {
   v: Vencimiento;
   exp?: Expediente;
   onCumplido: (id: string) => void;
   onEdit: (v: Vencimiento) => void;
   onDelete: (id: string) => void;
+  onDetail: (v: Vencimiento) => void;
   marking: string | null;
   deleting: string | null;
 }) {
@@ -836,7 +858,7 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, marking, deletin
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
       <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.cumplido ? "bg-green-500" : urg || vencida ? "bg-red-400" : warning ? "bg-amber-400" : "bg-purple-300"}`} />
       <div className="flex-1 min-w-0">
-        <Link href="/agenda" className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition">{v.descripcion}</Link>
+        <button onClick={() => onDetail(v)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{v.descripcion}</button>
         {exp ? (
           <Link href={`/expedientes/${exp.id}`} className="text-xs text-ink-400 truncate block max-w-[180px] hover:text-brand-600 transition">
             {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
