@@ -188,19 +188,26 @@ export function TareaDetailSheet({ tareaId, token, onClose, onDeleted, onUpdated
                     </div>
                   )}
                   {exp && (
-                    <div className="flex justify-between items-start gap-3 py-2.5">
-                      <span className="text-sm text-ink-400 flex-shrink-0">Expediente</span>
-                      <div className="text-right">
-                        <Link href={`/expedientes/${exp.id}`} onClick={onClose} className="text-xs font-medium text-brand-600 leading-snug">
+                    <>
+                      <div className="flex justify-between items-start gap-3 py-2.5">
+                        <span className="text-sm text-ink-400 flex-shrink-0">Expediente</span>
+                        <Link href={`/expedientes/${exp.id}`} onClick={onClose} className="text-xs font-medium text-brand-600 text-right leading-snug">
                           {exp.numero}{exp.caratula ? ` · ${exp.caratula}` : ""}
                         </Link>
-                        {[exp.juzgado, exp.localidad].filter(v => v && v.trim()).length > 0 && (
-                          <p className="text-[11px] text-ink-400 mt-0.5">
-                            {[exp.juzgado, exp.localidad].filter(v => v && v.trim()).join(" · ")}
-                          </p>
-                        )}
                       </div>
-                    </div>
+                      {exp.juzgado && (
+                        <div className="flex justify-between items-start gap-3 py-2.5">
+                          <span className="text-sm text-ink-400 flex-shrink-0">Tribunal</span>
+                          <span className="text-xs text-ink-700 text-right">{exp.juzgado}</span>
+                        </div>
+                      )}
+                      {exp.localidad && (
+                        <div className="flex justify-between items-start gap-3 py-2.5">
+                          <span className="text-sm text-ink-400 flex-shrink-0">Localidad</span>
+                          <span className="text-xs text-ink-700 text-right">{exp.localidad}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                   {tarea.descripcion && (
                     <div className="py-2.5">
