@@ -4,9 +4,9 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-22
-**Sprint activo:** Sprint 15 — COMPLETADO
-**Versión:** 0.18.0
+**Última actualización:** 2026-04-23
+**Sprint activo:** Sprint 16 — COMPLETADO
+**Versión:** 0.19.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -19,9 +19,9 @@
 ## Resumen ejecutivo
 
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
-**Versión estable taggeada:** `v0.16.0` — 2026-04-22
+**Versión estable taggeada:** `v0.19.0` — 2026-04-23
 
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos (drag-drop, preview, reordenar), navegación desde todos los puntos de la app. Google OAuth sin re-prompt de permisos. Selector de expediente con búsqueda de texto en todos los modales. Cuenta corriente de cliente (honorarios + pagos + ingresos por expediente e ingresos directos). Agenda mobile rediseñada con componente unificado touch-first.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos (drag-drop, preview, reordenar), navegación desde todos los puntos de la app. Google OAuth sin re-prompt de permisos. Selector de expediente con búsqueda de texto en todos los modales. Cuenta corriente de cliente (honorarios + pagos + ingresos por expediente e ingresos directos). Agenda mobile rediseñada con componente unificado touch-first. `flag_paralizado` en Tareas y Expedientes con efecto visual congelado. Tribunal/localidad en detalle de tarea/vencimiento. Navegación mobile desde dashboard/agenda abre bottom sheet.**
 
 ---
 
@@ -296,6 +296,33 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 **Nuevos endpoints:** `GET /tareas/{id}`, `GET|POST|DELETE /tareas/{id}/notas`, `GET|POST|DELETE /vencimientos/{id}/notas`
 **Nuevas páginas:** `/tareas/[id]`, `/vencimientos/[id]`
 **Componente modificado:** `calendar-mensual.tsx` — nuevo prop `onClickEvento`
+
+### Sprint 16 — COMPLETADO (2026-04-23)
+
+#### AGENDA-PAR-001 · flag_paralizado en Tareas ✓
+- [x] Botón "Paralizar" en kanban de tareas (toggle)
+- [x] Filtro "Paralizadas" en agenda (mobile y desktop) — oculta vencimientos cuando activo
+- [x] Efecto visual congelado en TareaCard: gradiente icy azul + footer con copo de nieve
+- [x] Kanban reducido a 2 columnas (Pendientes + Hechas)
+- [x] FilterGroup apila filtros verticalmente (feedback WhatsApp)
+
+#### AGENDA-PAR-002 · flag_paralizado en Expedientes ✓
+- [x] Columna `flag_paralizado` en tabla `expedientes` — migración `5fa0ba36dbc4`
+- [x] Schema `ExpedienteUpdate` y `ExpedienteOut` actualizados
+- [x] Botón "Paralizar/Paralizado" en header de detalle de expediente
+- [x] Botones de estado (Activo/Archivado/Cerrado) en header — removidos del modal de edición
+- [x] Efecto visual congelado en listado: row + footer con borde icy y copo de nieve (inline styles para evitar JIT miss)
+- [x] Misma lógica en cards mobile
+
+#### UX-DETAIL-002 · Tribunal/Localidad en detalles ✓
+- [x] Tribunal y Localidad del expediente en bottom sheets de Tarea y Vencimiento
+- [x] Tribunal y Localidad en páginas desktop `/tareas/[id]` y `/vencimientos/[id]`
+
+#### FIX-NAV-001 · Navegación mobile desde dashboard ✓
+- [x] `onDetailV`/`onDetailT` en dashboard abren bottom sheet en mobile (<1024px) en vez de navegar a página de detalle (que redirigía a `/agenda`)
+
+**Migraciones:** `5fa0ba36dbc4` (flag_paralizado en expedientes)
+**Archivos clave:** `expedientes/page.tsx`, `expedientes/[id]/page.tsx`, `agenda/page.tsx`, `dashboard/page.tsx`, `tarea-detail-sheet.tsx`, `vencimiento-detail-sheet.tsx`, `tareas/[id]/page.tsx`, `vencimientos/[id]/page.tsx`, `filter-pills.tsx`
 
 ---
 

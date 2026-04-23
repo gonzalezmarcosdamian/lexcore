@@ -4,6 +4,42 @@
 
 ---
 
+## Sesión 013 — 2026-04-23
+
+**Sprint:** Sprint 16
+
+### Qué se hizo
+
+**Feat: flag_paralizado en Tareas (agenda)**
+- Botón "Paralizar" toggle en cards de kanban
+- Filtro "Paralizadas" en agenda mobile y desktop (oculta vencimientos cuando está activo)
+- Efecto visual congelado: gradiente icy azul + footer con copo de nieve en TareaCard y AgendaItemMobile
+- Kanban reducido a 2 columnas
+- FilterGroup pasa a stack vertical (feedback usuario)
+
+**Feat: flag_paralizado en Expedientes**
+- Migración `5fa0ba36dbc4` — columna `flag_paralizado` con `server_default=false`
+- Botón toggle en header del detalle del expediente
+- Estado (Activo/Archivado/Cerrado) movido al header como button group, removido del modal de edición
+- Listado: efecto congelado con inline styles (Tailwind JIT no compila clases condicionales con opacity modifiers)
+- `React.Fragment` necesario para retornar múltiples `<tr>` en `.map()`
+
+**Fix: Tribunal/Localidad en páginas de detalle**
+- Añadidos en bottom sheets (TareaDetailSheet, VencimientoDetailSheet)
+- Añadidos en páginas desktop `/tareas/[id]` y `/vencimientos/[id]`
+
+**Fix: Navegación mobile desde dashboard**
+- `onDetailV`/`onDetailT` en dashboard ahora abren bottom sheet en mobile (window.innerWidth < 1024) en vez de navegar a la página de detalle (que redirigía a /agenda)
+
+### Decisiones técnicas
+- Inline styles obligatorios para clases Tailwind con opacity (`/60`) o variantes complejas en expresiones condicionales — JIT no las genera
+- `server_default=sa.text('false')` obligatorio al agregar columna NOT NULL bool a tabla existente
+
+### Versión taggeada
+`v0.19.0`
+
+---
+
 ## Sesión 012 — 2026-04-22
 
 **Sprint:** Sprint 15+
