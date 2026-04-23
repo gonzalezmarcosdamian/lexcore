@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PageHelp } from "@/components/ui/page-help";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -674,14 +675,11 @@ function PerfilPageInner() {
             </div>
             <div>
               <label className={labelCls}>Dirección</label>
-              <div className="relative">
-                <input value={studioForm.direccion} onChange={(e) => setStudioForm({ ...studioForm, direccion: e.target.value })} className={`${inputCls} pr-10`} placeholder="Av. Corrientes 1234, CABA" />
-                {mapsUrl && (
-                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-300 hover:text-brand-500 transition">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  </a>
-                )}
-              </div>
+              <AddressAutocomplete
+                value={studioForm.direccion}
+                onChange={(_val, rawText) => setStudioForm({ ...studioForm, direccion: rawText })}
+                placeholder="Av. Corrientes 1234, CABA"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
