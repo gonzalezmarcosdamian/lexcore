@@ -810,7 +810,7 @@ export default function AgendaPage() {
   };
 
   const { desde, hasta } = getDatesFromValue(periodoValue);
-  const vFiltradas = vencimientos.filter(v => v.fecha >= desde && v.fecha <= hasta && (!filtroTipoVenc || v.tipo === filtroTipoVenc));
+  const vFiltradas = filtroParalizado ? [] : vencimientos.filter(v => v.fecha >= desde && v.fecha <= hasta && (!filtroTipoVenc || v.tipo === filtroTipoVenc));
   const tFiltradas = tareas.filter(t =>
     (!t.fecha_limite || (t.fecha_limite >= desde && t.fecha_limite <= hasta)) &&
     (!filtroTipoTarea || t.tipo === filtroTipoTarea) &&
