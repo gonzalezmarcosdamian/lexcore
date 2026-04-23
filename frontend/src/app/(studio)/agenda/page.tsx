@@ -377,7 +377,7 @@ function TareaCard({
         onDragStart={onDragStart}
         className={`group rounded-xl border overflow-hidden transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
           t.estado === "hecha" ? "bg-green-50 border-green-100 opacity-70" :
-          paralizada           ? "bg-orange-50 border-orange-200" :
+          paralizada           ? "bg-gradient-to-br from-slate-100/90 via-blue-50/60 to-slate-100/90 border-blue-200" :
           vencida              ? "bg-red-50 border-red-200" :
                                  "bg-white border-ink-100 hover:border-ink-200"
         }`}
@@ -425,9 +425,11 @@ function TareaCard({
         </div>
       </div>
         {paralizada && (
-          <div className="flex items-center gap-1.5 px-4 py-1.5 bg-orange-100 border-t border-orange-200">
-            <svg className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-            <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wide">Paralizada</span>
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-blue-100/70 via-slate-100/80 to-blue-100/70 border-t border-blue-200/60">
+            <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
+            </svg>
+            <span className="text-[10px] font-bold text-blue-400/90 uppercase tracking-[0.2em]">Paralizada</span>
           </div>
         )}
       </div>
@@ -474,7 +476,7 @@ function AgendaItemMobile({
       onClick={onNavigate}
       className={`w-full text-left rounded-xl border overflow-hidden transition active:scale-[0.99] ${
         hecho           ? "bg-green-50/60 border-green-100 opacity-75" :
-        isParalizado    ? "bg-orange-50 border-orange-200" :
+        isParalizado    ? "bg-gradient-to-br from-slate-100/90 via-blue-50/60 to-slate-100/90 border-blue-200" :
         isVencido       ? "bg-red-50 border-red-200" :
         isUrgente       ? "bg-amber-50 border-amber-200" :
                           "bg-white border-ink-100"
@@ -501,9 +503,11 @@ function AgendaItemMobile({
         </span>
       </div>
       {isParalizado && !hecho && (
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 border-t border-orange-200">
-          <svg className="w-3 h-3 text-orange-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wide">Paralizada</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-100/70 via-slate-100/80 to-blue-100/70 border-t border-blue-200/60">
+          <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
+          </svg>
+          <span className="text-[10px] font-bold text-blue-400/90 uppercase tracking-[0.2em]">Paralizada</span>
         </div>
       )}
     </button>
@@ -1008,7 +1012,7 @@ export default function AgendaPage() {
         <div className="flex gap-2">
           <button
             onClick={() => setFiltroParalizado(p => !p)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-orange-100 text-orange-700 border-orange-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
           >
             <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
             Solo paralizadas
@@ -1180,7 +1184,7 @@ export default function AgendaPage() {
               />
               <button
                 onClick={() => setFiltroParalizado(p => !p)}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-orange-100 text-orange-700 border-orange-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
                 Paralizadas

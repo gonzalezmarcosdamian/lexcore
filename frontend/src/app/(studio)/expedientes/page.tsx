@@ -427,7 +427,7 @@ export default function ExpedientesPage() {
             <div
               key={e.id}
               onClick={() => router.push(`/expedientes/${e.id}`)}
-              className={`rounded-xl border shadow-sm overflow-hidden cursor-pointer active:bg-brand-50 transition-colors ${e.flag_paralizado ? "border-orange-200 bg-orange-50" : "border-ink-100 bg-white"}`}
+              className={`rounded-xl border shadow-sm overflow-hidden cursor-pointer transition-colors ${e.flag_paralizado ? "border-blue-200 bg-gradient-to-br from-slate-100/90 via-blue-50/70 to-slate-100/90 active:from-blue-100 active:to-blue-100" : "border-ink-100 bg-white active:bg-brand-50"}`}
             >
               <div className="px-4 py-3.5 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -441,9 +441,11 @@ export default function ExpedientesPage() {
                 <svg className="w-4 h-4 text-ink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </div>
               {e.flag_paralizado && (
-                <div className="flex items-center gap-1.5 px-4 py-1.5 bg-orange-100 border-t border-orange-200">
-                  <svg className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                  <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wide">Paralizado</span>
+                <div className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-blue-100/70 via-slate-100/80 to-blue-100/70 border-t border-blue-200/60">
+                  <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
+                  </svg>
+                  <span className="text-[10px] font-bold text-blue-400/90 uppercase tracking-[0.2em]">Paralizado</span>
                 </div>
               )}
             </div>
@@ -509,7 +511,7 @@ export default function ExpedientesPage() {
                   <tr
                     key={e.id}
                     onClick={() => router.push(`/expedientes/${e.id}`)}
-                    className="hover:bg-brand-50/40 cursor-pointer transition-colors group"
+                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-gradient-to-r from-slate-100/80 via-blue-50/60 to-slate-100/80 hover:from-slate-200/60 hover:via-blue-100/60 hover:to-slate-200/60" : "hover:bg-brand-50/40"}`}
                   >
                     {visibleCols.map((colKey) => {
                       switch (colKey) {
@@ -587,13 +589,13 @@ export default function ExpedientesPage() {
                   </tr>
                   {e.flag_paralizado && (
                     <tr key={`${e.id}-paralizado`} onClick={() => router.push(`/expedientes/${e.id}`)} className="cursor-pointer">
-                      <td colSpan={visibleCols.length} className="px-4 py-1.5 bg-blue-50 border-b border-blue-100">
+                      <td colSpan={visibleCols.length} className="px-4 py-1.5 bg-gradient-to-r from-blue-100/70 via-slate-100/80 to-blue-100/70 border-t border-blue-200/60 border-b border-blue-200/60">
                         <div className="flex items-center gap-2">
-                          <svg className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
                           </svg>
-                          <span className="text-[11px] font-bold text-blue-500 uppercase tracking-widest">Paralizado</span>
-                          <div className="flex-1 h-px bg-blue-100" />
+                          <span className="text-[10px] font-bold text-blue-400/90 uppercase tracking-[0.2em]">Paralizado</span>
+                          <div className="flex-1 h-px bg-gradient-to-r from-blue-200/60 to-transparent" />
                         </div>
                       </td>
                     </tr>
