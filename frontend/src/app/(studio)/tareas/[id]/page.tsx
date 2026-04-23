@@ -1,6 +1,7 @@
 "use client";
 
 import { TimeInput } from "@/components/ui/time-input";
+import { todayAR } from "@/lib/date";
 
 import { DateInput } from "@/components/ui/date-input";
 
@@ -158,7 +159,7 @@ export default function TareaDetailPage() {
   }
 
   const cfg = ESTADO_CFG[tarea.estado];
-  const vencida = tarea.fecha_limite && tarea.fecha_limite < new Date().toISOString().split("T")[0] && tarea.estado !== "hecha";
+  const vencida = tarea.fecha_limite && tarea.fecha_limite < todayAR() && tarea.estado !== "hecha";
 
   return (
     <>

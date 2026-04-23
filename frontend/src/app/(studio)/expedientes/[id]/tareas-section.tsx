@@ -1,6 +1,7 @@
 "use client";
 
 import { TimeInput } from "@/components/ui/time-input";
+import { todayAR } from "@/lib/date";
 
 import { DateInput } from "@/components/ui/date-input";
 
@@ -8,7 +9,7 @@ import { useState, useEffect, useRef } from "react";
 import { api, Tarea, TareaEstado, TareaTipo, StudioUser } from "@/lib/api";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayAR();
 
 const TAREA_ESTADOS = [
   { value: "pendiente" as TareaEstado, label: "PENDIENTE", cls: "bg-ink-100 text-ink-600" },

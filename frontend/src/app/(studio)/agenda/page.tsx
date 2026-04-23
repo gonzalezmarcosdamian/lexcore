@@ -14,6 +14,7 @@ import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
+import { todayAR, yearAR, monthAR } from "@/lib/date";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -25,7 +26,7 @@ function esUrgente(fecha: string): boolean {
 }
 
 function formatFecha(f: string): string {
-  const today = new Date().toISOString().split("T")[0];
+  const today = todayAR();
   if (f === today) return "Hoy";
   const d = new Date(f + "T12:00:00");
   return d.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
@@ -623,11 +624,11 @@ export default function AgendaPage() {
   const token = session?.user?.backendToken;
   const router = useRouter();
 
-  const now2 = new Date();
+
   const [periodoValue, setPeriodoValue] = useState<PeriodoValue>({
     periodo: "anio",
-    desde: `${now2.getFullYear()}-01-01`,
-    hasta: `${now2.getFullYear()}-12-31`,
+    desde: `${yearAR()}-01-01`,
+    hasta: `${yearAR()}-12-31`,
   });
   const [vencimientos, setVencimientos] = useState<Vencimiento[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -636,9 +637,8 @@ export default function AgendaPage() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [inhabiles, setInhabiles] = useState<DiaInhabil[]>([]);
   const [vista, setVista] = useState<Vista>("tablero");
-  const now3 = new Date();
-  const [calMes, setCalMes] = useState(now3.getMonth() + 1);
-  const [calAnio, setCalAnio] = useState(now3.getFullYear());
+  const [calMes, setCalMes] = useState(monthAR());
+  const [calAnio, setCalAnio] = useState(yearAR());
 
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
@@ -985,7 +985,7 @@ export default function AgendaPage() {
                 <p className="text-sm text-ink-400 text-center py-10">Sin items en este período</p>
               )}
               {Object.entries(itemsCronologicos).map(([fecha, items]) => {
-                const esHoy = fecha === new Date().toISOString().split("T")[0];
+                const esHoy = fecha === todayAR();
                 return (
                   <div key={fecha}>
                     <div className="flex items-center gap-2 mb-2">

@@ -15,8 +15,9 @@ import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
+import { todayAR, yearAR, monthAR, toDateStrAR } from "@/lib/date";
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayAR();
 
 function isUrgente(fecha: string) {
   const diff = new Date(fecha).getTime() - Date.now();
@@ -61,19 +62,17 @@ export default function DashboardPage() {
   const [showNewTarea, setShowNewTarea] = useState(false);
   const [showNewVenc, setShowNewVenc] = useState(false);
   const [expLookup, setExpLookup] = useState<Record<string, Expediente>>({});
-  const now = new Date();
   const [periodoValue, setPeriodoValue] = useState<PeriodoValue>({
     periodo: "anio",
-    desde: `${now.getFullYear()}-01-01`,
-    hasta: `${now.getFullYear()}-12-31`,
+    desde: `${yearAR()}-01-01`,
+    hasta: `${yearAR()}-12-31`,
   });
   const [honorarios, setHonorarios] = useState<HonorarioResumen | null>(null);
   const [gastoResumen, setGastoResumen] = useState<GastoResumen | null>(null);
   const [ingresoResumen, setIngresoResumen] = useState<IngresoResumen | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const now4 = new Date();
-  const [calMes, setCalMes] = useState(now4.getMonth() + 1);
-  const [calAnio, setCalAnio] = useState(now4.getFullYear());
+  const [calMes, setCalMes] = useState(monthAR());
+  const [calAnio, setCalAnio] = useState(yearAR());
   const [inhabiles, setInhabiles] = useState<DiaInhabil[]>([]);
   const [diaPickerFecha, setDiaPickerFecha] = useState<string | null>(null);
 
@@ -651,21 +650,21 @@ function AgendaWidget({
   onHecha: (id: string) => void; onEditT: (t: Tarea) => void; onDeleteT: (id: string) => void;
   onDetailV: (v: Vencimiento) => void; onDetailT: (t: Tarea) => void;
 }) {
-  const hoy = new Date();
-  const todayStr = hoy.toISOString().split("T")[0];
-  const [semanaOffset, setSemanaOffset] = useState(0); // 0 = semana actual, +1 = próxima, -1 = anterior
+  const todayStr = todayAR();
+  const [semanaOffset, setSemanaOffset] = useState(0);
 
   // Construir los 7 días de la semana (lun → dom) con offset
   const diasSemana = useMemo(() => {
+    const hoy = new Date(todayStr + "T12:00:00");
     const diaSemana = hoy.getDay();
     const lunes = new Date(hoy);
     lunes.setDate(hoy.getDate() - ((diaSemana + 6) % 7) + semanaOffset * 7);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(lunes);
       d.setDate(lunes.getDate() + i);
-      return d.toISOString().split("T")[0];
+      return toDateStrAR(d);
     });
-  }, [semanaOffset]);
+  }, [semanaOffset, todayStr]);
 
   const semanaLabel = useMemo(() => {
     if (semanaOffset === 0) return "Esta semana";

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { todayAR } from "@/lib/date";
 import { api, Honorario, Moneda } from "@/lib/api";
 import { DateInput } from "@/components/ui/date-input";
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayAR();
 
 function fmt(n: number, moneda: Moneda) {
   return new Intl.NumberFormat("es-AR", {

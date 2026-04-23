@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { todayAR } from "@/lib/date";
 
 export type CalEvent = {
   id: string;
@@ -51,7 +52,7 @@ const DOT_CLS: Record<string, string> = {
 };
 
 export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, onNextMes, onClickDia, onClickEvento }: Props) {
-  const hoy = new Date().toISOString().split("T")[0];
+  const hoy = todayAR();
   const [selectedDia, setSelectedDia] = useState<string | null>(null);
 
   const { semanas } = useMemo(() => {

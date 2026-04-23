@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { todayAR } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -438,7 +439,7 @@ export default function ClienteDetailPage() {
               <div className="space-y-1.5">
                 {tareasCliente.map(t => {
                   const exp = t.expediente_id ? expLookup[t.expediente_id] : undefined;
-                  const vencida = t.fecha_limite && t.fecha_limite < new Date().toISOString().split("T")[0];
+                  const vencida = t.fecha_limite && t.fecha_limite < todayAR();
                   return (
                     <button key={t.id} onClick={() => router.push(`/tareas/${t.id}`)} className="w-full flex items-center gap-2 text-left p-2 rounded-lg hover:bg-ink-50 transition group/t">
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${t.estado === "hecha" ? "bg-green-400" : t.estado === "en_curso" ? "bg-blue-400" : "bg-ink-300"}`} />

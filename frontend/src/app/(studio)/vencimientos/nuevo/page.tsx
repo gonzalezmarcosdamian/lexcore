@@ -1,6 +1,7 @@
 "use client";
 
 import { TimeInput } from "@/components/ui/time-input";
+import { todayAR } from "@/lib/date";
 
 import { DateInput } from "@/components/ui/date-input";
 
@@ -11,7 +12,7 @@ import Link from "next/link";
 import { api, Expediente } from "@/lib/api";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayAR();
 
 const TIPOS = [
   { value: "vencimiento", label: "Vencimiento procesal", icon: "⚖️" },

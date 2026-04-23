@@ -1,6 +1,7 @@
 "use client";
 
 import { TimeInput } from "@/components/ui/time-input";
+import { todayAR } from "@/lib/date";
 
 import { DateInput } from "@/components/ui/date-input";
 
@@ -26,7 +27,7 @@ function formatTs(ts: string) {
     " " + d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function esVencida(fecha: string) { return fecha < new Date().toISOString().split("T")[0]; }
+function esVencida(fecha: string) { return fecha < todayAR(); }
 function esUrgente(fecha: string) {
   const diff = new Date(fecha).getTime() - Date.now();
   return diff >= 0 && diff < 48 * 3600 * 1000;

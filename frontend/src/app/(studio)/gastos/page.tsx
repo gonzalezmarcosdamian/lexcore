@@ -1,6 +1,7 @@
 "use client";
 
 import { DateInput } from "@/components/ui/date-input";
+import { todayAR } from "@/lib/date";
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -33,7 +34,7 @@ const ESTADO_CONFIG: Record<GastoEstado, { label: string; color: string; dot: st
   confirmado: { label: "Confirmado", color: "bg-green-50 text-green-700 border border-green-100", dot: "bg-green-500" },
 };
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayAR();
 
 const EMPTY_GASTO_FORM = {
   descripcion: "",

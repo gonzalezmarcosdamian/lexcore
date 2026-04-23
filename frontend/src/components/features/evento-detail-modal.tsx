@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { todayAR } from "@/lib/date";
 import { Vencimiento, Tarea, Expediente } from "@/lib/api";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
-const today = new Date().toISOString().split("T")[0];
+const today = todayAR();
 
 function formatFechaLarga(fecha: string) {
   const d = new Date(fecha + "T12:00:00");
