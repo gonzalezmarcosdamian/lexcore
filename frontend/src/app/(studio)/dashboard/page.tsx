@@ -17,6 +17,8 @@ import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 import { todayAR, yearAR, monthAR, toDateStrAR } from "@/lib/date";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { TareaDetailSheet } from "@/components/features/tarea-detail-sheet";
+import { VencimientoDetailSheet } from "@/components/features/vencimiento-detail-sheet";
 
 const today = todayAR();
 
@@ -60,6 +62,8 @@ export default function DashboardPage() {
   const [deletingT, setDeletingT] = useState<string | null>(null);
   const [editingV, setEditingV] = useState<Vencimiento | null>(null);
   const [editingT, setEditingT] = useState<Tarea | null>(null);
+  const [mobileDetailV, setMobileDetailV] = useState<string | null>(null);
+  const [mobileDetailT, setMobileDetailT] = useState<string | null>(null);
   const [showNewTarea, setShowNewTarea] = useState(false);
   const [showNewVenc, setShowNewVenc] = useState(false);
   const [expLookup, setExpLookup] = useState<Record<string, Expediente>>({});
@@ -200,6 +204,8 @@ export default function DashboardPage() {
     <div className="space-y-6 pb-20 lg:pb-6">
       {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
+      {mobileDetailT && token && <TareaDetailSheet tareaId={mobileDetailT} token={token} onClose={() => setMobileDetailT(null)} onDeleted={() => { setTareas(p => p.filter(t => t.id !== mobileDetailT)); setMobileDetailT(null); }} onUpdated={(t) => setTareas(p => p.map(x => x.id === t.id ? t : x))} />}
+      {mobileDetailV && token && <VencimientoDetailSheet vencimientoId={mobileDetailV} token={token} onClose={() => setMobileDetailV(null)} onDeleted={() => { setProximos(p => p.filter(v => v.id !== mobileDetailV)); setMobileDetailV(null); }} onUpdated={(v) => setProximos(p => p.map(x => x.id === v.id ? v : x))} />}
       {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} clientes={clientes} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
       {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
@@ -247,11 +253,11 @@ export default function DashboardPage() {
             onShowNewTarea={() => setShowNewTarea(true)}
             onShowNewVenc={() => setShowNewVenc(true)}
             onCumplido={handleCumplido}
-            onDetailV={(v) => router.push(`/vencimientos/${v.id}`)}
+            onDetailV={(v) => typeof window !== "undefined" && window.innerWidth < 1024 ? setMobileDetailV(v.id) : router.push(`/vencimientos/${v.id}`)}
             onEditV={setEditingV}
             onDeleteV={handleDeleteVencimiento}
             onHecha={handleTareaHecha}
-            onDetailT={(t) => router.push(`/tareas/${t.id}`)}
+            onDetailT={(t) => typeof window !== "undefined" && window.innerWidth < 1024 ? setMobileDetailT(t.id) : router.push(`/tareas/${t.id}`)}
             onEditT={setEditingT}
             onDeleteT={handleDeleteTarea}
           />

@@ -235,6 +235,18 @@ export default function TareaDetailPage() {
               </Link>
             </div>
           )}
+          {exp?.juzgado && (
+            <div className="flex justify-between items-start gap-3 py-2.5">
+              <span className="text-sm text-ink-400 flex-shrink-0">Tribunal</span>
+              <span className="text-xs text-ink-700 text-right">{exp.juzgado}</span>
+            </div>
+          )}
+          {exp?.localidad && (
+            <div className="flex justify-between items-start gap-3 py-2.5">
+              <span className="text-sm text-ink-400 flex-shrink-0">Localidad</span>
+              <span className="text-xs text-ink-700 text-right">{exp.localidad}</span>
+            </div>
+          )}
           {tarea.cliente_nombre && (
             <div className="flex justify-between items-center gap-3 py-2.5">
               <span className="text-sm text-ink-400 flex-shrink-0">Cliente</span>
