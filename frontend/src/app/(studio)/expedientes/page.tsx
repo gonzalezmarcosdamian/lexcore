@@ -450,7 +450,7 @@ export default function ExpedientesPage() {
               <tr className="border-b border-ink-100 bg-ink-50/60">
                 {visibleCols.map(key => ALL_COLS.find(c => c.key === key)!).map((col) => {
                   const isSortable = ["numero","caratula","fuero","estado","created_at"].includes(col.key);
-                  const cls = col.key === "numero" ? "w-32" : col.key === "numero_judicial" ? "w-32" : col.key === "fuero" ? "w-32" : col.key === "juzgado" ? "w-40" : col.key === "localidad" ? "w-32" : col.key === "estado" ? "w-28" : col.key === "created_at" ? "w-28" : col.key === "equipo" ? "w-24 text-right" : col.key === "cliente" ? "w-36" : "";
+                  const cls = col.key === "numero" ? "whitespace-nowrap" : col.key === "numero_judicial" ? "whitespace-nowrap" : col.key === "fuero" ? "whitespace-nowrap" : col.key === "estado" ? "whitespace-nowrap" : col.key === "created_at" ? "whitespace-nowrap" : col.key === "equipo" ? "text-right whitespace-nowrap" : col.key === "cliente" ? "whitespace-nowrap" : col.key === "juzgado" ? "whitespace-nowrap" : col.key === "localidad" ? "whitespace-nowrap" : "";
                   return (
                     <th
                       key={col.key}
