@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -507,36 +507,28 @@ export default function ExpedientesPage() {
                 </tr>
               ) : (
                 sorted.map((e) => (
+                  <React.Fragment key={e.id}>
                   <tr
-                    key={e.id}
                     onClick={() => router.push(`/expedientes/${e.id}`)}
-                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-blue-50/70 hover:bg-blue-100/60" : "hover:bg-brand-50/40"}`}
+                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-blue-50/60 hover:bg-blue-100/50 [&>td]:!border-b-0" : "hover:bg-brand-50/40"}`}
                   >
                     {visibleCols.map((colKey) => {
                       switch (colKey) {
                         case "numero": return (
-                          <td key="numero" className={`py-3.5 ${e.flag_paralizado ? "pl-3 pr-4 border-l-4 border-blue-400" : "px-4"}`}>
+                          <td key="numero" className="px-4 py-3.5">
                             {e.numero_judicial
                               ? <><span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition block">{e.numero_judicial}</span><span className="font-mono text-[10px] text-ink-400">{e.numero}</span></>
                               : <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>}
                           </td>
                         );
                         case "numero_judicial": return (
-                          <td key="numero_judicial" className={`py-3.5 ${e.flag_paralizado ? "pl-3 pr-4 border-l-4 border-blue-400" : "px-4"}`}>
+                          <td key="numero_judicial" className="px-4 py-3.5">
                             <span className="font-mono text-xs font-bold text-ink-700">{e.numero_judicial ?? <span className="text-ink-300">—</span>}</span>
                           </td>
                         );
                         case "caratula": return (
-                          <td key="caratula" className={`py-3.5 max-w-xs lg:max-w-sm xl:max-w-md ${e.flag_paralizado && !visibleCols.includes("numero") && !visibleCols.includes("numero_judicial") ? "pl-3 pr-4 border-l-4 border-blue-400" : "px-4"}`}>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
-                              {e.flag_paralizado && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-500 bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
-                                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" /></svg>
-                                  Paralizado
-                                </span>
-                              )}
-                            </div>
+                          <td key="caratula" className="px-4 py-3.5 max-w-xs lg:max-w-sm xl:max-w-md">
+                            <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
                             {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
                           </td>
                         );
@@ -594,6 +586,20 @@ export default function ExpedientesPage() {
                       }
                     })}
                   </tr>
+                  {e.flag_paralizado && (
+                    <tr key={`${e.id}-footer`} onClick={() => router.push(`/expedientes/${e.id}`)} className="cursor-pointer bg-blue-100/50 hover:bg-blue-100/70">
+                      <td colSpan={visibleCols.length} className="px-4 py-2 border-t border-blue-200/80">
+                        <div className="flex items-center gap-2.5">
+                          <svg className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
+                          </svg>
+                          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.15em]">Paralizado</span>
+                          <div className="flex-1 h-px bg-blue-200/70" />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>
