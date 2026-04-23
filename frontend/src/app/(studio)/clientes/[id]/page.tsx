@@ -505,24 +505,27 @@ function fmt(n: number, moneda: string) {
 function KpiMoneda({ moneda, t }: { moneda: string; t: { acordado: number; cobrado: number; saldo: number } }) {
   const pct = t.acordado > 0 ? Math.min(100, Math.round((t.cobrado / t.acordado) * 100)) : 0;
   return (
-    <div className="bg-white px-5 py-4 space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="bg-white px-4 py-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">{moneda}</span>
-        {t.saldo > 0 && <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Saldo ${fmt(t.saldo, moneda)}</span>}
-        {t.saldo <= 0 && t.acordado > 0 && <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">✓ Al día</span>}
+        {t.saldo > 0
+          ? <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Saldo ${fmt(t.saldo, moneda)}</span>
+          : t.acordado > 0 && <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">✓ Al día</span>
+        }
       </div>
-      <div className="grid grid-cols-3 gap-3 text-center">
-        <div>
-          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Acordado</p>
-          <p className="text-sm font-bold text-ink-800">${fmt(t.acordado, moneda)}</p>
+      {/* Filas verticales en mobile — más legibles que 3 cols */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-ink-400">Acordado</span>
+          <span className="text-sm font-bold text-ink-800">${fmt(t.acordado, moneda)}</span>
         </div>
-        <div>
-          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Cobrado</p>
-          <p className="text-sm font-bold text-green-700">${fmt(t.cobrado, moneda)}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-ink-400">Cobrado</span>
+          <span className="text-sm font-bold text-green-700">${fmt(t.cobrado, moneda)}</span>
         </div>
-        <div>
-          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Pendiente</p>
-          <p className={`text-sm font-bold ${t.saldo > 0 ? "text-red-600" : "text-ink-400"}`}>${fmt(t.saldo, moneda)}</p>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-ink-400">Pendiente</span>
+          <span className={`text-sm font-bold ${t.saldo > 0 ? "text-red-600" : "text-ink-400"}`}>${fmt(t.saldo, moneda)}</span>
         </div>
       </div>
       {t.acordado > 0 && (
@@ -540,11 +543,11 @@ function ExpedienteCuentaRow({ exp }: { exp: import("@/lib/api").ExpedienteCuent
 
   return (
     <div className="border-t border-ink-100">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-ink-50/50 transition text-left">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-ink-50/50 transition text-left">
         <svg className={`w-4 h-4 text-ink-400 transition-transform flex-shrink-0 ${open ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-ink-800 font-mono">{exp.numero}</span>
-          <span className="text-xs text-ink-400 ml-2 truncate">{exp.caratula}</span>
+          <p className="text-sm font-semibold text-ink-800 font-mono">{exp.numero}</p>
+          <p className="text-xs text-ink-400 truncate">{exp.caratula}</p>
         </div>
         {tieneDeuda
           ? <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex-shrink-0">Con deuda</span>
@@ -553,30 +556,32 @@ function ExpedienteCuentaRow({ exp }: { exp: import("@/lib/api").ExpedienteCuent
       </button>
 
       {open && (
-        <div className="pb-2">
+        <div className="pb-2 space-y-2">
           {exp.honorarios.map(h => (
-            <div key={h.id} className="mx-4 mb-3 rounded-xl border border-ink-100 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 bg-ink-50/40">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-ink-700 truncate">{h.concepto}</p>
-                  <p className="text-[10px] text-ink-400">{h.fecha_acuerdo} · Acordado <span className="font-semibold text-ink-600">${fmt(Number(h.monto_acordado), h.moneda)} {h.moneda}</span></p>
-                </div>
-                <div className="text-right flex-shrink-0 ml-3">
+            <div key={h.id} className="mx-3 rounded-xl border border-ink-100 overflow-hidden">
+              {/* Header honorario */}
+              <div className="px-3 py-2.5 bg-ink-50/40 space-y-0.5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-semibold text-ink-700 flex-1 min-w-0">{h.concepto}</p>
                   {Number(h.saldo_pendiente) > 0
-                    ? <p className="text-xs font-bold text-red-600">Saldo ${fmt(Number(h.saldo_pendiente), h.moneda)}</p>
-                    : <p className="text-xs font-bold text-green-600">✓ Pagado</p>
+                    ? <span className="text-xs font-bold text-red-600 flex-shrink-0">Saldo ${fmt(Number(h.saldo_pendiente), h.moneda)}</span>
+                    : <span className="text-xs font-bold text-green-600 flex-shrink-0">✓ Pagado</span>
                   }
                 </div>
+                <p className="text-[10px] text-ink-400">{h.fecha_acuerdo} · Acordado <span className="font-semibold text-ink-600">${fmt(Number(h.monto_acordado), h.moneda)} {h.moneda}</span></p>
               </div>
+              {/* Pagos */}
               {h.pagos.length > 0 && (
                 <div className="divide-y divide-ink-50">
                   {h.pagos.map(p => (
-                    <div key={p.id} className="flex items-center gap-3 px-4 py-2">
+                    <div key={p.id} className="flex items-center gap-2 px-3 py-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
-                      <span className="text-xs text-ink-500 flex-shrink-0">{p.fecha}</span>
-                      <span className="text-xs text-ink-400 flex-shrink-0 capitalize">{p.tipo}</span>
-                      {p.comprobante && <span className="text-xs text-ink-400 truncate">{p.comprobante}</span>}
-                      <span className="ml-auto text-xs font-semibold text-green-700">${fmt(Number(p.importe), p.moneda)}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-xs text-ink-600 capitalize">{p.tipo}</span>
+                        {p.comprobante && <span className="text-[10px] text-ink-400 ml-1.5 truncate">{p.comprobante}</span>}
+                      </div>
+                      <span className="text-[10px] text-ink-400 flex-shrink-0">{p.fecha}</span>
+                      <span className="text-xs font-semibold text-green-700 flex-shrink-0">${fmt(Number(p.importe), p.moneda)}</span>
                     </div>
                   ))}
                 </div>
@@ -585,7 +590,7 @@ function ExpedienteCuentaRow({ exp }: { exp: import("@/lib/api").ExpedienteCuent
           ))}
 
           {exp.ingresos.map(ing => (
-            <div key={ing.id} className="mx-4 mb-1">
+            <div key={ing.id} className="mx-3">
               <IngresoRow ing={ing} />
             </div>
           ))}
@@ -597,11 +602,12 @@ function ExpedienteCuentaRow({ exp }: { exp: import("@/lib/api").ExpedienteCuent
 
 function IngresoRow({ ing }: { ing: import("@/lib/api").Ingreso }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5">
+    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-ink-100 bg-blue-50/30">
       <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-      <span className="text-xs text-ink-500 flex-shrink-0">{ing.fecha}</span>
-      <span className="text-xs text-ink-700 truncate flex-1">{ing.descripcion}</span>
-      <span className="text-xs text-ink-400 flex-shrink-0 capitalize">{ing.categoria.replace(/_/g, " ")}</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-ink-700 truncate">{ing.descripcion}</p>
+        <p className="text-[10px] text-ink-400">{ing.fecha} · <span className="capitalize">{ing.categoria.replace(/_/g, " ")}</span></p>
+      </div>
       <span className="text-xs font-semibold text-blue-700 flex-shrink-0">${fmt(Number(ing.monto), ing.moneda)}</span>
     </div>
   );
