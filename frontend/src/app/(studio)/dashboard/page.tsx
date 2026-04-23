@@ -745,7 +745,7 @@ function AgendaWidget({
               <button
                 key={fecha}
                 onClick={() => setDiaSeleccionado(fecha)}
-                className={`flex flex-col items-stretch text-left transition group min-h-[72px] lg:min-h-[280px] ${
+                className={`flex flex-col items-stretch text-left transition group min-h-[72px] ${
                   esSel ? "bg-brand-50/60" : esHoy ? "bg-brand-50/30" : "hover:bg-ink-50/40"
                 }`}
               >
@@ -761,7 +761,7 @@ function AgendaWidget({
                 <div className="flex-1 p-1.5 space-y-1 overflow-hidden">
                   {/* Desktop: pills con título */}
                   <div className="hidden lg:block space-y-1">
-                    {evs.slice(0, 4).map((e, j) => {
+                    {evs.map((e, j) => {
                       const colorCls =
                         e.color === "red"    ? "bg-red-50 border-red-200 text-red-700" :
                         e.color === "purple" ? "bg-purple-50 border-purple-200 text-purple-700" :
@@ -782,16 +782,13 @@ function AgendaWidget({
                               onDetailT({ id: e.id, titulo: e.titulo, estado: (e.estado ?? "pendiente") as Tarea["estado"], fecha_limite: (e as any).fecha_limite, expediente_id: e.expediente_id, hora: e.hora } as Tarea);
                             }
                           }}
-                          className={`w-full flex items-center gap-1 px-1.5 py-1 rounded-md border text-[10px] font-medium truncate text-left hover:opacity-80 transition ${colorCls}`}
+                          className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs font-medium truncate text-left hover:opacity-80 transition ${colorCls}`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotCls}`} />
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotCls}`} />
                           <span className="truncate">{e.hora ? `${e.hora} ` : ""}{e.titulo}</span>
                         </button>
                       );
                     })}
-                    {evs.length > 4 && (
-                      <p className="text-[10px] text-ink-400 font-medium px-1">+{evs.length - 4} más</p>
-                    )}
                   </div>
                   {/* Mobile: dots */}
                   <div className="lg:hidden flex flex-wrap gap-0.5 justify-center pt-1">
