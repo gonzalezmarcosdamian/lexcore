@@ -16,6 +16,7 @@ class TareaCreate(BaseModel):
     fecha_limite: Optional[str] = None  # YYYY-MM-DD
     hora: Optional[str] = None  # HH:MM
     estado: TareaEstado = TareaEstado.pendiente
+    flag_paralizado: bool = False
 
     @field_validator("titulo")
     @classmethod
@@ -34,6 +35,7 @@ class TareaUpdate(BaseModel):
     fecha_limite: Optional[str] = None
     hora: Optional[str] = None
     estado: Optional[TareaEstado] = None
+    flag_paralizado: Optional[bool] = None
 
 
 class TareaOut(BaseModel):
@@ -50,6 +52,7 @@ class TareaOut(BaseModel):
     fecha_limite: Optional[str] = None
     hora: Optional[str] = None
     estado: TareaEstado
+    flag_paralizado: bool = False
     created_at: datetime
     updated_at: datetime
 

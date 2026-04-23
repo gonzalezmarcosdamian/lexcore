@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Enum, ForeignKey, String, Text
+from sqlalchemy import Boolean, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import TenantModel
@@ -40,3 +40,4 @@ class Tarea(TenantModel):
     estado: Mapped[TareaEstado] = mapped_column(
         Enum(TareaEstado), nullable=False, default=TareaEstado.pendiente
     )
+    flag_paralizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

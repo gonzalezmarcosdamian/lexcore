@@ -273,7 +273,7 @@ export interface IngresoResumen {
   cantidad: number;
 }
 
-export type TareaEstado = "pendiente" | "en_curso" | "hecha";
+export type TareaEstado = "pendiente" | "en_curso" | "hecha"; // en_curso: legacy, no usar en UI nueva
 
 export type TareaTipo = "judicial" | "extrajudicial" | "administrativa" | "operativa";
 
@@ -291,6 +291,7 @@ export interface Tarea {
   fecha_limite?: string | null;
   hora?: string | null;
   estado: TareaEstado;
+  flag_paralizado: boolean;
   created_at: string;
   updated_at: string;
 }

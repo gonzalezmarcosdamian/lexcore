@@ -45,7 +45,6 @@ const VENC_ESTADOS = [
 
 const TAREA_ESTADOS = [
   { value: "pendiente", label: "PENDIENTE", cls: "bg-ink-100 text-ink-600" },
-  { value: "en_curso",  label: "EN CURSO",  cls: "bg-blue-100 text-blue-700" },
   { value: "hecha",     label: "HECHO",     cls: "bg-green-100 text-green-700" },
 ] as const;
 
@@ -87,39 +86,15 @@ function VencimientoStatusPill({ cumplido, onChange }: { cumplido: boolean; onCh
 }
 
 function TareaStatusPill({ estado, onChange }: { estado: TareaEstado; onChange: (e: TareaEstado) => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const current = TAREA_ESTADOS.find(e => e.value === estado) ?? TAREA_ESTADOS[0];
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
+  const current = estado === "hecha" ? TAREA_ESTADOS[1] : TAREA_ESTADOS[0];
+  const next: TareaEstado = estado === "hecha" ? "pendiente" : "hecha";
   return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition ${current.cls}`}
-      >
-        {current.label}
-        <svg className="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-ink-200 rounded-lg shadow-lg py-1 min-w-[130px]">
-          {TAREA_ESTADOS.map(e => (
-            <button
-              key={e.value}
-              onClick={() => { onChange(e.value as TareaEstado); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-[11px] font-semibold tracking-wide uppercase hover:bg-ink-50 transition ${e.value === estado ? "opacity-40 cursor-default" : ""}`}
-            >
-              <span className={`inline-block px-1.5 py-0.5 rounded ${e.cls}`}>{e.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <button
+      onClick={() => onChange(next)}
+      className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition active:scale-95 ${current.cls}`}
+    >
+      {current.label}
+    </button>
   );
 }
 
@@ -206,14 +181,15 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
   const [titulo, setTitulo] = useState(t.titulo);
   const [fechaLimite, setFechaLimite] = useState(t.fecha_limite ?? "");
   const [hora, setHora] = useState(t.hora ?? "");
-  const [estado, setEstado] = useState(t.estado);
+  const [estado, setEstado] = useState<TareaEstado>(t.estado === "en_curso" ? "pendiente" : t.estado);
+  const [flagParalizado, setFlagParalizado] = useState(t.flag_paralizado ?? false);
   const [expedienteId, setExpedienteId] = useState(t.expediente_id ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const body: Record<string, unknown> = { titulo, estado, expediente_id: expedienteId || null };
+      const body: Record<string, unknown> = { titulo, estado, flag_paralizado: flagParalizado, expediente_id: expedienteId || null };
       body.fecha_limite = fechaLimite || null;
       body.hora = hora || null;
       const updated = await api.patch<Tarea>(`/tareas/${t.id}`, body, token);
@@ -231,9 +207,9 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
             <div className="flex gap-2">
-              {(["pendiente", "en_curso", "hecha"] as const).map((s) => {
-                const labels = { pendiente: "Pendiente", en_curso: "En curso", hecha: "✓ Hecha" };
-                const active = { pendiente: "bg-ink-600 text-white border-ink-600", en_curso: "bg-blue-600 text-white border-blue-600", hecha: "bg-green-600 text-white border-green-600" };
+              {(["pendiente", "hecha"] as const).map((s) => {
+                const labels = { pendiente: "Pendiente", hecha: "✓ Hecha" };
+                const active = { pendiente: "bg-ink-600 text-white border-ink-600", hecha: "bg-green-600 text-white border-green-600" };
                 return (
                   <button key={s} type="button" onClick={() => setEstado(s)}
                     className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${estado === s ? active[s] : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}>
@@ -261,6 +237,17 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
             <label className="block text-xs font-medium text-ink-600 mb-1">Expediente</label>
             <ExpedienteSelect expedientes={expedientes} value={expedienteId} onChange={setExpedienteId} />
           </div>
+          <button
+            type="button"
+            onClick={() => setFlagParalizado(p => !p)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition ${flagParalizado ? "bg-orange-50 border-orange-300 text-orange-700" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            <span className="text-sm font-medium flex-1 text-left">Marcar como paralizada</span>
+            <span className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${flagParalizado ? "bg-orange-500 border-orange-500" : "border-ink-300"}`}>
+              {flagParalizado && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+            </span>
+          </button>
           {err && <p className="text-xs text-red-500">{err}</p>}
         </div>
         <div className="flex gap-3 mt-6">
@@ -372,6 +359,7 @@ function TareaCard({
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const vencida = t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha";
+  const paralizada = t.flag_paralizado && t.estado !== "hecha";
 
   return (
     <>
@@ -387,13 +375,13 @@ function TareaCard({
       <div
         draggable={isDraggable}
         onDragStart={onDragStart}
-        className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
-          t.estado === "hecha"    ? "bg-green-50 border-green-100 opacity-70" :
-          vencida                 ? "bg-red-50 border-red-200" :
-          t.estado === "en_curso" ? "bg-blue-50 border-blue-100" :
-                                    "bg-white border-ink-100 hover:border-ink-200"
+        className={`group rounded-xl border overflow-hidden transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
+          t.estado === "hecha" ? "bg-green-50 border-green-100 opacity-70" :
+          paralizada           ? "bg-orange-50 border-orange-200" :
+          vencida              ? "bg-red-50 border-red-200" :
+                                 "bg-white border-ink-100 hover:border-ink-200"
         }`}
-      >
+      ><div className="px-4 py-3 flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
             <TareaStatusPill estado={t.estado} onChange={onToggle} />
@@ -436,6 +424,13 @@ function TareaCard({
           </div>
         </div>
       </div>
+        {paralizada && (
+          <div className="flex items-center gap-1.5 px-4 py-1.5 bg-orange-100 border-t border-orange-200">
+            <svg className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wide">Paralizada</span>
+          </div>
+        )}
+      </div>
     </>
   );
 }
@@ -443,41 +438,33 @@ function TareaCard({
 // ── Mobile Item Unificado ─────────────────────────────────────────────────────
 
 function AgendaItemMobile({
-  tipo, titulo, estado, fecha, hora, expediente, urgente: isUrgente, vencido: isVencido,
+  tipo, titulo, estado, fecha, hora, expediente, urgente: isUrgente, vencido: isVencido, paralizado: isParalizado,
   onCycleEstado, onNavigate,
 }: {
   tipo: "vencimiento" | "tarea";
   titulo: string;
-  estado: string; // "pendiente"|"cumplido"|"en_curso"|"hecha"
+  estado: string;
   fecha?: string;
   hora?: string | null;
   expediente?: { id: string; numero: string; caratula?: string } | null;
   urgente?: boolean;
   vencido?: boolean;
+  paralizado?: boolean;
   onCycleEstado: (e: React.MouseEvent) => void;
   onNavigate: () => void;
 }) {
   const hecho = estado === "hecha" || estado === "cumplido";
-  const enCurso = estado === "en_curso";
 
   const badgeCls = hecho
     ? "bg-green-100 text-green-700"
-    : isVencido
-    ? "bg-red-100 text-red-700"
-    : isUrgente
-    ? "bg-amber-100 text-amber-700"
-    : enCurso
-    ? "bg-blue-100 text-blue-700"
+    : isVencido ? "bg-red-100 text-red-700"
+    : isUrgente ? "bg-amber-100 text-amber-700"
     : "bg-ink-100 text-ink-600";
 
   const badgeLabel = hecho
     ? tipo === "tarea" ? "HECHO" : "CUMPLIDO"
-    : isVencido
-    ? "VENCIDO"
-    : isUrgente
-    ? "URGENTE"
-    : enCurso
-    ? "EN CURSO"
+    : isVencido ? "VENCIDO"
+    : isUrgente ? "URGENTE"
     : "PENDIENTE";
 
   const dotCls = tipo === "vencimiento" ? "bg-purple-400" : "bg-blue-400";
@@ -485,32 +472,40 @@ function AgendaItemMobile({
   return (
     <button
       onClick={onNavigate}
-      className={`w-full text-left rounded-xl border px-3 py-3 flex items-start gap-3 transition active:scale-[0.99] ${
-        hecho ? "bg-green-50/60 border-green-100 opacity-75" :
-        isVencido ? "bg-red-50 border-red-200" :
-        isUrgente ? "bg-amber-50 border-amber-200" :
-        enCurso ? "bg-blue-50/50 border-blue-100" :
-        "bg-white border-ink-100"
+      className={`w-full text-left rounded-xl border overflow-hidden transition active:scale-[0.99] ${
+        hecho           ? "bg-green-50/60 border-green-100 opacity-75" :
+        isParalizado    ? "bg-orange-50 border-orange-200" :
+        isVencido       ? "bg-red-50 border-red-200" :
+        isUrgente       ? "bg-amber-50 border-amber-200" :
+                          "bg-white border-ink-100"
       }`}
     >
-      <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotCls}`} />
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium leading-snug ${hecho ? "line-through text-ink-400" : "text-ink-900"}`}>
-          {titulo}
-        </p>
-        {(fecha || expediente) && (
-          <p className="text-xs text-ink-400 mt-0.5 truncate">
-            {fecha && <span>{new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })}{hora ? ` · ${hora}` : ""}</span>}
-            {expediente && <span className="text-brand-600"> · {expediente.numero}</span>}
+      <div className="px-3 py-3 flex items-start gap-3">
+        <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotCls}`} />
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-medium leading-snug ${hecho ? "line-through text-ink-400" : "text-ink-900"}`}>
+            {titulo}
           </p>
-        )}
+          {(fecha || expediente) && (
+            <p className="text-xs text-ink-400 mt-0.5 truncate">
+              {fecha && <span>{new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })}{hora ? ` · ${hora}` : ""}</span>}
+              {expediente && <span className="text-brand-600"> · {expediente.numero}</span>}
+            </p>
+          )}
+        </div>
+        <span
+          onClick={onCycleEstado}
+          className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition active:scale-95 ${badgeCls}`}
+        >
+          {badgeLabel}
+        </span>
       </div>
-      <span
-        onClick={onCycleEstado}
-        className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition active:scale-95 ${badgeCls}`}
-      >
-        {badgeLabel}
-      </span>
+      {isParalizado && !hecho && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 border-t border-orange-200">
+          <svg className="w-3 h-3 text-orange-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wide">Paralizada</span>
+        </div>
+      )}
     </button>
   );
 }
@@ -527,11 +522,10 @@ function Skeleton() {
 
 // ── Kanban Tablero ────────────────────────────────────────────────────────────
 
-type KanbanCol = "pendiente" | "en_curso" | "hecho";
+type KanbanCol = "pendiente" | "hecho";
 
 const KANBAN_COLS: { id: KanbanCol; label: string; headerCls: string; bgCls: string }[] = [
-  { id: "pendiente", label: "PENDIENTE", headerCls: "border-ink-300 text-ink-600",    bgCls: "bg-ink-50/60" },
-  { id: "en_curso",  label: "EN CURSO",  headerCls: "border-blue-400 text-blue-700",  bgCls: "bg-blue-50/40" },
+  { id: "pendiente", label: "PENDIENTE", headerCls: "border-ink-300 text-ink-600",     bgCls: "bg-ink-50/60" },
   { id: "hecho",     label: "HECHO",     headerCls: "border-green-400 text-green-700", bgCls: "bg-green-50/30" },
 ];
 
@@ -564,8 +558,9 @@ function AgendaTablero({
   };
 
   const colTarea = (col: KanbanCol): Tarea[] => {
-    const estadoMap: Record<KanbanCol, TareaEstado | null> = { pendiente: "pendiente", en_curso: "en_curso", hecho: "hecha" };
-    const base = tareas.filter(t => t.estado === estadoMap[col]);
+    const base = col === "hecho"
+      ? tareas.filter(t => t.estado === "hecha")
+      : tareas.filter(t => t.estado !== "hecha");
     return [...base].sort((a, b) => ((a.fecha_limite ?? "") + (a.hora ?? "")).localeCompare((b.fecha_limite ?? "") + (b.hora ?? "")));
   };
 
@@ -580,8 +575,7 @@ function AgendaTablero({
     } else {
       const tarea = tareas.find(t => t.id === drag.id);
       if (!tarea) return;
-      const estadoMap: Record<KanbanCol, TareaEstado> = { pendiente: "pendiente", en_curso: "en_curso", hecho: "hecha" };
-      const nuevoEstado = estadoMap[col];
+      const nuevoEstado: TareaEstado = col === "hecho" ? "hecha" : "pendiente";
       if (tarea.estado !== nuevoEstado) onToggleTarea(tarea, nuevoEstado);
     }
     dragRef.current = null;
@@ -680,6 +674,7 @@ export default function AgendaPage() {
 
   const [filtroTipoVenc, setFiltroTipoVenc] = useState<string>("");
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
+  const [filtroParalizado, setFiltroParalizado] = useState(false);
 
   const [mobileDetailTarea, setMobileDetailTarea] = useState<string | null>(null);
   const [mobileDetailVenc, setMobileDetailVenc] = useState<string | null>(null);
@@ -804,7 +799,7 @@ export default function AgendaPage() {
 
   const handleToggleTarea = async (t: Tarea, estado?: TareaEstado) => {
     if (!token) return;
-    const CICLO: Record<TareaEstado, TareaEstado> = { pendiente: "en_curso", en_curso: "hecha", hecha: "pendiente" };
+    const CICLO: Record<TareaEstado, TareaEstado> = { pendiente: "hecha", en_curso: "hecha", hecha: "pendiente" };
     const next = estado ?? CICLO[t.estado];
     const updated = await api.patch<Tarea>(`/tareas/${t.id}`, { estado: next }, token);
     setTareas(prev => prev.map(x => x.id === t.id ? updated : x));
@@ -812,7 +807,11 @@ export default function AgendaPage() {
 
   const { desde, hasta } = getDatesFromValue(periodoValue);
   const vFiltradas = vencimientos.filter(v => v.fecha >= desde && v.fecha <= hasta && (!filtroTipoVenc || v.tipo === filtroTipoVenc));
-  const tFiltradas = tareas.filter(t => (!t.fecha_limite || (t.fecha_limite >= desde && t.fecha_limite <= hasta)) && (!filtroTipoTarea || t.tipo === filtroTipoTarea));
+  const tFiltradas = tareas.filter(t =>
+    (!t.fecha_limite || (t.fecha_limite >= desde && t.fecha_limite <= hasta)) &&
+    (!filtroTipoTarea || t.tipo === filtroTipoTarea) &&
+    (!filtroParalizado || t.flag_paralizado)
+  );
 
   const totalPendientes = vencimientos.filter(v => !v.cumplido).length + tareas.filter(t => t.estado !== "hecha").length;
   const urgentes = vencimientos.filter(v => !v.cumplido && esUrgente(v.fecha)).length;
@@ -1005,6 +1004,17 @@ export default function AgendaPage() {
           </button>
         </div>
 
+        {/* Filtro paralizadas — mobile */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFiltroParalizado(p => !p)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-orange-100 text-orange-700 border-orange-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+            Solo paralizadas
+          </button>
+        </div>
+
         {/* Vista calendario — mobile */}
         {vista === "calendario" && (
           <CalendarioMensual
@@ -1059,7 +1069,7 @@ export default function AgendaPage() {
                         const t = tFiltradas.find(x => x.id === item.id);
                         if (!t) return null;
                         const exp = t.expediente_id ? expLookup[t.expediente_id] : undefined;
-                        const CICLO_T: Record<TareaEstado, TareaEstado> = { pendiente: "en_curso", en_curso: "hecha", hecha: "pendiente" };
+                        const CICLO_T: Record<TareaEstado, TareaEstado> = { pendiente: "hecha", en_curso: "hecha", hecha: "pendiente" };
                         return (
                           <AgendaItemMobile
                             key={item.id}
@@ -1071,6 +1081,7 @@ export default function AgendaPage() {
                             expediente={exp ? { id: exp.id, numero: exp.numero } : null}
                             urgente={!!t.fecha_limite && esUrgente(t.fecha_limite) && t.estado !== "hecha"}
                             vencido={!!t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha"}
+                            paralizado={t.flag_paralizado && t.estado !== "hecha"}
                             onCycleEstado={(e) => { e.stopPropagation(); handleToggleTarea(t, CICLO_T[t.estado]); }}
                             onNavigate={() => setMobileDetailTarea(t.id)}
                           />
@@ -1166,6 +1177,13 @@ export default function AgendaPage() {
                 },
               ]}
             />
+            <button
+              onClick={() => setFiltroParalizado(p => !p)}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-orange-100 text-orange-700 border-orange-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+              Paralizadas
+            </button>
           </div>
         )}
 
