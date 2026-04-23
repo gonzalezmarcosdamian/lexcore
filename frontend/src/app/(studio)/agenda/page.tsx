@@ -1148,9 +1148,9 @@ export default function AgendaPage() {
 
         {/* Filtros */}
         {vista === "tablero" && !loading && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap pt-0.5">
               <FilterGroup
                 groups={[
                   {

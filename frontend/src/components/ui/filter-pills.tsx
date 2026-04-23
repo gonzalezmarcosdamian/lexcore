@@ -76,21 +76,10 @@ interface FilterGroupProps {
 
 export function FilterGroup({ groups }: FilterGroupProps) {
   return (
-    <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2">
-      {/* Mobile: stack vertical */}
-      <div className="flex flex-col gap-1.5 sm:hidden">
-        {groups.map((g) => (
-          <FilterPillsRow key={g.label} {...g} />
-        ))}
-      </div>
-      {/* Desktop: fila única con separadores */}
-      <div className="hidden sm:flex items-center gap-0 divide-x divide-ink-200">
-        {groups.map((g) => (
-          <div key={g.label} className="px-3 first:pl-0 last:pr-0">
-            <FilterPillsRow {...g} />
-          </div>
-        ))}
-      </div>
+    <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 flex flex-col gap-1.5">
+      {groups.map((g) => (
+        <FilterPillsRow key={g.label} {...g} />
+      ))}
     </div>
   );
 }
