@@ -210,31 +210,42 @@ export default function ClienteDetailPage() {
   const expLookup = Object.fromEntries(expedientes.map(e => [e.id, e]));
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center gap-2 text-sm mb-4">
-        <Link href="/clientes" className="text-ink-400 hover:text-ink-600 transition">
-          Clientes
-        </Link>
+    <div className="max-w-4xl pb-28 lg:pb-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-1.5 text-xs mb-3">
+        <Link href="/clientes" className="text-ink-400 hover:text-ink-600 transition">Clientes</Link>
         <span className="text-ink-300">/</span>
-        <span className="text-ink-700 font-medium truncate">{cliente.nombre}</span>
+        <span className="text-ink-600 font-medium truncate">{cliente.nombre}</span>
       </div>
 
-      <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-bold text-ink-900 truncate">{cliente.nombre}</h1>
-        <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${cliente.archivado ? "bg-ink-100 text-ink-500" : "bg-green-50 text-green-700"}`}>
-          {cliente.archivado ? "Archivado" : "Activo"}
-        </span>
-        <div className="ml-auto flex items-center gap-2">
+      {/* Header */}
+      <div className="mb-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold text-ink-900 truncate">{cliente.nombre}</h1>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${cliente.archivado ? "bg-ink-100 text-ink-500" : "bg-green-50 text-green-700"}`}>
+                {cliente.archivado ? "Archivado" : "Activo"}
+              </span>
+            </div>
+            {(cliente.telefono || cliente.email) && (
+              <p className="text-sm text-ink-400 mt-0.5 truncate">
+                {[cliente.telefono, cliente.email].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </div>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="border border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl px-3 py-1.5 text-sm font-medium transition flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-              Editar
-            </button>
-          )}
-          {!cliente.archivado && !editing && (
-            <button onClick={handleArchivar} className="border border-red-100 text-red-600 hover:bg-red-50 rounded-xl px-3 py-1.5 text-sm font-medium transition">
-              Archivar
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button onClick={() => setEditing(true)} className="border border-ink-200 text-ink-700 hover:bg-ink-50 rounded-xl px-3 py-1.5 text-sm font-medium transition flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                <span className="hidden sm:inline">Editar</span>
+              </button>
+              {!cliente.archivado && (
+                <button onClick={handleArchivar} className="border border-red-100 text-red-600 hover:bg-red-50 rounded-xl px-3 py-1.5 text-sm font-medium transition hidden sm:block">
+                  Archivar
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -245,9 +256,9 @@ export default function ClienteDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-6">
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-ink-600 mb-4 uppercase tracking-wide">
               Información del cliente
             </h2>
@@ -374,7 +385,7 @@ export default function ClienteDetailPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4 sm:p-5">
             <h2 className="text-sm font-semibold text-ink-600 mb-3 uppercase tracking-wide">
               Expedientes vinculados
             </h2>
@@ -422,7 +433,7 @@ export default function ClienteDetailPage() {
           </div>
 
           {tareasCliente.length > 0 && (
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4 sm:p-5">
               <h2 className="text-sm font-semibold text-ink-600 mb-3 uppercase tracking-wide">Tareas</h2>
               <div className="space-y-1.5">
                 {tareasCliente.map(t => {
