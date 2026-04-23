@@ -362,7 +362,7 @@ export default function ClienteDetailPage() {
                   <span className="text-sm text-ink-400 flex-shrink-0">Domicilio</span>
                   {cliente.domicilio ? (
                     <div className="text-right max-w-[60%]">
-                      <p className="text-sm text-ink-900 font-medium line-clamp-2" title={cliente.domicilio}>{cliente.domicilio}</p>
+                      <p className="text-sm text-ink-900 font-medium line-clamp-2" title={cliente.domicilio}>{formatDomicilio(cliente.domicilio)}</p>
                       {cliente.domicilio_lat && (
                         <a href={`https://maps.google.com/?q=${cliente.domicilio_lat},${cliente.domicilio_lng}`} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 mt-0.5">
@@ -609,6 +609,14 @@ function ExpedienteCuentaRow({ exp }: { exp: import("@/lib/api").ExpedienteCuent
       )}
     </div>
   );
+}
+
+function formatDomicilio(domicilio: string): string {
+  const parts = domicilio.split(",").map(p => p.trim()).filter(Boolean);
+  const filtered = parts.filter(p =>
+    !/(municipio|pedanía|pedania|departamento|partido de|argentina)/i.test(p)
+  );
+  return filtered.slice(0, 4).join(", ");
 }
 
 function IngresoRow({ ing }: { ing: import("@/lib/api").Ingreso }) {
