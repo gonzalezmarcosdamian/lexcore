@@ -464,14 +464,24 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
 @router.get("/{expediente_id}/pdf-unificado")
 def descargar_pdf_unificado(expediente_id: str, db: DbSession, current_user: CurrentUser):
     from app.models.documento import Documento
-    from app.models.tarea import Tarea
-    from app.services.pdf_unificado import generar_pdf_unificado
+    from app.models.studio import Studio
+    from app.services.pdf_unificado import generar_pdf_unificado, _fecha_larga
     from app.services.storage import generate_download_url
 
     tenant_id = current_user["studio_id"]
     exp = _get_expediente(db, expediente_id, tenant_id)
 
-    # Responsable principal (primer abogado)
+    # Datos del estudio (tenant)
+    studio = db.query(Studio).filter(Studio.id == tenant_id).first()
+    studio_name     = studio.name if studio else "LexCore"
+    studio_email    = studio.email_contacto if studio else None
+    studio_telefono = studio.telefono if studio else None
+
+    # Autor (usuario que genera)
+    autor = db.query(User).filter(User.id == current_user["sub"]).first()
+    autor_nombre = autor.full_name if autor else (current_user.get("email") or "—")
+
+    # Responsable principal (primer abogado del expediente)
     responsable_nombre = None
     if exp.abogados:
         user = db.query(User).filter(User.id == exp.abogados[0].user_id).first()
@@ -485,23 +495,23 @@ def descargar_pdf_unificado(expediente_id: str, db: DbSession, current_user: Cur
         if cliente:
             cliente_nombre = cliente.nombre
 
-    # Fecha apertura
-    fecha_apertura = None
-    if exp.created_at:
-        from app.services.pdf_unificado import _fecha_larga
-        fecha_apertura = _fecha_larga(exp.created_at)
+    fecha_apertura = _fecha_larga(exp.created_at) if exp.created_at else None
 
     exp_data = {
-        "numero": exp.numero,
-        "caratula": exp.caratula,
-        "numero_judicial": exp.numero_judicial,
-        "fuero": exp.fuero,
-        "juzgado": exp.juzgado,
-        "localidad": exp.localidad,
-        "estado": exp.estado.value if exp.estado else None,
-        "cliente_nombre": cliente_nombre,
+        "numero":            exp.numero,
+        "caratula":          exp.caratula,
+        "numero_judicial":   exp.numero_judicial,
+        "fuero":             exp.fuero,
+        "juzgado":           exp.juzgado,
+        "localidad":         exp.localidad,
+        "estado":            exp.estado.value if exp.estado else None,
+        "cliente_nombre":    cliente_nombre,
         "responsable_nombre": responsable_nombre,
-        "fecha_apertura": fecha_apertura,
+        "fecha_apertura":    fecha_apertura,
+        "studio_name":       studio_name,
+        "studio_email":      studio_email,
+        "studio_telefono":   studio_telefono,
+        "autor_nombre":      autor_nombre,
     }
 
     # Solo docs directamente del expediente, ordenados
