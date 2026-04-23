@@ -488,12 +488,27 @@ def descargar_pdf_unificado(expediente_id: str, db: DbSession, current_user: Cur
         if user:
             responsable_nombre = user.full_name
 
-    # Cliente
-    cliente_nombre = None
+    # Cliente — datos completos
+    cliente_data: dict = {}
     if exp.cliente_id:
         cliente = db.query(Cliente).filter(Cliente.id == exp.cliente_id).first()
         if cliente:
-            cliente_nombre = cliente.nombre
+            cliente_data = {
+                "nombre":   cliente.nombre,
+                "tipo":     "Persona jurídica" if cliente.tipo.value == "juridica" else "Persona física",
+                "dni":      cliente.dni or cliente.cuit_dni,
+                "cuit":     cliente.cuit,
+                "telefono": cliente.telefono,
+                "email":    cliente.email,
+                "domicilio": cliente.domicilio,
+            }
+
+    # Equipo completo del expediente
+    equipo = []
+    for ea in exp.abogados:
+        u = db.query(User).filter(User.id == ea.user_id).first()
+        if u:
+            equipo.append({"nombre": u.full_name, "rol": ea.rol.value if ea.rol else "colaborador"})
 
     fecha_apertura = _fecha_larga(exp.created_at) if exp.created_at else None
 
@@ -505,8 +520,8 @@ def descargar_pdf_unificado(expediente_id: str, db: DbSession, current_user: Cur
         "juzgado":           exp.juzgado,
         "localidad":         exp.localidad,
         "estado":            exp.estado.value if exp.estado else None,
-        "cliente_nombre":    cliente_nombre,
-        "responsable_nombre": responsable_nombre,
+        "cliente":           cliente_data,
+        "equipo":            equipo,
         "fecha_apertura":    fecha_apertura,
         "studio_name":       studio_name,
         "studio_email":      studio_email,
