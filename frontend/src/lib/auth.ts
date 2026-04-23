@@ -97,6 +97,7 @@ export const authOptions: NextAuthOptions = {
         token.studioId = (user as any).studioId;
         token.role = (user as any).role;
         token.backendToken = (user as any).backendToken;
+        token.backendTokenIssuedAt = Date.now();
         token.needsStudio = (user as any).needsStudio;
       }
       if (account?.provider) {
@@ -104,6 +105,29 @@ export const authOptions: NextAuthOptions = {
       }
       if (account?.provider === "google") {
         token.googleRefreshToken = account.refresh_token;
+      }
+      // Renovar backendToken si quedan menos de 7 días (expira a los 30)
+      const issuedAt = (token.backendTokenIssuedAt as number) ?? 0;
+      const age = Date.now() - issuedAt;
+      const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+      if (issuedAt && age > THIRTY_DAYS - SEVEN_DAYS && token.backendToken) {
+        try {
+          const API_URL = process.env.NEXTAUTH_URL
+            ? process.env.NEXTAUTH_URL.replace(":3001", ":8000").replace("3001", "8000")
+            : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+          const res = await fetch(`${API_URL}/auth/refresh`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token.backendToken}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            token.backendToken = data.access_token;
+            token.backendTokenIssuedAt = Date.now();
+          }
+        } catch {
+          // Si falla el refresh, el token existente sigue siendo válido por varios días más
+        }
       }
       return token;
     },
@@ -157,6 +181,6 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
 
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 }, // 30 días
   secret: process.env.NEXTAUTH_SECRET,
 };

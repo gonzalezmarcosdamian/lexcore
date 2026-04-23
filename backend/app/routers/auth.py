@@ -440,3 +440,27 @@ def setup_studio(body: SetupStudioRequest, db: DbSession, request: Request):
         studio_id=studio.id,
         role=user.role.value,
     )
+
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh_token(request: Request, db: DbSession):
+    """Renueva el backendToken usando el token actual (aún válido)."""
+    auth_header = request.headers.get("Authorization", "")
+    raw = auth_header.removeprefix("Bearer ").strip()
+    payload = decode_token(raw)
+    user_id = payload.get("sub")
+    studio_id = payload.get("studio_id")
+    if not user_id or not studio_id or studio_id == "pending":
+        raise HTTPException(status_code=401, detail="Token inválido")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or user.tenant_id != studio_id:
+        raise HTTPException(status_code=401, detail="Usuario no encontrado")
+    new_token = create_access_token(studio_id=studio_id, user_id=user_id, role=user.role.value)
+    return TokenResponse(
+        access_token=new_token,
+        user_id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        studio_id=studio_id,
+        role=user.role.value,
+    )
