@@ -194,9 +194,9 @@ export function TareaDetailSheet({ tareaId, token, onClose, onDeleted, onUpdated
                         <Link href={`/expedientes/${exp.id}`} onClick={onClose} className="text-xs font-medium text-brand-600 leading-snug">
                           {exp.numero}{exp.caratula ? ` · ${exp.caratula}` : ""}
                         </Link>
-                        {(exp.juzgado || exp.localidad) && (
+                        {[exp.juzgado, exp.localidad].filter(v => v && v.trim()).length > 0 && (
                           <p className="text-[11px] text-ink-400 mt-0.5">
-                            {[exp.juzgado, exp.localidad].filter(Boolean).join(" · ")}
+                            {[exp.juzgado, exp.localidad].filter(v => v && v.trim()).join(" · ")}
                           </p>
                         )}
                       </div>
