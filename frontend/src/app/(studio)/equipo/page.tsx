@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api, Invitacion, StudioUser, UserRole } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const ROL_LABELS: Record<UserRole, string> = {
   admin: "Admin",
@@ -69,6 +70,7 @@ export default function EquipoPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ email: "", full_name: "", rol: "asociado" as "socio" | "asociado" | "pasante" });
@@ -133,8 +135,8 @@ export default function EquipoPage() {
     }
   };
 
-  const handleRemove = async (userId: string, name: string) => {
-    if (!token || !confirm(`¿Eliminás a ${name} del estudio? Perderá acceso inmediatamente.`)) return;
+  const handleRemove = async (userId: string) => {
+    if (!token) return;
     setRemovingId(userId);
     try {
       await api.delete(`/users/${userId}`, token);
@@ -165,6 +167,15 @@ export default function EquipoPage() {
 
   return (
     <div className="max-w-4xl">
+      {confirmRemove && (
+        <ConfirmModal
+          title={`¿Eliminar a ${confirmRemove.name}?`}
+          description="Perderá acceso al estudio inmediatamente."
+          confirmLabel="Eliminar"
+          onConfirm={() => { handleRemove(confirmRemove.id); setConfirmRemove(null); }}
+          onCancel={() => setConfirmRemove(null)}
+        />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -305,7 +316,7 @@ export default function EquipoPage() {
                             <option value="pasante">Pasante</option>
                           </select>
                           <button
-                            onClick={() => handleRemove(u.id, u.full_name)}
+                            onClick={() => setConfirmRemove({ id: u.id, name: u.full_name })}
                             disabled={removingId === u.id}
                             className="text-xs border border-red-100 text-red-500 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
                           >

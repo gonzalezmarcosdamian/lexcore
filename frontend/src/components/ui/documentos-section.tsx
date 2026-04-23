@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api, Documento } from "@/lib/api";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -110,6 +111,7 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteDoc, setConfirmDeleteDoc] = useState<Documento | null>(null);
   const [previewDoc, setPreviewDoc] = useState<Documento | null>(null);
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
@@ -177,7 +179,6 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
   }
 
   async function handleDelete(doc: Documento) {
-    if (!confirm(`¿Eliminás "${doc.label || doc.nombre}"?`)) return;
     setDeletingId(doc.id);
     try {
       await fetch(`${API_URL}/documentos/${doc.id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
@@ -216,6 +217,15 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
 
   return (
     <div className="space-y-4">
+      {confirmDeleteDoc && (
+        <ConfirmModal
+          title={`¿Eliminar "${confirmDeleteDoc.label || confirmDeleteDoc.nombre}"?`}
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { handleDelete(confirmDeleteDoc); setConfirmDeleteDoc(null); }}
+          onCancel={() => setConfirmDeleteDoc(null)}
+        />
+      )}
       {/* Drop zone */}
       <div
         onDrop={handleDrop}
@@ -292,7 +302,7 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
                 <button onClick={() => handleDownload(doc)} className="text-xs text-brand-600 hover:text-brand-700 font-medium border border-brand-200 hover:border-brand-300 hover:bg-brand-50 px-2.5 py-1 rounded-lg transition-all">
                   Descargar
                 </button>
-                <button onClick={() => handleDelete(doc)} disabled={deletingId === doc.id} className="text-xs text-red-500 hover:text-red-700 border border-red-100 hover:border-red-300 hover:bg-red-50 px-2 py-1 rounded-lg transition-all disabled:opacity-40">
+                <button onClick={() => setConfirmDeleteDoc(doc)} disabled={deletingId === doc.id} className="text-xs text-red-500 hover:text-red-700 border border-red-100 hover:border-red-300 hover:bg-red-50 px-2 py-1 rounded-lg transition-all disabled:opacity-40">
                   {deletingId === doc.id ? "..." : "✕"}
                 </button>
               </div>

@@ -16,6 +16,7 @@ import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 import { todayAR, yearAR, monthAR, toDateStrAR } from "@/lib/date";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const today = todayAR();
 
@@ -597,13 +598,16 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, onDetail, marking, de
           </Link>
         )}
       </div>
-      {confirmDelete ? (
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-          <button onClick={() => { onDelete(tarea.id); setConfirmDelete(false); }} disabled={deleting === tarea.id} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition disabled:opacity-50">Sí</button>
-          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2.5 py-1.5 rounded-lg hover:bg-ink-50 transition">No</button>
-        </div>
-      ) : (
+      {confirmDelete && (
+        <ConfirmModal
+          title="¿Eliminar tarea?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { setConfirmDelete(false); onDelete(tarea.id); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      {!confirmDelete && (
         <>
           {tarea.estado === "en_curso" && (
             <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">En curso</span>
@@ -875,13 +879,16 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, markin
           <p className="text-xs text-ink-400 truncate">{v.tipo}</p>
         )}
       </div>
-      {confirmDelete ? (
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-          <button onClick={() => { onDelete(v.id); setConfirmDelete(false); }} disabled={deleting === v.id} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition disabled:opacity-50">Sí</button>
-          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2.5 py-1.5 rounded-lg hover:bg-ink-50 transition">No</button>
-        </div>
-      ) : (
+      {confirmDelete && (
+        <ConfirmModal
+          title="¿Eliminar vencimiento?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { setConfirmDelete(false); onDelete(v.id); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      {!confirmDelete && (
         <>
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
             urg || vencida ? "bg-red-100 text-red-700" : warning ? "bg-yellow-100 text-yellow-700" : "bg-ink-100 text-ink-500"

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { todayAR } from "@/lib/date";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { api, Honorario, Moneda } from "@/lib/api";
 import { DateInput } from "@/components/ui/date-input";
 
@@ -30,6 +31,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirmEliminarId, setConfirmEliminarId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     concepto: "",
@@ -67,7 +69,6 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
   };
 
   const eliminarHonorario = async (id: string) => {
-    if (!confirm("¿Eliminar este honorario? Se perderán todos los pagos asociados.")) return;
     await api.delete(`/honorarios/${id}`, token);
     load();
     onCreated?.();
@@ -132,6 +133,15 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
 
   return (
     <div className="space-y-4">
+      {confirmEliminarId && (
+        <ConfirmModal
+          title="¿Eliminar honorario?"
+          description="Se perderán todos los pagos asociados."
+          confirmLabel="Eliminar"
+          onConfirm={() => { eliminarHonorario(confirmEliminarId); setConfirmEliminarId(null); }}
+          onCancel={() => setConfirmEliminarId(null)}
+        />
+      )}
       {/* Hero summary */}
       {honorarios.length > 0 && (
         <div className="bg-gradient-to-br from-ink-900 to-ink-800 rounded-2xl p-5 text-white">
@@ -361,7 +371,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                           Registrar pago
                         </button>
                         <button
-                          onClick={() => eliminarHonorario(h.id)}
+                          onClick={() => setConfirmEliminarId(h.id)}
                           className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-lg transition"
                         >
                           Eliminar
@@ -370,7 +380,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                     </div>}
                     {saldo <= 0 && pf.tipo !== "interes" && (
                       <button
-                        onClick={() => eliminarHonorario(h.id)}
+                        onClick={() => setConfirmEliminarId(h.id)}
                         className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-lg transition w-full"
                       >
                         Eliminar honorario

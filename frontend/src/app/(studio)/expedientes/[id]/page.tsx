@@ -10,6 +10,7 @@ import { DocumentosTab } from "./documentos-tab";
 import { TareasSection } from "./tareas-section";
 import { ResumenIASection } from "./resumen-ia-section";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -83,27 +84,28 @@ function VencimientoCardExpediente({ v, token, onToggle, onUpdated, onDeleted }:
         <p className="text-xs text-ink-400 mt-0.5">{v.tipo}</p>
         <AdjuntosInline vencimientoId={v.id} token={token} />
       </div>
-      {confirmDelete ? (
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-          <button onClick={del} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg font-semibold">Sí</button>
-          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50">No</button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-0.5 flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition">
-          {v.cumplido ? (
-            <button onClick={onToggle} className="text-xs border border-green-200 text-green-700 hover:bg-green-50 rounded-lg px-2.5 py-1.5 font-medium transition">↩ Deshacer</button>
-          ) : (
-            <button onClick={onToggle} className="text-xs border border-ink-200 text-ink-700 hover:bg-white rounded-lg px-2.5 py-1.5 font-medium transition">Cumplido</button>
-          )}
-          <button onClick={() => setEditing(true)} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-          </button>
-          <button onClick={() => setConfirmDelete(true)} title="Eliminar" className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-          </button>
-        </div>
+      {confirmDelete && (
+        <ConfirmModal
+          title="¿Eliminar vencimiento?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { setConfirmDelete(false); del(); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
+      <div className="flex items-center gap-0.5 flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 transition">
+        {v.cumplido ? (
+          <button onClick={onToggle} className="text-xs border border-green-200 text-green-700 hover:bg-green-50 rounded-lg px-2.5 py-1.5 font-medium transition">↩ Deshacer</button>
+        ) : (
+          <button onClick={onToggle} className="text-xs border border-ink-200 text-ink-700 hover:bg-white rounded-lg px-2.5 py-1.5 font-medium transition">Cumplido</button>
+        )}
+        <button onClick={() => setEditing(true)} title="Editar" className="p-1.5 rounded-lg text-ink-400 hover:text-brand-600 hover:bg-brand-50 transition">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        </button>
+        <button onClick={() => setConfirmDelete(true)} title="Eliminar" className="p-1.5 rounded-lg text-ink-400 hover:text-red-500 hover:bg-red-50 transition">
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -312,6 +314,7 @@ export default function ExpedienteDetailPage() {
   const [editingMovTexto, setEditingMovTexto] = useState("");
   const [editingMovFecha, setEditingMovFecha] = useState("");
   const [deletingMovId, setDeletingMovId] = useState<string | null>(null);
+  const [confirmQuitarCliente, setConfirmQuitarCliente] = useState<string | null>(null);
 
   // Equipo colapsable
   const [equipoOpen, setEquipoOpen] = useState(true);
@@ -468,7 +471,7 @@ export default function ExpedienteDetailPage() {
   };
 
   const handleRemoveCliente = async (clienteId: string) => {
-    if (!token || !confirm("¿Quitar este cliente del expediente?")) return;
+    if (!token) return;
     try {
       await api.delete(`/expedientes/${id}/clientes/${clienteId}`, token);
       setExpediente((prev) => prev ? { ...prev, clientes_extra: prev.clientes_extra.filter((c) => c.id !== clienteId) } : prev);
@@ -703,7 +706,7 @@ export default function ExpedienteDetailPage() {
                     isPrimary={false}
                     disponibles={[]}
                     onReplace={undefined}
-                    onRemove={() => handleRemoveCliente(c.id)}
+                    onRemove={() => setConfirmQuitarCliente(c.id)}
                   />
                 ))}
             </div>
@@ -1000,6 +1003,25 @@ export default function ExpedienteDetailPage() {
 
         </div>
       </div>
+
+      {confirmQuitarCliente && (
+        <ConfirmModal
+          title="¿Quitar cliente del expediente?"
+          description="El cliente dejará de estar asociado a este expediente."
+          confirmLabel="Quitar"
+          onConfirm={() => { handleRemoveCliente(confirmQuitarCliente); setConfirmQuitarCliente(null); }}
+          onCancel={() => setConfirmQuitarCliente(null)}
+        />
+      )}
+
+      {deletingMovId && (
+        <ConfirmModal
+          title="¿Eliminar este movimiento?"
+          description="Esta acción no se puede deshacer."
+          onConfirm={() => { handleDeleteMov(deletingMovId); setDeletingMovId(null); }}
+          onCancel={() => setDeletingMovId(null)}
+        />
+      )}
     </div>
   );
 }
@@ -1066,15 +1088,6 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                 <button onClick={onEditCancel} className="text-xs text-ink-500 hover:text-ink-700 transition">Cancelar</button>
                 <button onClick={() => onEditSave?.(item.id)} className="text-xs bg-brand-600 text-white px-2.5 py-1 rounded-lg hover:bg-brand-700 transition">Guardar</button>
               </div>
-            </div>
-          </div>
-        ) : isDeleting ? (
-          <div className="space-y-2">
-            <p className="text-sm text-ink-800">{item.descripcion}</p>
-            <div className="flex items-center gap-2 pt-1">
-              <span className="text-xs text-red-600 font-medium">¿Eliminar este movimiento?</span>
-              <button onClick={onDeleteCancel} className="text-xs text-ink-500 hover:text-ink-700 transition ml-auto">No</button>
-              <button onClick={() => onDelete?.(item.id)} className="text-xs bg-red-600 text-white px-2.5 py-1 rounded-lg hover:bg-red-700 transition">Sí, eliminar</button>
             </div>
           </div>
         ) : (

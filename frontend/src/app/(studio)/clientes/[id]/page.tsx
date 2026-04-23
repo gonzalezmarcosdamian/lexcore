@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Vencimiento, CuentaCorriente } from "@/lib/api";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 const ESTADO_EXP_COLORS: Record<EstadoExpediente, string> = {
   activo: "bg-green-50 text-green-700",
@@ -81,6 +82,7 @@ export default function ClienteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [confirmArchivar, setConfirmArchivar] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -161,7 +163,7 @@ export default function ClienteDetailPage() {
   };
 
   const handleArchivar = async () => {
-    if (!token || !confirm("¿Confirmar archivar este cliente? Esta acción se puede revertir.")) return;
+    if (!token) return;
     try {
       await api.delete(`/clientes/${id}`, token);
       router.push("/clientes");
@@ -212,6 +214,15 @@ export default function ClienteDetailPage() {
 
   return (
     <div className="max-w-4xl pb-28 lg:pb-6">
+      {confirmArchivar && (
+        <ConfirmModal
+          title="¿Archivar este cliente?"
+          description="Podés revertirlo después desde la lista de clientes archivados."
+          confirmLabel="Archivar"
+          onConfirm={() => { setConfirmArchivar(false); handleArchivar(); }}
+          onCancel={() => setConfirmArchivar(false)}
+        />
+      )}
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs mb-3">
         <Link href="/clientes" className="text-ink-400 hover:text-ink-600 transition">Clientes</Link>
@@ -242,7 +253,7 @@ export default function ClienteDetailPage() {
                 <span className="hidden sm:inline">Editar</span>
               </button>
               {!cliente.archivado && (
-                <button onClick={handleArchivar} className="border border-red-100 text-red-600 hover:bg-red-50 rounded-xl px-3 py-1.5 text-sm font-medium transition hidden sm:block">
+                <button onClick={() => setConfirmArchivar(true)} className="border border-red-100 text-red-600 hover:bg-red-50 rounded-xl px-3 py-1.5 text-sm font-medium transition hidden sm:block">
                   Archivar
                 </button>
               )}
