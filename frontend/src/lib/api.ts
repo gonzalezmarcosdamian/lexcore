@@ -324,6 +324,35 @@ export interface StudioMe {
   trial_ends_at?: string | null;
 }
 
+// ── Cuenta corriente cliente ──────────────────────────────────────────────────
+
+export interface TotalesMoneda {
+  acordado: number;
+  cobrado: number;
+  saldo: number;
+}
+
+export interface TotalesBimoneda {
+  ARS: TotalesMoneda;
+  USD: TotalesMoneda;
+}
+
+export interface ExpedienteCuenta {
+  id: string;
+  numero: string;
+  caratula: string;
+  estado: string;
+  honorarios: Honorario[];
+  ingresos: Ingreso[];
+  totales: TotalesBimoneda;
+}
+
+export interface CuentaCorriente {
+  expedientes: ExpedienteCuenta[];
+  ingresos_directos: Ingreso[];
+  totales_globales: TotalesBimoneda;
+}
+
 export interface Invitacion {
   id: string;
   tenant_id: string;

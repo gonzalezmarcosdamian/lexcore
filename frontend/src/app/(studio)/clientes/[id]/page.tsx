@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Vencimiento } from "@/lib/api";
+import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Vencimiento, CuentaCorriente } from "@/lib/api";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
 
 const ESTADO_EXP_COLORS: Record<EstadoExpediente, string> = {
@@ -63,6 +63,7 @@ export default function ClienteDetailPage() {
   const [tareasPorExp, setTareasPorExp] = useState<Record<string, Tarea[]>>({});
   const [vencPorExp, setVencPorExp] = useState<Record<string, Vencimiento[]>>({});
   const [tareasCliente, setTareasCliente] = useState<Tarea[]>([]);
+  const [cuentaCorriente, setCuentaCorriente] = useState<CuentaCorriente | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
     nombre: "",
@@ -123,6 +124,10 @@ export default function ClienteDetailPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+    api.get<CuentaCorriente>(`/clientes/${id}/cuenta-corriente`, token)
+      .then(setCuentaCorriente)
+      .catch(() => {});
   }, [id, token]);
 
   const handleSave = async () => {
@@ -444,6 +449,160 @@ export default function ClienteDetailPage() {
 
         </div>
       </div>
+
+      {/* ── Cuenta Corriente ── */}
+      {cuentaCorriente && (cuentaCorriente.expedientes.some(e => e.honorarios.length > 0 || e.ingresos.length > 0) || cuentaCorriente.ingresos_directos.length > 0) && (
+        <div className="mt-6">
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-ink-100 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-700 uppercase tracking-wide">Cuenta Corriente</h2>
+            </div>
+
+            {/* KPIs globales */}
+            {(() => {
+              const g = cuentaCorriente.totales_globales;
+              const tieneARS = g.ARS.acordado > 0 || g.ARS.cobrado > 0;
+              const tieneUSD = g.USD.acordado > 0 || g.USD.cobrado > 0;
+              return (tieneARS || tieneUSD) ? (
+                <div className={`grid grid-cols-1 ${tieneARS && tieneUSD ? "sm:grid-cols-2" : ""} gap-px bg-ink-100`}>
+                  {tieneARS && <KpiMoneda moneda="ARS" t={g.ARS} />}
+                  {tieneUSD && <KpiMoneda moneda="USD" t={g.USD} />}
+                </div>
+              ) : null;
+            })()}
+
+            {/* Por expediente */}
+            {cuentaCorriente.expedientes.filter(e => e.honorarios.length > 0 || e.ingresos.length > 0).map(exp => (
+              <ExpedienteCuentaRow key={exp.id} exp={exp} />
+            ))}
+
+            {/* Ingresos directos sin expediente */}
+            {cuentaCorriente.ingresos_directos.length > 0 && (
+              <div className="border-t border-ink-100">
+                <div className="px-5 py-3 bg-ink-50/40">
+                  <p className="text-xs font-semibold text-ink-600">Ingresos sin expediente</p>
+                </div>
+                <div className="divide-y divide-ink-50">
+                  {cuentaCorriente.ingresos_directos.map(ing => (
+                    <IngresoRow key={ing.id} ing={ing} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Sub-componentes Cuenta Corriente ──────────────────────────────────────────
+
+function fmt(n: number, moneda: string) {
+  return new Intl.NumberFormat("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n) + (moneda === "USD" ? " USD" : "");
+}
+
+function KpiMoneda({ moneda, t }: { moneda: string; t: { acordado: number; cobrado: number; saldo: number } }) {
+  const pct = t.acordado > 0 ? Math.min(100, Math.round((t.cobrado / t.acordado) * 100)) : 0;
+  return (
+    <div className="bg-white px-5 py-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-ink-500 uppercase tracking-wider">{moneda}</span>
+        {t.saldo > 0 && <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Saldo ${fmt(t.saldo, moneda)}</span>}
+        {t.saldo <= 0 && t.acordado > 0 && <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">✓ Al día</span>}
+      </div>
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <div>
+          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Acordado</p>
+          <p className="text-sm font-bold text-ink-800">${fmt(t.acordado, moneda)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Cobrado</p>
+          <p className="text-sm font-bold text-green-700">${fmt(t.cobrado, moneda)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Pendiente</p>
+          <p className={`text-sm font-bold ${t.saldo > 0 ? "text-red-600" : "text-ink-400"}`}>${fmt(t.saldo, moneda)}</p>
+        </div>
+      </div>
+      {t.acordado > 0 && (
+        <div className="h-1.5 bg-ink-100 rounded-full overflow-hidden">
+          <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExpedienteCuentaRow({ exp }: { exp: import("@/lib/api").ExpedienteCuenta }) {
+  const [open, setOpen] = useState(true);
+  const tieneDeuda = exp.totales.ARS.saldo > 0 || exp.totales.USD.saldo > 0;
+
+  return (
+    <div className="border-t border-ink-100">
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-3 px-5 py-3 hover:bg-ink-50/50 transition text-left">
+        <svg className={`w-4 h-4 text-ink-400 transition-transform flex-shrink-0 ${open ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold text-ink-800 font-mono">{exp.numero}</span>
+          <span className="text-xs text-ink-400 ml-2 truncate">{exp.caratula}</span>
+        </div>
+        {tieneDeuda
+          ? <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex-shrink-0">Con deuda</span>
+          : <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex-shrink-0">Al día</span>
+        }
+      </button>
+
+      {open && (
+        <div className="pb-2">
+          {exp.honorarios.map(h => (
+            <div key={h.id} className="mx-4 mb-3 rounded-xl border border-ink-100 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 bg-ink-50/40">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink-700 truncate">{h.concepto}</p>
+                  <p className="text-[10px] text-ink-400">{h.fecha_acuerdo} · Acordado <span className="font-semibold text-ink-600">${fmt(Number(h.monto_acordado), h.moneda)} {h.moneda}</span></p>
+                </div>
+                <div className="text-right flex-shrink-0 ml-3">
+                  {Number(h.saldo_pendiente) > 0
+                    ? <p className="text-xs font-bold text-red-600">Saldo ${fmt(Number(h.saldo_pendiente), h.moneda)}</p>
+                    : <p className="text-xs font-bold text-green-600">✓ Pagado</p>
+                  }
+                </div>
+              </div>
+              {h.pagos.length > 0 && (
+                <div className="divide-y divide-ink-50">
+                  {h.pagos.map(p => (
+                    <div key={p.id} className="flex items-center gap-3 px-4 py-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
+                      <span className="text-xs text-ink-500 flex-shrink-0">{p.fecha}</span>
+                      <span className="text-xs text-ink-400 flex-shrink-0 capitalize">{p.tipo}</span>
+                      {p.comprobante && <span className="text-xs text-ink-400 truncate">{p.comprobante}</span>}
+                      <span className="ml-auto text-xs font-semibold text-green-700">${fmt(Number(p.importe), p.moneda)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {exp.ingresos.map(ing => (
+            <div key={ing.id} className="mx-4 mb-1">
+              <IngresoRow ing={ing} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IngresoRow({ ing }: { ing: import("@/lib/api").Ingreso }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-2.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+      <span className="text-xs text-ink-500 flex-shrink-0">{ing.fecha}</span>
+      <span className="text-xs text-ink-700 truncate flex-1">{ing.descripcion}</span>
+      <span className="text-xs text-ink-400 flex-shrink-0 capitalize">{ing.categoria.replace(/_/g, " ")}</span>
+      <span className="text-xs font-semibold text-blue-700 flex-shrink-0">${fmt(Number(ing.monto), ing.moneda)}</span>
     </div>
   );
 }
