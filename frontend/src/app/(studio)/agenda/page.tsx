@@ -15,6 +15,8 @@ import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calendar-mensual";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 import { todayAR, yearAR, monthAR } from "@/lib/date";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { FilterGroup } from "@/components/ui/filter-pills";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -261,47 +263,49 @@ function VencimientoCard({
   const urgente = esUrgente(v.fecha) && !v.cumplido;
 
   return (
-    <div
-      draggable={isDraggable}
-      onDragStart={onDragStart}
-      className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
-        v.cumplido      ? "bg-green-50 border-green-100 opacity-70" :
-        vencida         ? "bg-red-50 border-red-200" :
-        urgente         ? "bg-amber-50 border-amber-200" :
-                          "bg-white border-ink-100 hover:border-ink-200"
-      }`}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-          <VencimientoStatusPill cumplido={v.cumplido} onChange={onToggle} />
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            {v.tipo ?? "Vencimiento"}
-          </span>
-          {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
-          {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
+    <>
+      {confirmDelete && (
+        <ConfirmModal
+          title="¿Eliminar vencimiento?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { setConfirmDelete(false); onDelete(); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      <div
+        draggable={isDraggable}
+        onDragStart={onDragStart}
+        className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
+          v.cumplido      ? "bg-green-50 border-green-100 opacity-70" :
+          vencida         ? "bg-red-50 border-red-200" :
+          urgente         ? "bg-amber-50 border-amber-200" :
+                            "bg-white border-ink-100 hover:border-ink-200"
+        }`}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <VencimientoStatusPill cumplido={v.cumplido} onChange={onToggle} />
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              {v.tipo ?? "Vencimiento"}
+            </span>
+            {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
+            {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
+          </div>
+          <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</button>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className="text-xs text-ink-400">{formatFecha(v.fecha)}{v.hora ? ` · ${v.hora}` : ""}</span>
+            {exp ? (
+              <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate">
+                {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
+              </Link>
+            ) : (
+              <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
+            )}
+          </div>
+          <AdjuntosInline vencimientoId={v.id} token={token} />
         </div>
-        <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</button>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-xs text-ink-400">{formatFecha(v.fecha)}{v.hora ? ` · ${v.hora}` : ""}</span>
-          {exp ? (
-            <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate">
-              {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-            </Link>
-          ) : (
-            <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
-          )}
-        </div>
-        <AdjuntosInline vencimientoId={v.id} token={token} />
-      </div>
-
-      {confirmDelete ? (
-        <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
-          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-          <button onClick={onDelete} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg font-semibold transition">Sí</button>
-          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50 transition">No</button>
-        </div>
-      ) : (
         <div className="flex flex-col items-center gap-0.5 flex-shrink-0 ml-1">
           <button onClick={onDetail} title="Ver detalle" className="p-1.5 rounded-lg text-ink-300 hover:text-brand-600 hover:bg-brand-50 transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -315,8 +319,8 @@ function VencimientoCard({
             </button>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -341,52 +345,54 @@ function TareaCard({
   const vencida = t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha";
 
   return (
-    <div
-      draggable={isDraggable}
-      onDragStart={onDragStart}
-      className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
-        t.estado === "hecha"    ? "bg-green-50 border-green-100 opacity-70" :
-        vencida                 ? "bg-red-50 border-red-200" :
-        t.estado === "en_curso" ? "bg-blue-50 border-blue-100" :
-                                  "bg-white border-ink-100 hover:border-ink-200"
-      }`}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-          <TareaStatusPill estado={t.estado} onChange={onToggle} />
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-            {TIPO_TAREA_LABEL[t.tipo] ?? ""} {t.tipo ?? "Tarea"}
-          </span>
-          {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencida</span>}
-        </div>
-        <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>{t.titulo}</button>
-        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          {t.fecha_limite && <span className="text-xs text-ink-400">{formatFecha(t.fecha_limite)}{t.hora ? ` · ${t.hora}` : ""}</span>}
-          {t.responsable_nombre && (
-            <span className="text-xs text-ink-400 flex items-center gap-0.5">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-              {t.responsable_nombre}
+    <>
+      {confirmDelete && (
+        <ConfirmModal
+          title="¿Eliminar tarea?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { setConfirmDelete(false); onDelete(); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      <div
+        draggable={isDraggable}
+        onDragStart={onDragStart}
+        className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
+          t.estado === "hecha"    ? "bg-green-50 border-green-100 opacity-70" :
+          vencida                 ? "bg-red-50 border-red-200" :
+          t.estado === "en_curso" ? "bg-blue-50 border-blue-100" :
+                                    "bg-white border-ink-100 hover:border-ink-200"
+        }`}
+      >
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+            <TareaStatusPill estado={t.estado} onChange={onToggle} />
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
+              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+              {TIPO_TAREA_LABEL[t.tipo] ?? ""} {t.tipo ?? "Tarea"}
             </span>
-          )}
-          {exp ? (
-            <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate max-w-[180px]">
-              {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
-            </Link>
-          ) : t.expediente_id ? (
-            <Link href={`/expedientes/${t.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
-          ) : null}
+            {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencida</span>}
+          </div>
+          <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${t.estado === "hecha" ? "line-through text-ink-400" : "text-ink-900"}`}>{t.titulo}</button>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            {t.fecha_limite && <span className="text-xs text-ink-400">{formatFecha(t.fecha_limite)}{t.hora ? ` · ${t.hora}` : ""}</span>}
+            {t.responsable_nombre && (
+              <span className="text-xs text-ink-400 flex items-center gap-0.5">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                {t.responsable_nombre}
+              </span>
+            )}
+            {exp ? (
+              <Link href={`/expedientes/${exp.id}`} className="text-xs text-brand-600 hover:underline truncate max-w-[180px]">
+                {exp.numero}{exp.cliente_nombre ? ` · ${exp.cliente_nombre}` : ""}
+              </Link>
+            ) : t.expediente_id ? (
+              <Link href={`/expedientes/${t.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
+            ) : null}
+          </div>
+          <AdjuntosInline tareaId={t.id} token={token} />
         </div>
-        <AdjuntosInline tareaId={t.id} token={token} />
-      </div>
-
-      {confirmDelete ? (
-        <div className="flex items-center gap-1.5 flex-shrink-0 ml-1">
-          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-          <button onClick={onDelete} className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-lg font-semibold transition">Sí</button>
-          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2 py-1 rounded-lg hover:bg-ink-50 transition">No</button>
-        </div>
-      ) : (
         <div className="flex flex-col items-center gap-0.5 flex-shrink-0 ml-1">
           <button onClick={onDetail} title="Ver detalle" className="p-1.5 rounded-lg text-ink-300 hover:text-brand-600 hover:bg-brand-50 transition">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -400,8 +406,8 @@ function TareaCard({
             </button>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -1073,28 +1079,41 @@ export default function AgendaPage() {
           </div>
         </div>
 
-        {/* Filtros desktop */}
+        {/* Filtros */}
         {vista === "tablero" && !loading && (
           <div className="space-y-3">
             <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-            <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-medium text-ink-500">Vencimientos:</span>
-                {(["", "vencimiento", "audiencia", "presentacion", "pericia", "otro"] as const).map(t => (
-                  <button key={t} onClick={() => setFiltroTipoVenc(t)} className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoVenc === t ? "bg-purple-600 text-white border-purple-600" : "bg-white text-ink-500 border-ink-200 hover:border-purple-300"}`}>
-                    {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-medium text-ink-500">Tareas:</span>
-                {(["", "judicial", "extrajudicial", "administrativa", "operativa"] as const).map(t => (
-                  <button key={t} onClick={() => setFiltroTipoTarea(t)} className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${filtroTipoTarea === t ? "bg-blue-600 text-white border-blue-600" : "bg-white text-ink-500 border-ink-200 hover:border-blue-300"}`}>
-                    {t === "" ? "Todos" : t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <FilterGroup
+              groups={[
+                {
+                  label: "Vencimientos",
+                  value: filtroTipoVenc,
+                  onChange: setFiltroTipoVenc,
+                  activeColor: "purple",
+                  options: [
+                    { value: "", label: "Todos" },
+                    { value: "vencimiento", label: "Vencimiento" },
+                    { value: "audiencia", label: "Audiencia" },
+                    { value: "presentacion", label: "Presentación" },
+                    { value: "pericia", label: "Pericia" },
+                    { value: "otro", label: "Otro" },
+                  ],
+                },
+                {
+                  label: "Tareas",
+                  value: filtroTipoTarea,
+                  onChange: setFiltroTipoTarea,
+                  activeColor: "blue",
+                  options: [
+                    { value: "", label: "Todos" },
+                    { value: "judicial", label: "Judicial" },
+                    { value: "extrajudicial", label: "Extrajudicial" },
+                    { value: "administrativa", label: "Administrativa" },
+                    { value: "operativa", label: "Operativa" },
+                  ],
+                },
+              ]}
+            />
           </div>
         )}
 

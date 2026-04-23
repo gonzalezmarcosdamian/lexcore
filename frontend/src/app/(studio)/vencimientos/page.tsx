@@ -10,6 +10,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Vencimiento, Expediente } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { FilterPillsRow } from "@/components/ui/filter-pills";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -225,22 +227,17 @@ function VencimientoRow({
         </div>
       </div>
 
+      {confirmDelete && (
+        <ConfirmModal
+          title="¿Eliminar vencimiento?"
+          description="Esta acción no se puede deshacer."
+          confirmLabel="Eliminar"
+          onConfirm={() => { setConfirmDelete(false); onDelete(v.id); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
       {/* Actions */}
-      {confirmDelete ? (
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
-          <button
-            onClick={() => { onDelete(v.id); setConfirmDelete(false); }}
-            disabled={deleting === v.id}
-            className="text-xs bg-red-600 hover:bg-red-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition disabled:opacity-50"
-          >
-            Sí
-          </button>
-          <button onClick={() => setConfirmDelete(false)} className="text-xs border border-ink-200 text-ink-600 px-2.5 py-1.5 rounded-lg hover:bg-ink-50 transition">
-            No
-          </button>
-        </div>
-      ) : v.cumplido ? (
+      {v.cumplido ? (
         <span className="flex-shrink-0 flex items-center gap-1 text-xs text-green-600 font-semibold">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -494,51 +491,49 @@ export default function VencimientosPage() {
       </div>
 
       {/* Filter bar */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="space-y-2 mb-4">
         <input
           type="search"
           placeholder="Buscar por descripción…"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          className="w-full sm:w-52 sm:focus:w-80 bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition-all"
+          className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition-all"
         />
-        <select
+        <FilterPillsRow
+          value={estadoFiltro}
+          onChange={(v) => setEstadoFiltro(v as EstadoFiltro)}
+          activeColor="brand"
+          options={[
+            { value: "pendientes", label: "Pendientes" },
+            { value: "cumplidos", label: "Cumplidos" },
+          ]}
+        />
+        <FilterPillsRow
+          label="Período"
           value={periodo}
-          onChange={(e) => setPeriodo(e.target.value as Periodo)}
-          className="bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"
-        >
-          <option value="7">Próximos 7 días</option>
-          <option value="30">Próximos 30 días</option>
-          <option value="90">Próximos 90 días</option>
-          <option value="todos">Todos</option>
-        </select>
-        <select
+          onChange={(v) => setPeriodo(v as Periodo)}
+          activeColor="brand"
+          options={[
+            { value: "7", label: "7 días" },
+            { value: "30", label: "30 días" },
+            { value: "90", label: "90 días" },
+            { value: "todos", label: "Todos" },
+          ]}
+        />
+        <FilterPillsRow
+          label="Tipo"
           value={tipoFiltro}
-          onChange={(e) => setTipoFiltro(e.target.value)}
-          className="bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition"
-        >
-          <option value="">Todos los tipos</option>
-          <option value="vencimiento">Vencimiento</option>
-          <option value="audiencia">Audiencia</option>
-          <option value="presentacion">Presentación</option>
-          <option value="pericia">Pericia</option>
-          <option value="otro">Otro</option>
-        </select>
-        <div className="flex bg-ink-100 rounded-xl p-1 gap-1">
-          {(["pendientes", "cumplidos"] as EstadoFiltro[]).map((e) => (
-            <button
-              key={e}
-              onClick={() => setEstadoFiltro(e)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                estadoFiltro === e
-                  ? "bg-white text-ink-900 shadow-sm"
-                  : "text-ink-500 hover:text-ink-700"
-              }`}
-            >
-              {e === "pendientes" ? "Pendientes" : "Cumplidos"}
-            </button>
-          ))}
-        </div>
+          onChange={setTipoFiltro}
+          activeColor="purple"
+          options={[
+            { value: "", label: "Todos" },
+            { value: "vencimiento", label: "Vencimiento" },
+            { value: "audiencia", label: "Audiencia" },
+            { value: "presentacion", label: "Presentación" },
+            { value: "pericia", label: "Pericia" },
+            { value: "otro", label: "Otro" },
+          ]}
+        />
       </div>
 
       {error && (
