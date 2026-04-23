@@ -130,12 +130,13 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
   const [fecha, setFecha] = useState(v.fecha);
   const [hora, setHora] = useState(v.hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
+  const [cumplido, setCumplido] = useState(v.cumplido);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo }, token);
+      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo, cumplido }, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
@@ -147,6 +148,25 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
         </div>
         <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCumplido(false)}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${!cumplido ? "bg-purple-600 text-white border-purple-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
+              >
+                Pendiente
+              </button>
+              <button
+                type="button"
+                onClick={() => setCumplido(true)}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${cumplido ? "bg-green-600 text-white border-green-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
+              >
+                ✓ Cumplido
+              </button>
+            </div>
+          </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
             <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
