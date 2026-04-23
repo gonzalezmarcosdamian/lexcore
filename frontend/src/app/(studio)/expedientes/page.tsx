@@ -510,7 +510,8 @@ export default function ExpedientesPage() {
                   <React.Fragment key={e.id}>
                   <tr
                     onClick={() => router.push(`/expedientes/${e.id}`)}
-                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-blue-50/60 hover:bg-blue-100/50 [&>td]:!border-b-0" : "hover:bg-brand-50/40"}`}
+                    style={e.flag_paralizado ? { background: "rgb(219 234 254)", boxShadow: "inset 2px 0 0 rgb(59 130 246), inset 0 1px 0 rgb(147 197 253), inset -1px 0 0 rgb(147 197 253)" } : undefined}
+                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "hover:brightness-95" : "hover:bg-brand-50/40"}`}
                   >
                     {visibleCols.map((colKey) => {
                       switch (colKey) {
@@ -587,14 +588,14 @@ export default function ExpedientesPage() {
                     })}
                   </tr>
                   {e.flag_paralizado && (
-                    <tr key={`${e.id}-footer`} onClick={() => router.push(`/expedientes/${e.id}`)} className="cursor-pointer bg-blue-100/50 hover:bg-blue-100/70">
-                      <td colSpan={visibleCols.length} className="px-4 py-2 border-t border-blue-200/80">
-                        <div className="flex items-center gap-2.5">
+                    <tr key={`${e.id}-footer`} onClick={() => router.push(`/expedientes/${e.id}`)} style={{ background: "rgb(191 219 254)", boxShadow: "inset 2px 0 0 rgb(59 130 246), inset 0 -1px 0 rgb(147 197 253), inset -1px 0 0 rgb(147 197 253)" }} className="cursor-pointer hover:brightness-95">
+                      <td colSpan={visibleCols.length} className="px-4 py-1.5" style={{ borderTop: "1px solid rgb(147 197 253)" }}>
+                        <div className="flex items-center gap-2">
                           <svg className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
                           </svg>
-                          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.15em]">Paralizado</span>
-                          <div className="flex-1 h-px bg-blue-200/70" />
+                          <span className="text-xs font-bold text-blue-600 uppercase tracking-widest">Paralizado</span>
+                          <div className="flex-1 h-px bg-blue-300" />
                         </div>
                       </td>
                     </tr>
