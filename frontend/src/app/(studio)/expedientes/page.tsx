@@ -445,7 +445,7 @@ export default function ExpedientesPage() {
         {/* Tabla desktop */}
         <div className="hidden lg:block bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
+          <table className="w-full text-sm min-w-[500px] table-auto">
             <thead>
               <tr className="border-b border-ink-100 bg-ink-50/60">
                 {visibleCols.map(key => ALL_COLS.find(c => c.key === key)!).map((col) => {
@@ -517,7 +517,7 @@ export default function ExpedientesPage() {
                           </td>
                         );
                         case "caratula": return (
-                          <td key="caratula" className="px-4 py-3.5 max-w-0">
+                          <td key="caratula" className="px-4 py-3.5 max-w-xs lg:max-w-sm xl:max-w-md">
                             <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
                             {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
                           </td>
