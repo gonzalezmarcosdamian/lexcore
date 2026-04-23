@@ -507,29 +507,36 @@ export default function ExpedientesPage() {
                 </tr>
               ) : (
                 sorted.map((e) => (
-                  <>
                   <tr
                     key={e.id}
                     onClick={() => router.push(`/expedientes/${e.id}`)}
-                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-gradient-to-r from-slate-100/80 via-blue-50/60 to-slate-100/80 hover:from-slate-200/60 hover:via-blue-100/60 hover:to-slate-200/60" : "hover:bg-brand-50/40"}`}
+                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-blue-50/70 hover:bg-blue-100/60" : "hover:bg-brand-50/40"}`}
                   >
                     {visibleCols.map((colKey) => {
                       switch (colKey) {
                         case "numero": return (
-                          <td key="numero" className="px-4 py-3.5">
+                          <td key="numero" className={`py-3.5 ${e.flag_paralizado ? "pl-3 pr-4 border-l-4 border-blue-400" : "px-4"}`}>
                             {e.numero_judicial
                               ? <><span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition block">{e.numero_judicial}</span><span className="font-mono text-[10px] text-ink-400">{e.numero}</span></>
                               : <span className="font-mono text-xs font-bold text-ink-700 group-hover:text-brand-700 transition">{e.numero}</span>}
                           </td>
                         );
                         case "numero_judicial": return (
-                          <td key="numero_judicial" className="px-4 py-3.5">
+                          <td key="numero_judicial" className={`py-3.5 ${e.flag_paralizado ? "pl-3 pr-4 border-l-4 border-blue-400" : "px-4"}`}>
                             <span className="font-mono text-xs font-bold text-ink-700">{e.numero_judicial ?? <span className="text-ink-300">—</span>}</span>
                           </td>
                         );
                         case "caratula": return (
-                          <td key="caratula" className="px-4 py-3.5 max-w-xs lg:max-w-sm xl:max-w-md">
-                            <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
+                          <td key="caratula" className={`py-3.5 max-w-xs lg:max-w-sm xl:max-w-md ${e.flag_paralizado && !visibleCols.includes("numero") && !visibleCols.includes("numero_judicial") ? "pl-3 pr-4 border-l-4 border-blue-400" : "px-4"}`}>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
+                              {e.flag_paralizado && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-500 bg-blue-100 border border-blue-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0">
+                                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" /></svg>
+                                  Paralizado
+                                </span>
+                              )}
+                            </div>
                             {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
                           </td>
                         );
@@ -587,20 +594,6 @@ export default function ExpedientesPage() {
                       }
                     })}
                   </tr>
-                  {e.flag_paralizado && (
-                    <tr key={`${e.id}-paralizado`} onClick={() => router.push(`/expedientes/${e.id}`)} className="cursor-pointer">
-                      <td colSpan={visibleCols.length} className="px-4 py-1.5 bg-gradient-to-r from-blue-100/70 via-slate-100/80 to-blue-100/70 border-t border-blue-200/60 border-b border-blue-200/60">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18M3 12h18M5.636 5.636l12.728 12.728M18.364 5.636L5.636 18.364" />
-                          </svg>
-                          <span className="text-[10px] font-bold text-blue-400/90 uppercase tracking-[0.2em]">Paralizado</span>
-                          <div className="flex-1 h-px bg-gradient-to-r from-blue-200/60 to-transparent" />
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  </>
                 ))
               )}
             </tbody>
