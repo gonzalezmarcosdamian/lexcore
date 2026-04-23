@@ -581,28 +581,30 @@ export default function ExpedienteDetailPage() {
                 {expediente.flag_paralizado ? "Paralizado" : "Paralizar"}
               </button>
               {/* PDF unificado */}
-              <button
-                disabled={generandoPDF}
-                onClick={async () => {
-                  setGenerandoPDF(true);
-                  try {
-                    await downloadExpedientePDF(expediente.id, expediente.numero, token!);
-                  } catch {
-                    alert("Error al generar el PDF. Intentá de nuevo.");
-                  } finally {
-                    setGenerandoPDF(false);
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-ink-200 text-ink-500 hover:bg-ink-50 transition disabled:opacity-50"
-                title="Descargar PDF unificado del expediente"
-              >
-                {generandoPDF ? (
-                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                ) : (
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3" /></svg>
-                )}
-                {generandoPDF ? "Generando…" : "PDF"}
-              </button>
+              <div className="relative group">
+                <button
+                  disabled={generandoPDF}
+                  onClick={async () => {
+                    setGenerandoPDF(true);
+                    try {
+                      await downloadExpedientePDF(expediente.id, expediente.numero, token!);
+                    } catch {
+                      alert("No se pudo generar el PDF. Revisá tu conexión e intentá de nuevo.");
+                    } finally {
+                      setGenerandoPDF(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-ink-200 text-ink-500 hover:bg-ink-50 transition disabled:opacity-50"
+                  title={documentos.length === 0 ? "Genera el PDF con solo la carátula (sin documentos adjuntos)" : `Descargar PDF unificado (${documentos.length} doc${documentos.length !== 1 ? "s" : ""})`}
+                >
+                  {generandoPDF ? (
+                    <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  ) : (
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3" /></svg>
+                  )}
+                  {generandoPDF ? "Generando..." : documentos.length === 0 ? "PDF (sin docs)" : `PDF (${documentos.length})`}
+                </button>
+              </div>
               <span className="inline-flex items-center gap-1 text-xs text-ink-400 bg-ink-50 border border-ink-100 px-2.5 py-1 rounded-full">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {tiempoVida(expediente.created_at)}

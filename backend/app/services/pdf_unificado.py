@@ -12,7 +12,7 @@ from fpdf import FPDF
 from pypdf import PdfReader, PdfWriter
 
 # ── Layout ────────────────────────────────────────────────────────────────────
-PLACEHOLDER = "—"
+PLACEHOLDER = "-"
 MAX_DOCS    = 30
 PAGE_W      = 210
 PAGE_H      = 297
@@ -37,7 +37,7 @@ ESTADO_COLOR = {
 ROL_LABEL = {
     "responsable":  "Responsable",
     "colaborador":  "Colaborador",
-    "supervision":  "Supervisión",
+    "supervision":  "Supervision",
 }
 
 MESES = ["enero","febrero","marzo","abril","mayo","junio",
@@ -48,8 +48,14 @@ def _fecha_larga(dt: datetime) -> str:
     return f"{dt.day} de {MESES[dt.month - 1]} de {dt.year}"
 
 
+def _safe(text: str) -> str:
+    """Elimina caracteres fuera de latin-1 para compatibilidad con fuentes Helvetica de fpdf2."""
+    return text.encode("latin-1", errors="replace").decode("latin-1")
+
+
 def _val(v) -> str:
-    return str(v).strip() if v and str(v).strip() else PLACEHOLDER
+    raw = str(v).strip() if v and str(v).strip() else PLACEHOLDER
+    return _safe(raw)
 
 
 # ── Base FPDF: header/footer en páginas de contenido ─────────────────────────
@@ -83,10 +89,10 @@ class LexPDF(FPDF):
         self.set_font("Helvetica", "", 6.5)
         self.set_text_color(*MID_GRAY)
         self.set_x(MARGIN)
-        self.cell(CW / 2, 5, "Generado con LexCore · lexcore.app", align="L")
+        self.cell(CW / 2, 5, "Generado con LexCore - lexcore.app", align="L")
         total = self.total_ref[0] if self.total_ref[0] else "?"
         self.set_x(MARGIN + CW / 2)
-        self.cell(CW / 2, 5, f"Pág. {self.page_no()} / {total}", align="R")
+        self.cell(CW / 2, 5, f"Pag. {self.page_no()} / {total}", align="R")
         self.set_text_color(*DARK)
 
 
@@ -160,7 +166,7 @@ def _build_caratula(exp_data: dict, docs_count: int) -> bytes:
     pdf.set_xy(MARGIN, 20)
     pdf.set_font("Helvetica", "", 8.5)
     pdf.set_text_color(180, 200, 240)
-    pdf.cell(CW, 6, "  ·  ".join(contacto) if contacto else "lexcore.app", align="L")
+    pdf.cell(CW, 6, "  |  ".join(contacto) if contacto else "lexcore.app", align="L")
 
     # Línea accent al pie de la banda
     pdf.set_draw_color(*BRAND)
@@ -244,7 +250,7 @@ def _build_caratula(exp_data: dict, docs_count: int) -> bytes:
     pdf.set_text_color(*MID_GRAY)
     autor = _val(exp_data.get("autor_nombre"))
     pdf.cell(CW, 5,
-        f"Generado por {autor}  ·  {_fecha_larga(now)} a las {hora}  ·  {docs_count} documento{'s' if docs_count != 1 else ''} incluido{'s' if docs_count != 1 else ''}",
+        f"Generado por {autor}  |  {_fecha_larga(now)} a las {hora}  |  {docs_count} documento{'s' if docs_count != 1 else ''} incluido{'s' if docs_count != 1 else ''}",
         align="L")
 
     if docs_count == MAX_DOCS:
@@ -263,7 +269,7 @@ def _build_caratula(exp_data: dict, docs_count: int) -> bytes:
     pdf.cell(CW / 2, 5, studio.upper(), align="L")
     pdf.set_font("Helvetica", "", 7.5)
     pdf.set_x(MARGIN + CW / 2)
-    pdf.cell(CW / 2, 5, "Generado con LexCore · lexcore.app", align="R")
+    pdf.cell(CW / 2, 5, "Generado con LexCore - lexcore.app", align="R")
 
     total_ref[0] = pdf.page
     return pdf.output()
