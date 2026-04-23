@@ -427,17 +427,25 @@ export default function ExpedientesPage() {
             <div
               key={e.id}
               onClick={() => router.push(`/expedientes/${e.id}`)}
-              className="bg-white rounded-xl border border-ink-100 shadow-sm px-4 py-3.5 flex items-center gap-3 active:bg-brand-50 transition-colors cursor-pointer"
+              className={`rounded-xl border shadow-sm overflow-hidden cursor-pointer active:bg-brand-50 transition-colors ${e.flag_paralizado ? "border-orange-200 bg-orange-50" : "border-ink-100 bg-white"}`}
             >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-mono text-xs font-bold text-ink-500">{e.numero}</span>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ESTADO_BADGE[e.estado]}`}>{ESTADO_LABELS[e.estado]}</span>
+              <div className="px-4 py-3.5 flex items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-mono text-xs font-bold text-ink-500">{e.numero}</span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${ESTADO_BADGE[e.estado]}`}>{ESTADO_LABELS[e.estado]}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-ink-900 truncate">{e.caratula}</p>
+                  {e.cliente_nombre && <p className="text-xs text-ink-400 truncate mt-0.5">{e.cliente_nombre}</p>}
                 </div>
-                <p className="text-sm font-semibold text-ink-900 truncate">{e.caratula}</p>
-                {e.cliente_nombre && <p className="text-xs text-ink-400 truncate mt-0.5">{e.cliente_nombre}</p>}
+                <svg className="w-4 h-4 text-ink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </div>
-              <svg className="w-4 h-4 text-ink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              {e.flag_paralizado && (
+                <div className="flex items-center gap-1.5 px-4 py-1.5 bg-orange-100 border-t border-orange-200">
+                  <svg className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                  <span className="text-[11px] font-bold text-orange-700 uppercase tracking-wide">Paralizado</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -500,7 +508,7 @@ export default function ExpedientesPage() {
                   <tr
                     key={e.id}
                     onClick={() => router.push(`/expedientes/${e.id}`)}
-                    className="hover:bg-brand-50/40 cursor-pointer transition-colors group"
+                    className={`cursor-pointer transition-colors group ${e.flag_paralizado ? "bg-orange-50 hover:bg-orange-100/60" : "hover:bg-brand-50/40"}`}
                   >
                     {visibleCols.map((colKey) => {
                       switch (colKey) {
@@ -518,7 +526,15 @@ export default function ExpedientesPage() {
                         );
                         case "caratula": return (
                           <td key="caratula" className="px-4 py-3.5 max-w-xs lg:max-w-sm xl:max-w-md">
-                            <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-medium text-ink-900 truncate">{e.caratula}</p>
+                              {e.flag_paralizado && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-orange-700 bg-orange-100 border border-orange-200 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">
+                                  <svg className="w-2.5 h-2.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                                  Paralizado
+                                </span>
+                              )}
+                            </div>
                             {e.juzgado && <p className="text-xs text-ink-400 truncate mt-0.5">{e.juzgado}</p>}
                           </td>
                         );

@@ -303,6 +303,7 @@ export default function ExpedienteDetailPage() {
   // Edit mode
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ numero: "", numero_judicial: "", caratula: "", fuero: "", juzgado: "", localidad: "", estado: "activo" as EstadoExpediente, cliente_id: "" });
+  const [savingEstado, setSavingEstado] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Bitácora — entrada manual
@@ -399,6 +400,28 @@ export default function ExpedienteDetailPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleChangeEstado = async (estado: EstadoExpediente) => {
+    if (!token || !expediente) return;
+    setSavingEstado(true);
+    try {
+      const updated = await api.patch<Expediente>(`/expedientes/${id}`, { estado }, token);
+      setExpediente(updated);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally { setSavingEstado(false); }
+  };
+
+  const handleToggleParalizado = async () => {
+    if (!token || !expediente) return;
+    setSavingEstado(true);
+    try {
+      const updated = await api.patch<Expediente>(`/expedientes/${id}`, { flag_paralizado: !expediente.flag_paralizado }, token);
+      setExpediente(updated);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally { setSavingEstado(false); }
   };
 
   const handleAddMov = async (e: React.FormEvent) => {
@@ -524,10 +547,38 @@ export default function ExpedienteDetailPage() {
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-ink-900 font-mono">{expediente.numero}</h1>
-              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTADO_BADGE[expediente.estado]}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${ESTADO_DOT[expediente.estado]}`} />
-                {ESTADO_LABELS[expediente.estado]}
-              </span>
+              {/* Estado — botones inline */}
+              <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
+                {(["activo", "archivado", "cerrado"] as EstadoExpediente[]).map(e => (
+                  <button
+                    key={e}
+                    disabled={savingEstado}
+                    onClick={() => handleChangeEstado(e)}
+                    className={`px-2.5 py-1.5 capitalize transition disabled:opacity-50 ${
+                      expediente.estado === e
+                        ? e === "activo" ? "bg-green-600 text-white"
+                          : e === "archivado" ? "bg-ink-400 text-white"
+                          : "bg-red-500 text-white"
+                        : "bg-white text-ink-500 hover:bg-ink-50"
+                    }`}
+                  >
+                    {ESTADO_LABELS[e]}
+                  </button>
+                ))}
+              </div>
+              {/* Paralizado toggle */}
+              <button
+                disabled={savingEstado}
+                onClick={handleToggleParalizado}
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition disabled:opacity-50 ${
+                  expediente.flag_paralizado
+                    ? "bg-orange-100 text-orange-700 border-orange-300"
+                    : "border-ink-200 text-ink-400 hover:bg-ink-50"
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                {expediente.flag_paralizado ? "Paralizado" : "Paralizar"}
+              </button>
               <span className="inline-flex items-center gap-1 text-xs text-ink-400 bg-ink-50 border border-ink-100 px-2.5 py-1 rounded-full">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 {tiempoVida(expediente.created_at)}
@@ -565,17 +616,9 @@ export default function ExpedienteDetailPage() {
             </div>
             <div className="p-5 space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                <div className="col-span-2">
                   <label className={labelCls}>N° Interno</label>
                   <input value={form.numero} onChange={(e) => setForm({ ...form, numero: e.target.value })} className={`${inputCls} font-mono`} placeholder="EXP-2026-0001" />
-                </div>
-                <div>
-                  <label className={labelCls}>Estado</label>
-                  <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value as EstadoExpediente })} className={inputCls}>
-                    <option value="activo">Activo</option>
-                    <option value="archivado">Archivado</option>
-                    <option value="cerrado">Cerrado</option>
-                  </select>
                 </div>
                 <div className="col-span-2">
                   <label className={labelCls}>N° de Expediente</label>

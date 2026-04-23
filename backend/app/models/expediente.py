@@ -30,6 +30,7 @@ class Expediente(TenantModel):
     estado: Mapped[EstadoExpediente] = mapped_column(
         Enum(EstadoExpediente), nullable=False, default=EstadoExpediente.activo
     )
+    flag_paralizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     cliente_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("clientes.id"), nullable=True, index=True
     )

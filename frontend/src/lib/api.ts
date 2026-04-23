@@ -101,6 +101,7 @@ export interface Expediente {
   juzgado?: string;
   localidad?: string;
   estado: EstadoExpediente;
+  flag_paralizado: boolean;
   cliente_id?: string;
   cliente_nombre?: string;
   clientes_extra: ClienteMin[];  // always [] for expedientes without multi-client

@@ -62,6 +62,7 @@ class ExpedienteUpdate(BaseModel):
     juzgado: Optional[str] = None
     localidad: Optional[str] = None
     estado: Optional[EstadoExpediente] = None
+    flag_paralizado: Optional[bool] = None
     cliente_id: Optional[str] = None
 
 
@@ -75,6 +76,7 @@ class ExpedienteOut(BaseModel):
     juzgado: Optional[str] = None
     localidad: Optional[str] = None
     estado: EstadoExpediente
+    flag_paralizado: bool = False
     cliente_id: Optional[str] = None
     cliente_nombre: Optional[str] = None   # enriquecido en el router
     created_at: datetime
