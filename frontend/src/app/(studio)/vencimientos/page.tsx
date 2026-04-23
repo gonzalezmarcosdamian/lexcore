@@ -11,7 +11,7 @@ import Link from "next/link";
 import { api, Vencimiento, Expediente } from "@/lib/api";
 import { PageHelp } from "@/components/ui/page-help";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { FilterPillsRow } from "@/components/ui/filter-pills";
+import { FilterGroup } from "@/components/ui/filter-pills";
 
 const MESES = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -499,39 +499,44 @@ export default function VencimientosPage() {
           onChange={(e) => setBusqueda(e.target.value)}
           className="w-full bg-white border border-ink-200 rounded-xl px-4 py-2.5 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent transition-all"
         />
-        <FilterPillsRow
-          value={estadoFiltro}
-          onChange={(v) => setEstadoFiltro(v as EstadoFiltro)}
-          activeColor="brand"
-          options={[
-            { value: "pendientes", label: "Pendientes" },
-            { value: "cumplidos", label: "Cumplidos" },
-          ]}
-        />
-        <FilterPillsRow
-          label="Período"
-          value={periodo}
-          onChange={(v) => setPeriodo(v as Periodo)}
-          activeColor="brand"
-          options={[
-            { value: "7", label: "7 días" },
-            { value: "30", label: "30 días" },
-            { value: "90", label: "90 días" },
-            { value: "todos", label: "Todos" },
-          ]}
-        />
-        <FilterPillsRow
-          label="Tipo"
-          value={tipoFiltro}
-          onChange={setTipoFiltro}
-          activeColor="purple"
-          options={[
-            { value: "", label: "Todos" },
-            { value: "vencimiento", label: "Vencimiento" },
-            { value: "audiencia", label: "Audiencia" },
-            { value: "presentacion", label: "Presentación" },
-            { value: "pericia", label: "Pericia" },
-            { value: "otro", label: "Otro" },
+        <FilterGroup
+          groups={[
+            {
+              label: "Estado",
+              value: estadoFiltro,
+              onChange: (v) => setEstadoFiltro(v as EstadoFiltro),
+              activeColor: "brand",
+              options: [
+                { value: "pendientes", label: "Pendientes" },
+                { value: "cumplidos", label: "Cumplidos" },
+              ],
+            },
+            {
+              label: "Período",
+              value: periodo,
+              onChange: (v) => setPeriodo(v as Periodo),
+              activeColor: "brand",
+              options: [
+                { value: "7", label: "7 días" },
+                { value: "30", label: "30 días" },
+                { value: "90", label: "90 días" },
+                { value: "todos", label: "Todos" },
+              ],
+            },
+            {
+              label: "Tipo",
+              value: tipoFiltro,
+              onChange: setTipoFiltro,
+              activeColor: "purple",
+              options: [
+                { value: "", label: "Todos" },
+                { value: "vencimiento", label: "Vencimiento" },
+                { value: "audiencia", label: "Audiencia" },
+                { value: "presentacion", label: "Presentación" },
+                { value: "pericia", label: "Pericia" },
+                { value: "otro", label: "Otro" },
+              ],
+            },
           ]}
         />
       </div>
