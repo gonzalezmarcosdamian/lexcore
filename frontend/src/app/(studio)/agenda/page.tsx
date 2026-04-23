@@ -154,7 +154,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
               <button
                 type="button"
                 onClick={() => setCumplido(false)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${!cumplido ? "bg-purple-600 text-white border-purple-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${!cumplido ? "bg-ink-600 text-white border-ink-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
               >
                 Pendiente
               </button>
@@ -229,6 +229,21 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
         </div>
         <div className="space-y-4">
           <div>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
+            <div className="flex gap-2">
+              {(["pendiente", "en_curso", "hecha"] as const).map((s) => {
+                const labels = { pendiente: "Pendiente", en_curso: "En curso", hecha: "✓ Hecha" };
+                const active = { pendiente: "bg-ink-600 text-white border-ink-600", en_curso: "bg-blue-600 text-white border-blue-600", hecha: "bg-green-600 text-white border-green-600" };
+                return (
+                  <button key={s} type="button" onClick={() => setEstado(s)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${estado === s ? active[s] : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}>
+                    {labels[s]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Título</label>
             <input value={titulo} onChange={(e) => setTitulo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           </div>
@@ -240,21 +255,6 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
               <TimeInput value={hora} onChange={setHora} />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
-            <div className="flex gap-2">
-              {(["pendiente", "en_curso", "hecha"] as const).map((s) => {
-                const labels = { pendiente: "Pendiente", en_curso: "En curso", hecha: "✓ Hecha" };
-                const active = { pendiente: "bg-ink-700 text-white border-ink-700", en_curso: "bg-blue-600 text-white border-blue-600", hecha: "bg-green-600 text-white border-green-600" };
-                return (
-                  <button key={s} type="button" onClick={() => setEstado(s)}
-                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${estado === s ? active[s] : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}>
-                    {labels[s]}
-                  </button>
-                );
-              })}
             </div>
           </div>
           <div>
