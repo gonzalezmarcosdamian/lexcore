@@ -42,8 +42,8 @@ const ALL_COLS: { key: ColKey; label: string }[] = [
   { key: "cliente", label: "Cliente" },
   { key: "equipo", label: "Equipo" },
 ];
-const DEFAULT_COLS: ColKey[] = ["numero", "caratula", "fuero", "estado", "created_at", "cliente", "equipo"];
-const COLS_STORAGE_KEY = "lexcore_exp_cols";
+const DEFAULT_COLS: ColKey[] = ["numero_judicial", "caratula", "fuero", "estado"];
+const COLS_STORAGE_KEY = "lexcore_exp_cols_v2";
 
 export default function ExpedientesPage() {
   const { data: session } = useSession();
