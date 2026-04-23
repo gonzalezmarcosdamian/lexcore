@@ -154,7 +154,7 @@ export default function NuevoClientePage() {
                 placeholder="12345678"
                 inputMode="numeric"
               />
-              {touched.dni && errores.dni && <p className="text-xs text-red-600 mt-1">{errores.dni}</p>}
+              {touched.dni && errores.dni && <p role="alert" className="text-xs text-red-600 mt-1">{errores.dni}</p>}
             </div>
           )}
           <div>
@@ -169,8 +169,9 @@ export default function NuevoClientePage() {
               onBlur={() => setTouched((t) => ({ ...t, cuit: true }))}
               className={touched.cuit && errores.cuit ? inputErrCls : inputCls}
               placeholder={form.tipo === "fisica" ? "20-12345678-9" : "30-12345678-9"}
+              inputMode="numeric"
             />
-            {touched.cuit && errores.cuit && <p className="text-xs text-red-600 mt-1">{errores.cuit}</p>}
+            {touched.cuit && errores.cuit && <p role="alert" className="text-xs text-red-600 mt-1">{errores.cuit}</p>}
           </div>
         </div>
 
@@ -183,8 +184,9 @@ export default function NuevoClientePage() {
               onBlur={() => setTouched((t) => ({ ...t, telefono: true }))}
               className={touched.telefono && errores.telefono ? inputErrCls : inputCls}
               placeholder="+54 9 11 1234-5678"
+              inputMode="tel"
             />
-            {touched.telefono && errores.telefono && <p className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
+            {touched.telefono && errores.telefono && <p role="alert" className="text-xs text-red-600 mt-1">{errores.telefono}</p>}
           </div>
           <div>
             <label className={labelCls}>Email</label>
@@ -195,8 +197,9 @@ export default function NuevoClientePage() {
               onBlur={() => setTouched((t) => ({ ...t, email: true }))}
               className={touched.email && errores.email ? inputErrCls : inputCls}
               placeholder="cliente@ejemplo.com"
+              inputMode="email"
             />
-            {touched.email && errores.email && <p className="text-xs text-red-600 mt-1">{errores.email}</p>}
+            {touched.email && errores.email && <p role="alert" className="text-xs text-red-600 mt-1">{errores.email}</p>}
           </div>
         </div>
 
@@ -233,7 +236,7 @@ export default function NuevoClientePage() {
             Cancelar
           </Link>
           <button type="submit" disabled={loading}
-            className="flex-1 bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-brand-700 disabled:opacity-50 transition shadow-sm"
+            className="flex-1 bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-brand-700 active:scale-95 disabled:opacity-50 transition shadow-sm"
           >
             {loading ? "Guardando…" : "Guardar cliente"}
           </button>

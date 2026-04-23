@@ -206,7 +206,7 @@ export default function NuevoExpedientePage() {
                   placeholder="García c/ Empresa SA sobre daños"
                   autoFocus
                 />
-                {step1Error && <p className="text-xs text-red-500 mt-1.5">{step1Error}</p>}
+                {step1Error && <p role="alert" className="text-xs text-red-500 mt-1.5">{step1Error}</p>}
                 <p className="text-xs text-ink-400 mt-1.5">
                   Identificá el caso: partes y tipo de acción
                 </p>
@@ -256,7 +256,7 @@ export default function NuevoExpedientePage() {
             <button
               type="button"
               onClick={handleNext}
-              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition shadow-sm text-base"
+              className="w-full bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-semibold py-3.5 rounded-xl transition shadow-sm text-base"
             >
               Continuar →
             </button>
@@ -363,7 +363,7 @@ export default function NuevoExpedientePage() {
                     </div>
                   )}
                 </div>
-                {clienteError && <p className="text-xs text-red-500 mt-1.5">{clienteError}</p>}
+                {clienteError && <p role="alert" className="text-xs text-red-500 mt-1.5">{clienteError}</p>}
                 <p className="text-xs text-ink-400 mt-1.5">
                   ¿No encontrás el cliente?{" "}
                   <a href="/clientes/nuevo" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline hover:text-brand-700">
@@ -374,7 +374,7 @@ export default function NuevoExpedientePage() {
               </div>
 
               {error && (
-                <div className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">
+                <div role="alert" className="bg-red-50 text-red-700 text-sm rounded-xl px-4 py-3 border border-red-100">
                   {error}
                 </div>
               )}
@@ -391,7 +391,7 @@ export default function NuevoExpedientePage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition shadow-sm disabled:opacity-50 text-sm"
+                className="bg-brand-600 hover:bg-brand-700 active:scale-95 text-white font-semibold py-3.5 rounded-xl transition shadow-sm disabled:opacity-50 text-sm"
               >
                 {loading ? "Creando…" : "Crear expediente"}
               </button>

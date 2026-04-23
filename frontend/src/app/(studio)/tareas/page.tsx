@@ -42,7 +42,7 @@ function TareaCard({ tarea, onToggle, onDetail }: { tarea: Tarea; onToggle: (t: 
     <div
       className={`
         group flex items-start gap-3 px-4 py-3.5 rounded-2xl border transition-all
-        ${hecha ? "bg-green-50/60 border-green-100 opacity-70" : vencida ? "bg-red-50 border-red-200" : "bg-white border-ink-100 hover:border-ink-200 hover:shadow-sm"}
+        ${hecha ? "bg-green-50/60 border-green-100 opacity-70" : vencida ? "bg-red-50 border-red-200 hover:bg-red-100" : "bg-white border-ink-100 hover:border-ink-200 hover:bg-ink-50 hover:shadow-sm"}
       `}
     >
       {/* Checkbox */}

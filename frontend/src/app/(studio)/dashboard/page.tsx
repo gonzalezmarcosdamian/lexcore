@@ -270,12 +270,12 @@ export default function DashboardPage() {
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: "Ingresos ARS", value: loadingContable ? null : `$ ${Number(ingARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-green-700" },
-                    { label: "Egresos ARS", value: loadingContable ? null : `$ ${Number(egARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-red-600" },
-                    { label: "Resultado ARS", value: loadingContable ? null : `${resultadoARS >= 0 ? "+" : ""}$ ${Number(resultadoARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: resultadoARS >= 0 ? "text-green-700" : "text-red-600" },
-                    { label: "Hon. pendiente", value: honorarios === null ? null : `$ ${Number(honorarios.saldo_pendiente_ars).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, sub: honorarios ? `${honorarios.expedientes_con_deuda} exp. con deuda` : undefined, color: "text-ink-900" },
-                  ].map(({ label, value, color, sub }) => (
-                    <div key={label} className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+                    { label: "Ingresos ARS", tooltip: "Total de ingresos registrados en el período seleccionado", value: loadingContable ? null : `$ ${Number(ingARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-green-700" },
+                    { label: "Egresos ARS", tooltip: "Total de egresos registrados en el período seleccionado", value: loadingContable ? null : `$ ${Number(egARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-red-600" },
+                    { label: "Resultado ARS", tooltip: "Ingresos menos egresos del período. Positivo = ganancia", value: loadingContable ? null : `${resultadoARS >= 0 ? "+" : ""}$ ${Number(resultadoARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: resultadoARS >= 0 ? "text-green-700" : "text-red-600" },
+                    { label: "Hon. pendiente", tooltip: "Honorarios acordados con clientes que aún no fueron cobrados", value: honorarios === null ? null : `$ ${Number(honorarios.saldo_pendiente_ars).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, sub: honorarios ? `${honorarios.expedientes_con_deuda} exp. con deuda` : undefined, color: "text-ink-900" },
+                  ].map(({ label, tooltip, value, color, sub }) => (
+                    <div key={label} title={tooltip} className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5 cursor-default hover:shadow-md hover:border-ink-200 transition-shadow duration-150">
                       <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-2">{label}</p>
                       {value === null
                         ? <span className="inline-block w-24 h-7 bg-ink-100 rounded animate-pulse" />

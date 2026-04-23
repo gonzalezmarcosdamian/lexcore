@@ -45,6 +45,14 @@ function NuevoVencimientoPageInner() {
   const [loadingExp, setLoadingExp] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ descripcion?: string; fecha?: string; expediente_id?: string }>({});
+
+  const validateField = (name: string, value: string) => {
+    if (name === "descripcion" && !value.trim()) return "La descripción es requerida";
+    if (name === "fecha" && !value) return "La fecha es requerida";
+    if (name === "expediente_id" && !value) return "Seleccioná un expediente";
+    return "";
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -112,7 +120,7 @@ function NuevoVencimientoPageInner() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>
+        <div role="alert" className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -159,8 +167,9 @@ function NuevoVencimientoPageInner() {
               required
               autoFocus
               value={form.descripcion}
-              onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-              className={inputClass}
+              onChange={(e) => { setForm({ ...form, descripcion: e.target.value }); if (fieldErrors.descripcion) setFieldErrors(fe => ({ ...fe, descripcion: "" })); }}
+              onBlur={(e) => setFieldErrors(fe => ({ ...fe, descripcion: validateField("descripcion", e.target.value) }))}
+              className={`${inputClass} ${fieldErrors.descripcion ? "border-red-300 focus:ring-red-300" : ""}`}
               placeholder={
                 form.tipo === "audiencia" ? "Ej: Audiencia de vista de causa" :
                 form.tipo === "presentacion" ? "Ej: Presentación de peritos" :
@@ -168,6 +177,7 @@ function NuevoVencimientoPageInner() {
                 "Ej: Vence plazo para contestar demanda"
               }
             />
+            {fieldErrors.descripcion && <p role="alert" className="text-xs text-red-500 mt-1">{fieldErrors.descripcion}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -192,7 +202,7 @@ function NuevoVencimientoPageInner() {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50"
+            className="flex-1 bg-brand-600 hover:bg-brand-700 active:scale-95 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50"
           >
             {saving ? "Guardando…" : "Guardar vencimiento"}
           </button>

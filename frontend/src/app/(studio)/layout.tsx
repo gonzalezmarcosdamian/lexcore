@@ -347,7 +347,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     active
-                      ? "bg-ink-800 border-l-2 border-brand-400 text-white pl-[10px]"
+                      ? "bg-ink-800 border-l-4 border-brand-400 text-white pl-[10px] font-semibold"
                       : "text-ink-400 hover:text-ink-100 hover:bg-ink-800/50"
                   }`}
                 >
@@ -689,7 +689,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors relative ${
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[44px] text-[10px] font-medium transition-colors relative ${
                 active ? "text-brand-600 border-t-2 border-brand-600 bg-brand-50/50 -mt-px" : "text-ink-400"
               }`}
             >
@@ -706,7 +706,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
         {/* Botón Más */}
         <button
           onClick={() => setMoreOpen(true)}
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors ${moreOpen ? "text-brand-600" : "text-ink-400"}`}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 min-h-[44px] text-[10px] font-medium transition-colors ${moreOpen ? "text-brand-600" : "text-ink-400"}`}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
