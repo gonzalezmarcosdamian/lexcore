@@ -17,6 +17,8 @@ import { ExpedienteSelect } from "@/components/ui/expediente-select";
 import { todayAR, yearAR, monthAR } from "@/lib/date";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FilterGroup } from "@/components/ui/filter-pills";
+import { TareaDetailSheet } from "@/components/features/tarea-detail-sheet";
+import { VencimientoDetailSheet } from "@/components/features/vencimiento-detail-sheet";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -652,6 +654,9 @@ export default function AgendaPage() {
   const [filtroTipoVenc, setFiltroTipoVenc] = useState<string>("");
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
 
+  const [mobileDetailTarea, setMobileDetailTarea] = useState<string | null>(null);
+  const [mobileDetailVenc, setMobileDetailVenc] = useState<string | null>(null);
+
   const [diaPickerFecha, setDiaPickerFecha] = useState<string | null>(null);
   const [showTareaModal, setShowTareaModal] = useState(false);
   const [tareaForm, setTareaForm] = useState({ titulo: "", expediente_id: "", cliente_id: "", fecha_limite: "", hora: "", descripcion: "", tipo: "judicial" as TareaTipo });
@@ -979,7 +984,7 @@ export default function AgendaPage() {
             anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
             onPrevMes={handlePrevMes} onNextMes={handleNextMes}
             onClickDia={handleClickDia}
-            onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
+            onClickEvento={(ev) => ev.tipo === "tarea" ? setMobileDetailTarea(ev.id) : setMobileDetailVenc(ev.id)}
           />
         )}
 
@@ -1020,7 +1025,7 @@ export default function AgendaPage() {
                               urgente={esUrgente(v.fecha) && !v.cumplido}
                               vencido={esVencida(v.fecha) && !v.cumplido}
                               onCycleEstado={(e) => { e.stopPropagation(); toggleVencimiento(v); }}
-                              onNavigate={() => router.push(`/vencimientos/${v.id}`)}
+                              onNavigate={() => setMobileDetailVenc(v.id)}
                             />
                           );
                         }
@@ -1040,7 +1045,7 @@ export default function AgendaPage() {
                             urgente={!!t.fecha_limite && esUrgente(t.fecha_limite) && t.estado !== "hecha"}
                             vencido={!!t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha"}
                             onCycleEstado={(e) => { e.stopPropagation(); handleToggleTarea(t, CICLO_T[t.estado]); }}
-                            onNavigate={() => router.push(`/tareas/${t.id}`)}
+                            onNavigate={() => setMobileDetailTarea(t.id)}
                           />
                         );
                       })}
@@ -1050,6 +1055,26 @@ export default function AgendaPage() {
               })}
             </div>
           )
+        )}
+
+        {/* Detail sheets — mobile only */}
+        {mobileDetailTarea && token && (
+          <TareaDetailSheet
+            tareaId={mobileDetailTarea}
+            token={token}
+            onClose={() => setMobileDetailTarea(null)}
+            onDeleted={(id) => { setTareas(prev => prev.filter(t => t.id !== id)); setMobileDetailTarea(null); }}
+            onUpdated={(updated) => setTareas(prev => prev.map(t => t.id === updated.id ? updated : t))}
+          />
+        )}
+        {mobileDetailVenc && token && (
+          <VencimientoDetailSheet
+            vencimientoId={mobileDetailVenc}
+            token={token}
+            onClose={() => setMobileDetailVenc(null)}
+            onDeleted={(id) => { setVencimientos(prev => prev.filter(v => v.id !== id)); setMobileDetailVenc(null); }}
+            onUpdated={(updated) => setVencimientos(prev => prev.map(v => v.id === updated.id ? updated : v))}
+          />
         )}
 
       </div>
