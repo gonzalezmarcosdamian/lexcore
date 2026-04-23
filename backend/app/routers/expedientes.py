@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
+import io
 from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession, RequireFullAccess
@@ -457,3 +459,72 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
 
     items.sort(key=_sort_key, reverse=True)
     return items
+
+
+@router.get("/{expediente_id}/pdf-unificado")
+def descargar_pdf_unificado(expediente_id: str, db: DbSession, current_user: CurrentUser):
+    from app.models.documento import Documento
+    from app.models.tarea import Tarea
+    from app.services.pdf_unificado import generar_pdf_unificado
+    from app.services.storage import generate_download_url
+
+    tenant_id = current_user["studio_id"]
+    exp = _get_expediente(db, expediente_id, tenant_id)
+
+    # Responsable principal (primer abogado)
+    responsable_nombre = None
+    if exp.abogados:
+        user = db.query(User).filter(User.id == exp.abogados[0].user_id).first()
+        if user:
+            responsable_nombre = user.full_name
+
+    # Cliente
+    cliente_nombre = None
+    if exp.cliente_id:
+        cliente = db.query(Cliente).filter(Cliente.id == exp.cliente_id).first()
+        if cliente:
+            cliente_nombre = cliente.nombre
+
+    # Fecha apertura
+    fecha_apertura = None
+    if exp.created_at:
+        from app.services.pdf_unificado import _fecha_larga
+        fecha_apertura = _fecha_larga(exp.created_at)
+
+    exp_data = {
+        "numero": exp.numero,
+        "caratula": exp.caratula,
+        "numero_judicial": exp.numero_judicial,
+        "fuero": exp.fuero,
+        "juzgado": exp.juzgado,
+        "localidad": exp.localidad,
+        "estado": exp.estado.value if exp.estado else None,
+        "cliente_nombre": cliente_nombre,
+        "responsable_nombre": responsable_nombre,
+        "fecha_apertura": fecha_apertura,
+    }
+
+    # Solo docs directamente del expediente, ordenados
+    documentos = [
+        {"id": d.id, "nombre": d.label or d.nombre, "content_type": d.content_type,
+         "file_key": d.file_key, "orden": d.orden}
+        for d in db.query(Documento).filter(
+            Documento.tenant_id == tenant_id,
+            Documento.expediente_id == expediente_id,
+        ).order_by(Documento.orden).all()
+    ]
+
+    def get_url(file_key: str, nombre: str) -> str:
+        try:
+            return generate_download_url(file_key, nombre, force_attachment=False)
+        except Exception:
+            return ""
+
+    pdf_bytes, _skipped = generar_pdf_unificado(exp_data, documentos, get_url)
+
+    filename = f"{exp.numero.replace('/', '-')}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

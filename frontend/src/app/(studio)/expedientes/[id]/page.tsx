@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Cliente, Expediente, Movimiento, Vencimiento, Honorario, Tarea, Documento, ActividadItem, EstadoExpediente, RolEnExpediente } from "@/lib/api";
+import { api, downloadExpedientePDF, Cliente, Expediente, Movimiento, Vencimiento, Honorario, Tarea, Documento, ActividadItem, EstadoExpediente, RolEnExpediente } from "@/lib/api";
 import { HonorariosTab } from "./honorarios-tab";
 import { DocumentosTab } from "./documentos-tab";
 import { TareasSection } from "./tareas-section";
@@ -304,6 +304,7 @@ export default function ExpedienteDetailPage() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ numero: "", numero_judicial: "", caratula: "", fuero: "", juzgado: "", localidad: "", estado: "activo" as EstadoExpediente, cliente_id: "" });
   const [savingEstado, setSavingEstado] = useState(false);
+  const [generandoPDF, setGenerandoPDF] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Bitácora — entrada manual
@@ -578,6 +579,29 @@ export default function ExpedienteDetailPage() {
               >
                 <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
                 {expediente.flag_paralizado ? "Paralizado" : "Paralizar"}
+              </button>
+              {/* PDF unificado */}
+              <button
+                disabled={generandoPDF}
+                onClick={async () => {
+                  setGenerandoPDF(true);
+                  try {
+                    await downloadExpedientePDF(expediente.id, expediente.numero, token!);
+                  } catch {
+                    alert("Error al generar el PDF. Intentá de nuevo.");
+                  } finally {
+                    setGenerandoPDF(false);
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-ink-200 text-ink-500 hover:bg-ink-50 transition disabled:opacity-50"
+                title="Descargar PDF unificado del expediente"
+              >
+                {generandoPDF ? (
+                  <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                ) : (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3" /></svg>
+                )}
+                {generandoPDF ? "Generando…" : "PDF"}
               </button>
               <span className="inline-flex items-center gap-1 text-xs text-ink-400 bg-ink-50 border border-ink-100 px-2.5 py-1 rounded-full">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>

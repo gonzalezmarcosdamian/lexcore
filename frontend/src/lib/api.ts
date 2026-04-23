@@ -59,6 +59,20 @@ export const api = {
     request<T>(path, { method: "DELETE", token }),
 };
 
+export async function downloadExpedientePDF(expedienteId: string, numero: string, token: string): Promise<void> {
+  const res = await fetch(`${API_URL}/expedientes/${expedienteId}/pdf-unificado`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Error al generar el PDF");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${numero.replace(/\//g, "-")}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type TipoCliente = "fisica" | "juridica";
