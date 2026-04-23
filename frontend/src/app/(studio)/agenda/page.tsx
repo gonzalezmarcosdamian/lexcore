@@ -404,6 +404,81 @@ function TareaCard({
   );
 }
 
+// ── Mobile Item Unificado ─────────────────────────────────────────────────────
+
+function AgendaItemMobile({
+  tipo, titulo, estado, fecha, hora, expediente, urgente: isUrgente, vencido: isVencido,
+  onCycleEstado, onNavigate,
+}: {
+  tipo: "vencimiento" | "tarea";
+  titulo: string;
+  estado: string; // "pendiente"|"cumplido"|"en_curso"|"hecha"
+  fecha?: string;
+  hora?: string | null;
+  expediente?: { id: string; numero: string; caratula?: string } | null;
+  urgente?: boolean;
+  vencido?: boolean;
+  onCycleEstado: (e: React.MouseEvent) => void;
+  onNavigate: () => void;
+}) {
+  const hecho = estado === "hecha" || estado === "cumplido";
+  const enCurso = estado === "en_curso";
+
+  const badgeCls = hecho
+    ? "bg-green-100 text-green-700"
+    : isVencido
+    ? "bg-red-100 text-red-700"
+    : isUrgente
+    ? "bg-amber-100 text-amber-700"
+    : enCurso
+    ? "bg-blue-100 text-blue-700"
+    : "bg-ink-100 text-ink-600";
+
+  const badgeLabel = hecho
+    ? tipo === "tarea" ? "HECHO" : "CUMPLIDO"
+    : isVencido
+    ? "VENCIDO"
+    : isUrgente
+    ? "URGENTE"
+    : enCurso
+    ? "EN CURSO"
+    : "PENDIENTE";
+
+  const dotCls = tipo === "vencimiento" ? "bg-purple-400" : "bg-blue-400";
+
+  return (
+    <button
+      onClick={onNavigate}
+      className={`w-full text-left rounded-xl border px-3 py-3 flex items-start gap-3 transition active:scale-[0.99] ${
+        hecho ? "bg-green-50/60 border-green-100 opacity-75" :
+        isVencido ? "bg-red-50 border-red-200" :
+        isUrgente ? "bg-amber-50 border-amber-200" :
+        enCurso ? "bg-blue-50/50 border-blue-100" :
+        "bg-white border-ink-100"
+      }`}
+    >
+      <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${dotCls}`} />
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium leading-snug ${hecho ? "line-through text-ink-400" : "text-ink-900"}`}>
+          {titulo}
+        </p>
+        {(fecha || expediente) && (
+          <p className="text-xs text-ink-400 mt-0.5 truncate">
+            {fecha && <span>{new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })}{hora ? ` · ${hora}` : ""}</span>}
+            {expediente && <span className="text-brand-600"> · {expediente.numero}</span>}
+          </p>
+        )}
+      </div>
+      <span
+        onClick={onCycleEstado}
+        className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded tracking-wider uppercase cursor-pointer select-none transition active:scale-95 ${badgeCls}`}
+      >
+        {badgeLabel}
+      </span>
+    </button>
+  );
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function Skeleton() {
@@ -913,7 +988,7 @@ export default function AgendaPage() {
                 const esHoy = fecha === new Date().toISOString().split("T")[0];
                 return (
                   <div key={fecha}>
-                    <div className="flex items-center gap-2 mb-2.5">
+                    <div className="flex items-center gap-2 mb-2">
                       <span className={`text-xs font-bold uppercase tracking-wide ${esHoy ? "text-brand-600" : "text-ink-400"}`}>
                         {formatFecha(fecha)}
                       </span>
@@ -923,19 +998,45 @@ export default function AgendaPage() {
                     </div>
                     <div className="space-y-2">
                       {items.map(item => {
-                        const v = item.tipo === "v" ? vFiltradas.find(x => x.id === item.id)! : null;
-                        const t = item.tipo === "t" ? tFiltradas.find(x => x.id === item.id)! : null;
-                        if (v) return (
-                          <VencimientoCard key={item.id} v={v} exp={expLookup[v.expediente_id]} token={token!}
-                            onToggle={() => toggleVencimiento(v)} onEdit={() => setEditingV(v)}
-                            onDelete={() => deleteVencimiento(v.id)} onDetail={() => router.push(`/vencimientos/${v.id}`)} />
+                        if (item.tipo === "v") {
+                          const v = vFiltradas.find(x => x.id === item.id);
+                          if (!v) return null;
+                          const exp = expLookup[v.expediente_id];
+                          return (
+                            <AgendaItemMobile
+                              key={item.id}
+                              tipo="vencimiento"
+                              titulo={v.descripcion}
+                              estado={v.cumplido ? "cumplido" : "pendiente"}
+                              fecha={v.fecha}
+                              hora={v.hora}
+                              expediente={exp ? { id: exp.id, numero: exp.numero } : null}
+                              urgente={esUrgente(v.fecha) && !v.cumplido}
+                              vencido={esVencida(v.fecha) && !v.cumplido}
+                              onCycleEstado={(e) => { e.stopPropagation(); toggleVencimiento(v); }}
+                              onNavigate={() => router.push(`/vencimientos/${v.id}`)}
+                            />
+                          );
+                        }
+                        const t = tFiltradas.find(x => x.id === item.id);
+                        if (!t) return null;
+                        const exp = t.expediente_id ? expLookup[t.expediente_id] : undefined;
+                        const CICLO_T: Record<TareaEstado, TareaEstado> = { pendiente: "en_curso", en_curso: "hecha", hecha: "pendiente" };
+                        return (
+                          <AgendaItemMobile
+                            key={item.id}
+                            tipo="tarea"
+                            titulo={t.titulo}
+                            estado={t.estado}
+                            fecha={t.fecha_limite ?? undefined}
+                            hora={t.hora}
+                            expediente={exp ? { id: exp.id, numero: exp.numero } : null}
+                            urgente={!!t.fecha_limite && esUrgente(t.fecha_limite) && t.estado !== "hecha"}
+                            vencido={!!t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha"}
+                            onCycleEstado={(e) => { e.stopPropagation(); handleToggleTarea(t, CICLO_T[t.estado]); }}
+                            onNavigate={() => router.push(`/tareas/${t.id}`)}
+                          />
                         );
-                        if (t) return (
-                          <TareaCard key={item.id} t={t} exp={t.expediente_id ? expLookup[t.expediente_id] : undefined} token={token!}
-                            onToggle={(estado) => handleToggleTarea(t, estado)} onEdit={() => setEditingT(t)}
-                            onDelete={() => deleteTarea(t.id)} onDetail={() => router.push(`/tareas/${t.id}`)} />
-                        );
-                        return null;
                       })}
                     </div>
                   </div>
