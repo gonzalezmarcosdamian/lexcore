@@ -4,6 +4,58 @@
 
 ---
 
+## Sesión 012 — 2026-04-22
+
+**Sprint:** Sprint 15+
+
+### Qué se hizo
+
+**Fix: duplicado de calendario en Agenda desktop (resuelto definitivamente)**
+- El calendario aparecía dos veces en desktop. Causa raíz: al refactorizar mobile/desktop, se dejó un `CalendarioMensual` fuera de ambos divs. Fix final: un componente por sección (`lg:hidden` y `hidden lg:block`), el CSS de visibilidad es el único control.
+
+**Feat: juzgado + localidad en header de detalle de expediente**
+- Feedback via WhatsApp: el subtítulo mostraba cliente, ahora muestra `juzgado · localidad · fuero`.
+
+**Feat: localidades de Córdoba y Argentina completas**
+- `LOCALIDADES_ARG` expandido a ~60+ entradas. Córdoba primero con ~37 localidades.
+- Aplicado en `expedientes/[id]/page.tsx` y `expedientes/nuevo/page.tsx`.
+
+**Feat: Dashboard — carátula + juzgado/localidad en eventos**
+- `VencimientoRow` y `TareaRow` muestran carátula del expediente y juzgado/localidad en vez de número + cliente.
+- Calendario semanal: auto-height, pills más grandes (`text-xs py-1.5 px-2`), sin `slice(0,4)`.
+
+**Feat: Clientes en nav top-level**
+- "Clientes" movido a sección TRABAJO al mismo nivel que Expedientes, fuera del sub-menú.
+
+**Feat: Acciones en header de detalle de cliente**
+- Botones Editar/Archivar movidos al header. Card ACCIONES eliminada. Homologado con el resto de la app.
+
+**Feat: Cuenta Corriente del cliente**
+- Nuevo endpoint `GET /clientes/{id}/cuenta-corriente` — honorarios + pagos por expediente + ingresos directos.
+- Frontend: sección expandible debajo del grid principal. KPIs ARS/USD, progreso de cobro, pagos desglosados.
+- Mobile-first: filas verticales, padding responsivo, `pb-28` para nav flotante.
+
+**Fix: Formato de domicilio**
+- Domicilio almacenado desde geocoder era muy verboso ("Municipio de...", "Pedanía..."). `formatDomicilio()` filtra esos segmentos y deja solo calle, barrio, ciudad, provincia.
+
+**Feat: Agenda mobile — rediseño unificado**
+- Nuevo componente `AgendaItemMobile`: mismo componente para vencimientos y tareas.
+- Dot de color identifica tipo (purple = vencimiento, blue = tarea).
+- Tap en badge cicla el estado directamente (sin dropdown).
+- Tap en fila navega al detalle. Sin botones inline de editar/eliminar.
+- Colores semánticos unificados: amber = urgente, red = vencido, green = cumplido/hecho.
+
+### Decisiones técnicas
+
+- `AgendaItemMobile` es exclusivo de mobile. Desktop sigue con `VencimientoCard` / `TareaCard` + kanban drag-drop.
+- `formatDomicilio()` vive en el componente de detalle de cliente (no en `api.ts`) porque es una transformación de display, no de datos.
+
+### Pendiente
+
+- Nada. Todo en producción.
+
+---
+
 ## Sesión 011 — 2026-04-22
 
 **Sprint:** Sprint 15+

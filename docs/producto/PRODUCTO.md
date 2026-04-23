@@ -6,7 +6,7 @@
 
 **Última actualización:** 2026-04-22
 **Sprint activo:** Sprint 15 — COMPLETADO
-**Versión:** 0.17.0
+**Versión:** 0.18.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -21,7 +21,7 @@
 LexCore es una plataforma multi-tenant de gestión para estudios de abogados.
 **Versión estable taggeada:** `v0.16.0` — 2026-04-22
 
-Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos (drag-drop, preview, reordenar), navegación desde todos los puntos de la app. Google OAuth sin re-prompt de permisos. Selector de expediente con búsqueda de texto en todos los modales.**
+Estado actual: **producto funcional completo — clientes, expedientes (número autogenerado), vencimientos, honorarios, documentos, equipo, gastos, ingresos, tareas e invitaciones operativos. UX pulida con notificaciones, módulo contable, conector Google Calendar, bitácora unificada, vista calendario mensual con feriados argentinos automáticos, cliente_id en tareas/gastos/ingresos, sistema de trial, notificaciones automáticas diarias. Agenda con picker Tarea/Vencimiento al clickear día, dashboard con AgendaWidget (mini-semana navegable + panel día), vencimientos editables/eliminables desde expediente con deshacer cumplido, bitácora registra todos los cambios de estado, columnas de expediente con reordenamiento drag-and-drop. Páginas de detalle completo para Tarea y Vencimiento con bitácora propia (notas/minutas), documentos adjuntos (drag-drop, preview, reordenar), navegación desde todos los puntos de la app. Google OAuth sin re-prompt de permisos. Selector de expediente con búsqueda de texto en todos los modales. Cuenta corriente de cliente (honorarios + pagos + ingresos por expediente e ingresos directos). Agenda mobile rediseñada con componente unificado touch-first.**
 
 ---
 
@@ -50,11 +50,13 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 **Páginas:** `/login`, `/register`
 **Migración:** `b4278af0ab0b`
 
-### Clientes ✓ (Sprint 02 — 2026-04-15)
+### Clientes ✓ (Sprint 02 — 2026-04-15 / Sprint 15 — 2026-04-22)
 - [x] CLT-001: CRUD completo de clientes (personas físicas y jurídicas)
+- [x] CLT-002: Cuenta corriente — honorarios + pagos + ingresos por expediente e ingresos directos
+- [x] CLT-003: Detalle mobile-first — header con acciones, domicilio formateado, nav top-level
 - Soft delete (archivado), búsqueda por nombre/CUIT
 
-**Endpoints:** `GET/POST /clientes`, `GET/PATCH/DELETE /clientes/{id}`
+**Endpoints:** `GET/POST /clientes`, `GET/PATCH/DELETE /clientes/{id}`, `GET /clientes/{id}/cuenta-corriente`
 **Páginas:** `/clientes`, `/clientes/nuevo`, `/clientes/{id}`
 
 ### Expedientes ✓ (Sprint 02 — 2026-04-15)
