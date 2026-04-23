@@ -583,7 +583,7 @@ function AgendaTablero({
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {KANBAN_COLS.map(col => {
         const vs = colVenc(col.id);
         const ts = colTarea(col.id);
@@ -1202,7 +1202,7 @@ export default function AgendaPage() {
         {/* Tablero desktop */}
         {vista === "tablero" && (
           loading ? (
-            <div className="grid grid-cols-3 gap-4">{[1,2,3].map(i => <div key={i}><Skeleton /></div>)}</div>
+            <div className="grid grid-cols-2 gap-4">{[1,2].map(i => <div key={i}><Skeleton /></div>)}</div>
           ) : (
             <AgendaTablero
               vencimientos={vFiltradas} tareas={tFiltradas} expLookup={expLookup} token={token!}
