@@ -184,9 +184,16 @@ export function VencimientoDetailSheet({ vencimientoId, token, onClose, onDelete
                   {exp && (
                     <div className="flex justify-between items-start gap-3 py-2.5">
                       <span className="text-sm text-ink-400 flex-shrink-0">Expediente</span>
-                      <Link href={`/expedientes/${exp.id}`} onClick={onClose} className="text-xs font-medium text-brand-600 text-right leading-snug">
-                        {exp.numero}{exp.caratula ? ` · ${exp.caratula}` : ""}
-                      </Link>
+                      <div className="text-right">
+                        <Link href={`/expedientes/${exp.id}`} onClick={onClose} className="text-xs font-medium text-brand-600 leading-snug">
+                          {exp.numero}{exp.caratula ? ` · ${exp.caratula}` : ""}
+                        </Link>
+                        {(exp.juzgado || exp.localidad) && (
+                          <p className="text-[11px] text-ink-400 mt-0.5">
+                            {[exp.juzgado, exp.localidad].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
