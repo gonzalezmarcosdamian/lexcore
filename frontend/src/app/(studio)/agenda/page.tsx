@@ -1146,44 +1146,46 @@ export default function AgendaPage() {
         {vista === "tablero" && !loading && (
           <div className="space-y-3">
             <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-            <FilterGroup
-              groups={[
-                {
-                  label: "Vencimientos",
-                  value: filtroTipoVenc,
-                  onChange: setFiltroTipoVenc,
-                  activeColor: "purple",
-                  options: [
-                    { value: "", label: "Todos" },
-                    { value: "vencimiento", label: "Vencimiento" },
-                    { value: "audiencia", label: "Audiencia" },
-                    { value: "presentacion", label: "Presentación" },
-                    { value: "pericia", label: "Pericia" },
-                    { value: "otro", label: "Otro" },
-                  ],
-                },
-                {
-                  label: "Tareas",
-                  value: filtroTipoTarea,
-                  onChange: setFiltroTipoTarea,
-                  activeColor: "blue",
-                  options: [
-                    { value: "", label: "Todos" },
-                    { value: "judicial", label: "Judicial" },
-                    { value: "extrajudicial", label: "Extrajudicial" },
-                    { value: "administrativa", label: "Administrativa" },
-                    { value: "operativa", label: "Operativa" },
-                  ],
-                },
-              ]}
-            />
-            <button
-              onClick={() => setFiltroParalizado(p => !p)}
-              className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-orange-100 text-orange-700 border-orange-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-              Paralizadas
-            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <FilterGroup
+                groups={[
+                  {
+                    label: "Vencimientos",
+                    value: filtroTipoVenc,
+                    onChange: setFiltroTipoVenc,
+                    activeColor: "purple",
+                    options: [
+                      { value: "", label: "Todos" },
+                      { value: "vencimiento", label: "Vencimiento" },
+                      { value: "audiencia", label: "Audiencia" },
+                      { value: "presentacion", label: "Presentación" },
+                      { value: "pericia", label: "Pericia" },
+                      { value: "otro", label: "Otro" },
+                    ],
+                  },
+                  {
+                    label: "Tareas",
+                    value: filtroTipoTarea,
+                    onChange: setFiltroTipoTarea,
+                    activeColor: "blue",
+                    options: [
+                      { value: "", label: "Todos" },
+                      { value: "judicial", label: "Judicial" },
+                      { value: "extrajudicial", label: "Extrajudicial" },
+                      { value: "administrativa", label: "Administrativa" },
+                      { value: "operativa", label: "Operativa" },
+                    ],
+                  },
+                ]}
+              />
+              <button
+                onClick={() => setFiltroParalizado(p => !p)}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-orange-100 text-orange-700 border-orange-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                Paralizadas
+              </button>
+            </div>
           </div>
         )}
 
