@@ -350,8 +350,8 @@ export default function ClienteDetailPage() {
                 <div className="flex justify-between items-start gap-4 py-2.5 border-b border-ink-50 last:border-0">
                   <span className="text-sm text-ink-400 flex-shrink-0">Domicilio</span>
                   {cliente.domicilio ? (
-                    <div className="text-right">
-                      <p className="text-sm text-ink-900 font-medium">{cliente.domicilio}</p>
+                    <div className="text-right max-w-[60%]">
+                      <p className="text-sm text-ink-900 font-medium line-clamp-2" title={cliente.domicilio}>{cliente.domicilio}</p>
                       {cliente.domicilio_lat && (
                         <a href={`https://maps.google.com/?q=${cliente.domicilio_lat},${cliente.domicilio_lng}`} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 mt-0.5">
