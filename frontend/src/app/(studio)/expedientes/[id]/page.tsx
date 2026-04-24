@@ -88,7 +88,7 @@ function VencimientoCardExpediente({ v, token, onToggle, onUpdated, onDeleted }:
       </div>
       {confirmDelete && (
         <ConfirmModal
-          title="¿Eliminar vencimiento?"
+          title="¿Eliminar movimiento?"
           description="Esta acción no se puede deshacer."
           confirmLabel="Eliminar"
           onConfirm={() => { setConfirmDelete(false); del(); }}
@@ -903,11 +903,8 @@ export default function ExpedienteDetailPage() {
             )}
           </div>
 
-          {/* Honorarios en sidebar */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-ink-50 flex items-center justify-between">
-              <h3 className="text-xs font-bold text-ink-500 uppercase tracking-wide">Honorarios</h3>
-            </div>
+          {/* placeholder — honorarios moved to main column */}
+          <div className="hidden">
             <div className="px-5 py-3 space-y-3">
               {/* ARS */}
               {honorarios.filter(h => h.moneda === "ARS").length > 0 && (() => {
@@ -1000,13 +997,13 @@ export default function ExpedienteDetailPage() {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
                   Movimiento procesal
                 </Link>
-                <button
-                  onClick={() => { /* abre modal tarea */ const btn = document.getElementById("btn-nueva-tarea-exp"); btn?.click(); }}
+                <Link
+                  href={`/tareas/nueva?expediente_id=${id}`}
                   className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl px-4 py-2.5 transition"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
                   Tarea
-                </button>
+                </Link>
               </div>
 
               {/* Feed */}
@@ -1061,12 +1058,17 @@ export default function ExpedienteDetailPage() {
             </div>
           </div>
 
-          {/* Movimientos procesales — botón agregar desde expediente */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-            <Link href={`/movimientos/nuevo?expediente_id=${id}`} className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-xl px-4 py-2.5 transition">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-              Nuevo movimiento procesal
-            </Link>
+          {/* Honorarios — ancho completo igual que bitácora */}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-ink-50 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-ink-700">Honorarios</h2>
+                <p className="text-xs text-ink-400 mt-0.5">Acuerdos y pagos</p>
+              </div>
+            </div>
+            <div className="p-4">
+              {token && <HonorariosTab expedienteId={id} token={token} onCreated={loadActividad} />}
+            </div>
           </div>
 
         </div>

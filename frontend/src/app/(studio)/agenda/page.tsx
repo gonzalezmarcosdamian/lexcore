@@ -119,7 +119,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
+          <h2 className="text-base font-semibold text-ink-900">Editar movimiento procesal</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
         </div>
         <div className="space-y-4">
@@ -282,7 +282,7 @@ function VencimientoCard({
     <>
       {confirmDelete && (
         <ConfirmModal
-          title="¿Eliminar vencimiento?"
+          title="¿Eliminar movimiento?"
           description="Esta acción no se puede deshacer."
           confirmLabel="Eliminar"
           onConfirm={() => { setConfirmDelete(false); onDelete(); }}
@@ -938,12 +938,12 @@ export default function AgendaPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowVencimientoModal(false); }}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-ink-900">Nuevo vencimiento</h2>
+              <h2 className="text-base font-semibold text-ink-900">Nuevo movimiento procesal</h2>
               <button onClick={() => setShowVencimientoModal(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
             </div>
             <form onSubmit={handleCrearVencimiento} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-ink-600 mb-1">Descripción *</label>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Titulo *</label>
                 <input required value={vencimientoForm.descripcion} onChange={(e) => setVencimientoForm(f => ({ ...f, descripcion: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400" placeholder="Ej: Presentar memorial" />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1193,7 +1193,7 @@ export default function AgendaPage() {
               <button onClick={() => setVista("calendario")} className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>📅 Calendario</button>
             </div>
             <button onClick={() => { setTareaForm(f => ({ ...f, fecha_limite: "" })); setShowTareaModal(true); setTareaError(""); }} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Tarea</button>
-            <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Vencimiento</button>
+            <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Movimiento</button>
             <CalendarSyncButton variant="compact" />
           </div>
         </div>

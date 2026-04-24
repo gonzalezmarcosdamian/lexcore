@@ -439,7 +439,7 @@ function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-ink-900">Nuevo vencimiento</h2>
+          <h2 className="text-base font-semibold text-ink-900">Nuevo movimiento procesal</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
         </div>
         <div className="space-y-4">
@@ -564,7 +564,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
+          <h2 className="text-base font-semibold text-ink-900">Editar movimiento procesal</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
         </div>
         <div className="space-y-4">
@@ -753,7 +753,7 @@ function AgendaWidget({
         <h2 className="text-sm font-semibold text-ink-700">Agenda</h2>
         <div className="flex items-center gap-2">
           <button onClick={onShowNewTarea} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Tarea</button>
-          <button onClick={onShowNewVenc} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Vencimiento</button>
+          <button onClick={onShowNewVenc} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Movimiento</button>
           <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
         </div>
       </div>
@@ -920,7 +920,7 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, markin
       </div>
       {confirmDelete && (
         <ConfirmModal
-          title="¿Eliminar vencimiento?"
+          title="¿Eliminar movimiento?"
           description="Esta acción no se puede deshacer."
           confirmLabel="Eliminar"
           onConfirm={() => { setConfirmDelete(false); onDelete(v.id); }}

@@ -90,7 +90,7 @@ function EditVencimientoModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-semibold text-ink-900">Editar vencimiento</h2>
+          <h2 className="text-base font-semibold text-ink-900">Editar movimiento procesal</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none">×</button>
         </div>
         <div className="space-y-4">
@@ -229,7 +229,7 @@ function VencimientoRow({
 
       {confirmDelete && (
         <ConfirmModal
-          title="¿Eliminar vencimiento?"
+          title="¿Eliminar movimiento?"
           description="Esta acción no se puede deshacer."
           confirmLabel="Eliminar"
           onConfirm={() => { setConfirmDelete(false); onDelete(v.id); }}

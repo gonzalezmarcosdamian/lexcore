@@ -104,12 +104,12 @@ function NuevoVencimientoPageInner() {
             <span className="text-ink-300">/</span>
           </>
         )}
-        <span className="text-ink-700 font-medium">Nuevo vencimiento</span>
+        <span className="text-ink-700 font-medium">Nuevo movimiento procesal</span>
       </div>
 
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-2xl font-bold text-ink-900">Nuevo vencimiento</h1>
+        <h1 className="text-2xl font-bold text-ink-900">Nuevo movimiento procesal</h1>
         {fromExpediente && expedienteCtx && (
           <p className="text-sm text-ink-500 mt-1">
             Para{" "}
