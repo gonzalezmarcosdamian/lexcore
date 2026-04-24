@@ -38,6 +38,8 @@ def _get_movimiento(db, movimiento_id: str, tenant_id: str) -> Movimiento:
 def listar_movimientos(
     db: DbSession,
     current_user: CurrentUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(200, ge=1, le=1000),
     expediente_id: Optional[str] = Query(None),
     estado: Optional[str] = Query(None),
     proximos: Optional[int] = Query(None, description="Próximos N días"),
@@ -53,7 +55,7 @@ def listar_movimientos(
         hoy = date.today().isoformat()
         limite = (date.today() + timedelta(days=proximos)).isoformat()
         query = query.filter(Movimiento.fecha >= hoy, Movimiento.fecha <= limite)
-    return query.order_by(Movimiento.fecha, Movimiento.hora).all()
+    return query.order_by(Movimiento.fecha, Movimiento.hora).offset(skip).limit(limit).all()
 
 
 @router.post("", response_model=MovimientoOut, status_code=status.HTTP_201_CREATED, dependencies=[RequireFullAccess])

@@ -58,6 +58,8 @@ def _enriquecer(db, tarea: Tarea) -> TareaOut:
 def listar_tareas(
     db: DbSession,
     current_user: CurrentUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(200, ge=1, le=1000),
     expediente_id: Optional[str] = Query(None),
     cliente_id: Optional[str] = Query(None),
     estado: Optional[TareaEstado] = Query(None),
