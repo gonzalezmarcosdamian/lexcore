@@ -51,6 +51,7 @@ class HonorarioCreate(BaseModel):
     monto_acordado: Decimal
     moneda: Moneda = Moneda.ARS
     fecha_acuerdo: str  # YYYY-MM-DD
+    fecha_vencimiento: Optional[str] = None  # YYYY-MM-DD
     notas: Optional[str] = None
 
     @field_validator("monto_acordado")
@@ -66,6 +67,7 @@ class HonorarioUpdate(BaseModel):
     monto_acordado: Optional[Decimal] = None
     moneda: Optional[Moneda] = None
     fecha_acuerdo: Optional[str] = None
+    fecha_vencimiento: Optional[str] = None
     notas: Optional[str] = None
 
 
@@ -77,6 +79,7 @@ class HonorarioOut(BaseModel):
     monto_acordado: Decimal
     moneda: Moneda
     fecha_acuerdo: str
+    fecha_vencimiento: Optional[str] = None
     notas: Optional[str] = None
     pagos: list[PagoOut] = []
     # Calculado

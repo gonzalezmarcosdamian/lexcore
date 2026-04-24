@@ -11,6 +11,8 @@ import { TareasSection } from "./tareas-section";
 import { ResumenIASection } from "./resumen-ia-section";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { DateInput } from "@/components/ui/date-input";
+import { TimeInput } from "@/components/ui/time-input";
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -309,6 +311,8 @@ export default function ExpedienteDetailPage() {
 
   // Bitácora — entrada manual
   const [nuevoMov, setNuevoMov] = useState("");
+  const [nuevoMovFecha, setNuevoMovFecha] = useState("");
+  const [nuevoMovHora, setNuevoMovHora] = useState("");
   const [savingMov, setSavingMov] = useState(false);
 
   // Movimiento edit/delete
@@ -430,8 +434,14 @@ export default function ExpedienteDetailPage() {
     if (!token || !nuevoMov.trim()) return;
     setSavingMov(true);
     try {
-      await api.post<Movimiento>(`/expedientes/${id}/movimientos`, { texto: nuevoMov }, token);
+      await api.post<Movimiento>(`/expedientes/${id}/movimientos`, {
+        texto: nuevoMov,
+        fecha_manual: nuevoMovFecha || undefined,
+        hora_acto: nuevoMovHora || undefined,
+      }, token);
       setNuevoMov("");
+      setNuevoMovFecha("");
+      setNuevoMovHora("");
       loadActividad();
     } catch { } finally { setSavingMov(false); }
   };
@@ -928,18 +938,30 @@ export default function ExpedienteDetailPage() {
             </div>
             <div className="p-4 space-y-4">
               {/* Entrada manual */}
-              <form onSubmit={handleAddMov} className="flex gap-2">
+              <form onSubmit={handleAddMov} className="space-y-2">
                 <textarea
                   value={nuevoMov}
                   onChange={(e) => setNuevoMov(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (nuevoMov.trim()) handleAddMov(e as unknown as React.FormEvent); } }}
-                  placeholder="Registrá un movimiento procesal… (Enter para guardar)"
+                  placeholder="Registrá un movimiento procesal…"
                   rows={2}
-                  className="flex-1 bg-ink-50 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white transition resize-none border-0"
+                  className="w-full bg-ink-50 rounded-xl px-4 py-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:bg-white transition resize-none border-0"
                 />
-                <button type="submit" disabled={savingMov || !nuevoMov.trim()} className="self-end bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50 flex-shrink-0">
-                  {savingMov ? "…" : "Registrar"}
-                </button>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Fecha del acto</p>
+                      <DateInput value={nuevoMovFecha} onChange={setNuevoMovFecha} placeholder="DD/MM/AAAA" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Hora</p>
+                      <TimeInput value={nuevoMovHora} onChange={setNuevoMovHora} placeholder="HH:MM" />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={savingMov || !nuevoMov.trim()} className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50 flex-shrink-0">
+                    {savingMov ? "…" : "Registrar"}
+                  </button>
+                </div>
               </form>
 
               {/* Feed */}
@@ -1258,7 +1280,15 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
               </div>
             )}
             <p className="text-xs text-ink-400 mt-1.5">
-              {new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" })}
+              {(() => {
+                const fechaActo = (meta as any).fecha_manual as string | undefined;
+                const horaActo  = (meta as any).hora_acto as string | undefined;
+                if (fechaActo) {
+                  const d = new Date(fechaActo + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+                  return horaActo ? `${d} · ${horaActo}` : d;
+                }
+                return new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" });
+              })()}
             </p>
           </>
         )}

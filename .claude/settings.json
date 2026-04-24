@@ -1,4 +1,21 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(docker logs *)",
+      "Bash(docker compose logs *)",
+      "Bash(docker compose ps *)",
+      "Bash(railway logs *)",
+      "Bash(railway variables *)",
+      "Bash(railway list *)",
+      "Bash(railway status *)",
+      "Bash(railway variables)",
+      "Bash(railway list)",
+      "Bash(railway status)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(docker compose exec backend alembic current)",
+      "Bash(docker compose exec backend alembic history *)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {

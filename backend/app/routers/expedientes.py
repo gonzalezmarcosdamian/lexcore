@@ -181,11 +181,20 @@ def listar_movimientos(
     db: DbSession,
     current_user: CurrentUser,
 ):
+    from sqlalchemy import case, func
     _get_expediente(db, expediente_id, current_user["studio_id"])
+    # Ordenar por fecha_manual cuando existe, sino por created_at — cronológico descendente
     return (
         db.query(Movimiento)
         .filter(Movimiento.expediente_id == expediente_id)
-        .order_by(Movimiento.created_at.desc())
+        .order_by(
+            case(
+                (Movimiento.fecha_manual.isnot(None), Movimiento.fecha_manual),
+                else_=func.date(Movimiento.created_at),
+            ).desc(),
+            Movimiento.hora_acto.desc().nullslast(),
+            Movimiento.created_at.desc(),
+        )
         .all()
     )
 
@@ -208,6 +217,8 @@ def crear_movimiento(
         user_id=current_user["sub"],
         texto=body.texto,
         fecha_manual=body.fecha_manual,
+        hora_acto=body.hora_acto,
+        documento_id=body.documento_id,
     )
     db.add(mov)
     invalidar_resumen(db, expediente_id, current_user["studio_id"])

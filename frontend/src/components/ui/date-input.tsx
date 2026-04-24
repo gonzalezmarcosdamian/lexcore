@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 interface DateInputProps {
   value: string;
@@ -14,48 +14,108 @@ interface DateInputProps {
   disabled?: boolean;
 }
 
+// Convierte DD/MM/AAAA → YYYY-MM-DD
+function parseDisplay(display: string): string {
+  const m = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return "";
+  const [, d, mo, y] = m;
+  return `${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}`;
+}
+
+// Convierte YYYY-MM-DD → DD/MM/AAAA
+function toDisplay(iso: string): string {
+  if (!iso) return "";
+  const [y, mo, d] = iso.split("-");
+  return `${d}/${mo}/${y}`;
+}
+
+// Aplica máscara automática mientras el usuario escribe
+function applyMask(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  let out = digits;
+  if (digits.length > 2) out = digits.slice(0, 2) + "/" + digits.slice(2);
+  if (digits.length > 4) out = digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
+  return out;
+}
+
 export function DateInput({
   value,
   onChange,
   required,
   min,
   max,
-  placeholder = "Seleccionar fecha",
+  placeholder = "DD/MM/AAAA",
   className = "",
   ringColor = "focus-within:ring-brand-400",
   disabled,
 }: DateInputProps) {
-  const ref = useRef<HTMLInputElement>(null);
+  const nativeRef = useRef<HTMLInputElement>(null);
+  const [textVal, setTextVal] = useState(toDisplay(value));
+  const [focused, setFocused] = useState(false);
 
-  const formatted = value
+  // Sync text when value changes externally
+  useEffect(() => {
+    if (!focused) setTextVal(toDisplay(value));
+  }, [value, focused]);
+
+  const formattedLabel = value
     ? new Date(value + "T12:00:00").toLocaleDateString("es-AR", {
-        weekday: "short",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
+        weekday: "short", day: "numeric", month: "short", year: "numeric",
       })
     : "";
 
-  const open = () => {
+  // Desktop: click abre el picker nativo
+  const openNative = () => {
     if (disabled) return;
-    try { ref.current?.showPicker(); } catch { ref.current?.click(); }
+    try { nativeRef.current?.showPicker(); } catch { nativeRef.current?.click(); }
   };
 
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = applyMask(e.target.value);
+    setTextVal(masked);
+    const iso = parseDisplay(masked);
+    if (iso) onChange(iso);
+    else if (masked === "") onChange("");
+  };
+
+  const handleTextBlur = () => {
+    setFocused(false);
+    const iso = parseDisplay(textVal);
+    if (iso) {
+      onChange(iso);
+      setTextVal(toDisplay(iso));
+    } else if (textVal.replace(/\D/g,"").length > 0) {
+      // Entrada inválida — restaurar el valor anterior
+      setTextVal(toDisplay(value));
+    }
+  };
+
+  const baseCls = `relative flex items-center w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 gap-2 transition focus-within:ring-2 focus-within:border-transparent ${ringColor} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
+
   return (
-    <div
-      className={`relative flex items-center w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 gap-2 cursor-pointer transition hover:border-ink-300 focus-within:ring-2 focus-within:border-transparent ${ringColor} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`}
-      onClick={open}
-    >
+    <div className={baseCls}>
       <svg className="w-4 h-4 text-ink-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
-      <span className={`flex-1 text-sm truncate ${value ? "text-ink-900 font-medium" : "text-ink-400"}`}>
-        {formatted || placeholder}
-      </span>
-      {value && (
+
+      {/* Mobile: texto con máscara */}
+      <input
+        type="text"
+        inputMode="numeric"
+        value={focused ? textVal : (formattedLabel || textVal)}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        onFocus={() => { setFocused(true); setTextVal(toDisplay(value)); }}
+        onBlur={handleTextBlur}
+        onChange={handleTextChange}
+        className="flex-1 text-sm bg-transparent outline-none text-ink-900 placeholder:text-ink-400 min-w-0"
+      />
+
+      {value && !disabled && (
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onChange(""); }}
+          onClick={() => { onChange(""); setTextVal(""); }}
           className="text-ink-300 hover:text-ink-500 transition flex-shrink-0"
           tabIndex={-1}
         >
@@ -64,17 +124,17 @@ export function DateInput({
           </svg>
         </button>
       )}
+
+      {/* Input nativo oculto para mantener compatibilidad con formularios */}
       <input
-        ref={ref}
+        ref={nativeRef}
         type="date"
         value={value}
-        required={required}
         min={min}
         max={max}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
         tabIndex={-1}
+        onChange={(e) => { onChange(e.target.value); setTextVal(toDisplay(e.target.value)); }}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
       />
     </div>
   );

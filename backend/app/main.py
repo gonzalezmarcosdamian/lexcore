@@ -56,6 +56,37 @@ def _job_notificar_urgentes():
                     caratula=caratula,
                     expediente_id=v.expediente_id,
                 )
+        # Honorarios con vencimiento hoy o mañana y saldo pendiente
+        from app.models.honorario import Honorario, PagoHonorario
+        from decimal import Decimal
+        from sqlalchemy import func as sqlfunc
+        hon_urgentes = db.query(Honorario).filter(
+            Honorario.fecha_vencimiento.isnot(None),
+            Honorario.fecha_vencimiento >= hoy,
+            Honorario.fecha_vencimiento <= limite,
+        ).all()
+        for h in hon_urgentes:
+            total_capital = db.query(sqlfunc.sum(PagoHonorario.importe)).filter(
+                PagoHonorario.honorario_id == h.id,
+                PagoHonorario.tipo == "capital",
+            ).scalar() or Decimal("0")
+            saldo = h.monto_acordado - total_capital
+            if saldo <= 0:
+                continue
+            miembros = db.query(User).filter(User.tenant_id == h.tenant_id).all()
+            emails = [u.email for u in miembros if u.email]
+            if not emails:
+                continue
+            exp = db.query(Expediente).filter(Expediente.id == h.expediente_id).first()
+            caratula = exp.caratula if exp else "Expediente"
+            send_vencimiento_urgente_email(
+                to_emails=emails,
+                descripcion=f"Cobro pendiente: {h.concepto} — Saldo: {h.moneda} {saldo:,.0f}",
+                fecha=h.fecha_vencimiento,
+                tipo="honorario",
+                caratula=caratula,
+                expediente_id=h.expediente_id,
+            )
     except Exception:
         logger.exception("Error en job notificar_urgentes")
     finally:

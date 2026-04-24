@@ -249,7 +249,7 @@ export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, on
           <div className="w-2.5 h-2.5 rounded bg-blue-100 border border-blue-200" />Tarea
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-ink-500">
-          <div className="w-2.5 h-2.5 rounded bg-purple-100 border border-purple-200" />Vencimiento
+          <div className="w-2.5 h-2.5 rounded bg-amber-100 border border-amber-200" />Vencimiento
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-ink-500">
           <div className="w-2.5 h-2.5 rounded-full bg-red-300" />Inhábil

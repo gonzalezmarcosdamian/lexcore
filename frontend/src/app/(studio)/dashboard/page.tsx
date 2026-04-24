@@ -7,7 +7,7 @@ import { DateInput } from "@/components/ui/date-input";
 import { useSession } from "next-auth/react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { api, Vencimiento, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea, TareaTipo } from "@/lib/api";
+import { api, Vencimiento, Honorario, HonorarioResumen, GastoResumen, IngresoResumen, Expediente, Cliente, Tarea, TareaTipo } from "@/lib/api";
 import Link from "next/link";
 import { PageHelp } from "@/components/ui/page-help";
 import { SplashScreen } from "@/components/ui/splash-screen";
@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [proximos, setProximos] = useState<Vencimiento[]>([]);
+  const [honorariosProximos, setHonorariosProximos] = useState<Honorario[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingTareas, setLoadingTareas] = useState(true);
@@ -109,6 +110,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return;
     api.get<HonorarioResumen>("/honorarios/resumen", token).then(setHonorarios).catch(() => setHonorarios({ saldo_pendiente_ars: 0, saldo_pendiente_usd: 0, expedientes_con_deuda: 0, total_cobrado_ars: 0, total_cobrado_usd: 0 } as any));
+    api.get<Honorario[]>("/honorarios/proximos", token, { dias: 30 }).then(setHonorariosProximos).catch(() => {});
     api.get<GastoResumen>("/gastos/resumen", token).then(setGastoResumen).catch(() => setGastoResumen({ total_ars: 0, total_usd: 0 } as any));
     api.get<IngresoResumen>("/ingresos/resumen", token).then(setIngresoResumen).catch(() => setIngresoResumen({ total_ars: 0, total_usd: 0 } as any));
     api.get<Cliente[]>("/clientes", token)
@@ -169,7 +171,7 @@ export default function DashboardPage() {
       cumplido: v.cumplido,
       expediente_id: v.expediente_id,
       fecha: v.fecha,
-      color: (v.cumplido ? "blue" : isUrgente(v.fecha) ? "red" : "purple") as CalEvent["color"],
+      color: (v.cumplido ? "blue" : isUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
     })),
     ...tareas.filter(t => t.fecha_limite).map(t => ({
       id: t.id,
@@ -261,6 +263,37 @@ export default function DashboardPage() {
             onEditT={setEditingT}
             onDeleteT={handleDeleteTarea}
           />
+
+          {/* ── Cobros próximos ── */}
+          {honorariosProximos.length > 0 && (
+            <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-emerald-50 flex items-center justify-between">
+                <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Cobros próximos</p>
+                <span className="text-xs text-ink-400">{honorariosProximos.length}</span>
+              </div>
+              <div className="divide-y divide-ink-50">
+                {honorariosProximos.slice(0, 5).map(h => {
+                  const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
+                  const urgent = diff < 0;
+                  const soon = diff >= 0 && diff <= 7;
+                  return (
+                    <div key={h.id} className="px-4 py-3 flex items-center gap-3">
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${urgent ? "bg-red-500" : soon ? "bg-orange-400" : "bg-emerald-500"}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-ink-900 truncate">{h.concepto}</p>
+                        <p className="text-xs text-ink-400">
+                          {h.moneda === "ARS" ? "$" : "U$D"} {Number(h.saldo_pendiente).toLocaleString("es-AR")}
+                          {h.fecha_vencimiento && ` · ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}`}
+                        </p>
+                      </div>
+                      {urgent && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">VENCIDO</span>}
+                      {soon && !urgent && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">PRÓXIMO</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Contable ── */}
           {(() => {
@@ -773,13 +806,13 @@ function AgendaWidget({
                     {evs.map((e, j) => {
                       const colorCls =
                         e.color === "red"    ? "bg-red-50 border-red-200 text-red-700" :
-                        e.color === "purple" ? "bg-purple-50 border-purple-200 text-purple-700" :
+                        e.color === "amber"  ? "bg-amber-50 border-amber-200 text-amber-700" :
                         e.color === "blue"   ? "bg-blue-50 border-blue-200 text-blue-700" :
-                                               "bg-amber-50 border-amber-200 text-amber-700";
+                                               "bg-ink-50 border-ink-200 text-ink-700";
                       const dotCls =
-                        e.color === "red"    ? "bg-red-400" :
-                        e.color === "purple" ? "bg-purple-400" :
-                        e.color === "blue"   ? "bg-blue-400" : "bg-amber-400";
+                        e.color === "red"    ? "bg-red-500" :
+                        e.color === "amber"  ? "bg-amber-400" :
+                        e.color === "blue"   ? "bg-blue-500" : "bg-ink-300";
                       return (
                         <button
                           key={j}
@@ -803,9 +836,9 @@ function AgendaWidget({
                   <div className="lg:hidden flex flex-wrap gap-0.5 justify-center pt-1">
                     {evs.slice(0, 3).map((e, j) => (
                       <span key={j} className={`w-1.5 h-1.5 rounded-full ${
-                        e.color === "red" ? "bg-red-400" :
-                        e.color === "purple" ? "bg-purple-400" :
-                        e.color === "blue" ? "bg-blue-400" : "bg-amber-400"
+                        e.color === "red" ? "bg-red-500" :
+                        e.color === "amber" ? "bg-amber-400" :
+                        e.color === "blue" ? "bg-blue-500" : "bg-ink-300"
                       }`} />
                     ))}
                     {evs.length > 3 && <span className="text-[8px] text-ink-400 font-bold">+</span>}
@@ -873,7 +906,7 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, markin
   const vencida = isVencida(v.fecha);
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
-      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.cumplido ? "bg-green-500" : urg || vencida ? "bg-red-400" : warning ? "bg-amber-400" : "bg-purple-300"}`} />
+      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.cumplido ? "bg-green-500" : urg || vencida ? "bg-red-500" : warning ? "bg-amber-400" : "bg-amber-300"}`} />
       <div className="flex-1 min-w-0">
         <button onClick={() => onDetail(v)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{v.descripcion}</button>
         {exp ? (

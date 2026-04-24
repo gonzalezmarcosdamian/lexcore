@@ -88,6 +88,8 @@ class Movimiento(TenantModel):
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     texto: Mapped[str] = mapped_column(Text, nullable=False)
     fecha_manual: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD override
+    hora_acto: Mapped[str | None] = mapped_column(String(5), nullable=True)      # HH:MM
+    documento_id: Mapped[str | None] = mapped_column(String, ForeignKey("documentos.id", ondelete="SET NULL"), nullable=True)
 
     expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="movimientos")
 

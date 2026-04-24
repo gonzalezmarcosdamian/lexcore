@@ -23,6 +23,7 @@ class Honorario(TenantModel):
     monto_acordado: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     moneda: Mapped[Moneda] = mapped_column(Enum(Moneda), nullable=False, default=Moneda.ARS)
     fecha_acuerdo: Mapped[str] = mapped_column(String(10), nullable=False)  # ISO date
+    fecha_vencimiento: Mapped[str | None] = mapped_column(String(10), nullable=True)  # ISO date — vencimiento de cobro
     notas: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     pagos: Mapped[list["PagoHonorario"]] = relationship(

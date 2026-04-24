@@ -38,6 +38,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
     monto_acordado: "",
     moneda: "ARS" as Moneda,
     fecha_acuerdo: today,
+    fecha_vencimiento: "",
     notas: "",
   });
 
@@ -57,7 +58,7 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
     setError("");
     try {
       await api.post("/honorarios", { ...form, expediente_id: expedienteId, monto_acordado: parseFloat(form.monto_acordado) }, token);
-      setForm({ concepto: "", monto_acordado: "", moneda: "ARS", fecha_acuerdo: today, notas: "" });
+      setForm({ concepto: "", monto_acordado: "", moneda: "ARS", fecha_acuerdo: today, fecha_vencimiento: "", notas: "" });
       setShowForm(false);
       load();
       onCreated?.();
@@ -222,9 +223,15 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
               </select>
             </div>
           </div>
-          <div>
-            <label className={labelCls}>Fecha de acuerdo *</label>
-            <DateInput value={form.fecha_acuerdo} onChange={v => setForm({ ...form, fecha_acuerdo: v })} required />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Fecha de acuerdo *</label>
+              <DateInput value={form.fecha_acuerdo} onChange={v => setForm({ ...form, fecha_acuerdo: v })} required />
+            </div>
+            <div>
+              <label className={labelCls}>Fecha de vencimiento</label>
+              <DateInput value={form.fecha_vencimiento} onChange={v => setForm({ ...form, fecha_vencimiento: v })} placeholder="DD/MM/AAAA" />
+            </div>
           </div>
           <div>
             <label className={labelCls}>Notas (opcional)</label>
@@ -252,9 +259,16 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
             const pct = h.monto_acordado > 0 ? Math.min(100, (h.total_capital / h.monto_acordado) * 100) : 0;
             const isExpanded = expandedId === h.id;
             const pf = pagoForm[h.id] ?? { importe: "", moneda: h.moneda, fecha: today, comprobante: "", tipo: "capital" as const };
+            const vencBadge = (() => {
+              if (!h.fecha_vencimiento || saldo <= 0) return null;
+              const diff = (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000;
+              if (diff < 0) return { label: "VENCIDO", cls: "bg-red-100 text-red-700" };
+              if (diff <= 7) return { label: "PRÓXIMO", cls: "bg-orange-100 text-orange-700" };
+              return { label: `Vence ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}`, cls: "bg-emerald-100 text-emerald-700" };
+            })();
 
             return (
-              <div key={h.id} className="bg-white border border-ink-100 rounded-xl overflow-hidden">
+              <div key={h.id} className={`bg-white border rounded-xl overflow-hidden ${vencBadge?.label === "VENCIDO" ? "border-red-200" : vencBadge?.label === "PRÓXIMO" ? "border-orange-200" : "border-ink-100"}`}>
                 {/* Header honorario */}
                 <div
                   className="px-4 py-3 flex items-start gap-3 cursor-pointer hover:bg-ink-50 transition"
@@ -268,8 +282,9 @@ export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId
                       </Badge>
                       {saldo <= 0 && <Badge color="bg-green-50 text-green-700">✓ Saldado</Badge>}
                       {saldo > 0 && pct > 0 && <Badge color="bg-amber-50 text-amber-700">Parcial</Badge>}
+                      {vencBadge && <Badge color={vencBadge.cls}>{vencBadge.label}</Badge>}
                     </div>
-                    <p className="text-xs text-ink-400 mt-0.5">Acordado: {fmt(h.monto_acordado, h.moneda)} — {h.fecha_acuerdo}</p>
+                    <p className="text-xs text-ink-400 mt-0.5">Acordado: {fmt(h.monto_acordado, h.moneda)} — {h.fecha_acuerdo}{h.fecha_vencimiento ? ` · Vence: ${h.fecha_vencimiento}` : ""}</p>
                     {/* Barra de progreso capital */}
                     <div className="mt-2 h-1.5 bg-ink-100 rounded-full overflow-hidden">
                       <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${pct}%` }} />

@@ -25,11 +25,15 @@ class AbogadoEnExpedienteOut(BaseModel):
 class MovimientoCreate(BaseModel):
     texto: str
     fecha_manual: Optional[str] = None  # YYYY-MM-DD override
+    hora_acto: Optional[str] = None     # HH:MM
+    documento_id: Optional[str] = None
 
 
 class MovimientoUpdate(BaseModel):
     texto: Optional[str] = None
-    fecha_manual: Optional[str] = None  # YYYY-MM-DD
+    fecha_manual: Optional[str] = None
+    hora_acto: Optional[str] = None
+    documento_id: Optional[str] = None
 
 
 class MovimientoOut(BaseModel):
@@ -38,6 +42,8 @@ class MovimientoOut(BaseModel):
     user_id: str
     texto: str
     fecha_manual: Optional[str] = None
+    hora_acto: Optional[str] = None
+    documento_id: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

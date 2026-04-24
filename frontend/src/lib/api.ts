@@ -136,6 +136,8 @@ export interface Movimiento {
   user_id: string;
   texto: string;
   fecha_manual?: string;
+  hora_acto?: string | null;
+  documento_id?: string | null;
   created_at: string;
 }
 
@@ -174,6 +176,7 @@ export interface Honorario {
   monto_acordado: number;
   moneda: Moneda;
   fecha_acuerdo: string;
+  fecha_vencimiento?: string | null;
   notas?: string;
   pagos: PagoHonorario[];
   total_pagado: number;

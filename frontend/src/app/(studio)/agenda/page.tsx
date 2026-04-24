@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente, Cliente } from "@/lib/api";
+import { api, Tarea, TareaEstado, TareaTipo, Vencimiento, Expediente, Cliente, Honorario } from "@/lib/api";
 import { PeriodSelector, PeriodoValue, getDatesFromValue } from "@/components/ui/period-selector";
 import { CalendarSyncButton } from "@/components/ui/calendar-sync-button";
 import { AdjuntosInline } from "@/components/ui/adjuntos-inline";
@@ -16,7 +16,7 @@ import { CalendarioMensual, CalEvent, DiaInhabil } from "@/components/ui/calenda
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 import { todayAR, yearAR, monthAR } from "@/lib/date";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
-import { FilterGroup } from "@/components/ui/filter-pills";
+import { FilterPillsRow } from "@/components/ui/filter-pills";
 import { TareaDetailSheet } from "@/components/features/tarea-detail-sheet";
 import { VencimientoDetailSheet } from "@/components/features/vencimiento-detail-sheet";
 
@@ -469,7 +469,9 @@ function AgendaItemMobile({
     : isUrgente ? "URGENTE"
     : "PENDIENTE";
 
-  const dotCls = tipo === "vencimiento" ? "bg-purple-400" : "bg-blue-400";
+  const dotCls = tipo === "vencimiento"
+    ? (isUrgente || isVencido ? "bg-red-500" : "bg-amber-400")
+    : "bg-blue-500";
 
   return (
     <button
@@ -565,7 +567,11 @@ function AgendaTablero({
     const base = col === "hecho"
       ? tareas.filter(t => t.estado === "hecha")
       : tareas.filter(t => t.estado !== "hecha");
-    return [...base].sort((a, b) => ((a.fecha_limite ?? "") + (a.hora ?? "")).localeCompare((b.fecha_limite ?? "") + (b.hora ?? "")));
+    return [...base].sort((a, b) => {
+      const ka = a.fecha_limite ? (a.fecha_limite + (a.hora ?? "")) : "9999";
+      const kb = b.fecha_limite ? (b.fecha_limite + (b.hora ?? "")) : "9999";
+      return ka.localeCompare(kb);
+    });
   };
 
   const handleDrop = (col: KanbanCol) => {
@@ -680,6 +686,7 @@ export default function AgendaPage() {
   const [filtroTipoTarea, setFiltroTipoTarea] = useState<string>("");
   const [filtroParalizado, setFiltroParalizado] = useState(false);
 
+  const [honorariosProximos, setHonorariosProximos] = useState<Honorario[]>([]);
   const [mobileDetailTarea, setMobileDetailTarea] = useState<string | null>(null);
   const [mobileDetailVenc, setMobileDetailVenc] = useState<string | null>(null);
 
@@ -697,6 +704,7 @@ export default function AgendaPage() {
   const fetchData = useCallback(() => {
     if (!token) return;
     setLoading(true);
+    api.get<Honorario[]>("/honorarios/proximos", token, { dias: 365 }).then(setHonorariosProximos).catch(() => {});
     Promise.all([
       api.get<Vencimiento[]>("/vencimientos", token, { proximos: 365 }),
       api.get<Tarea[]>("/tareas", token),
@@ -829,7 +837,7 @@ export default function AgendaPage() {
       cumplido: v.cumplido,
       expediente_id: v.expediente_id,
       fecha: v.fecha,
-      color: (v.cumplido ? "blue" : esUrgente(v.fecha) ? "red" : "purple") as CalEvent["color"],
+      color: (v.cumplido ? "blue" : esUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
     })),
     ...tareas.filter(t => t.fecha_limite).map(t => ({
       id: t.id,
@@ -1008,16 +1016,24 @@ export default function AgendaPage() {
           </button>
         </div>
 
-        {/* Filtro paralizadas — mobile */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFiltroParalizado(p => !p)}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-          >
-            <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-            Solo paralizadas
-          </button>
-        </div>
+        {/* Filtros tipo — mobile */}
+        {vista === "tablero" && !loading && (
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="purple" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
+              <button
+                onClick={() => setFiltroParalizado(p => !p)}
+                className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+              >
+                <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                Paraliz.
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Vista calendario — mobile */}
         {vista === "calendario" && (
@@ -1099,6 +1115,38 @@ export default function AgendaPage() {
           )
         )}
 
+        {/* Cobros pendientes — mobile */}
+        {honorariosProximos.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wide text-emerald-600">Cobros pendientes</span>
+              <div className="flex-1 h-px bg-emerald-100" />
+              <span className="text-xs text-ink-300">{honorariosProximos.length}</span>
+            </div>
+            {honorariosProximos.map(h => {
+              const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
+              const urgent = diff < 0;
+              const soon = diff >= 0 && diff <= 7;
+              return (
+                <div key={h.id} className={`w-full text-left rounded-xl border overflow-hidden bg-white ${urgent ? "border-red-200" : soon ? "border-orange-200" : "border-emerald-100"}`}>
+                  <div className="px-3 py-3 flex items-start gap-3">
+                    <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${urgent ? "bg-red-500" : soon ? "bg-orange-400" : "bg-emerald-500"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink-900 leading-snug">{h.concepto}</p>
+                      <p className="text-xs text-ink-400 mt-0.5">
+                        Saldo: {h.moneda === "ARS" ? "$" : "U$D"} {Number(h.saldo_pendiente).toLocaleString("es-AR")}
+                        {h.fecha_vencimiento && ` · Vence ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}`}
+                      </p>
+                    </div>
+                    {urgent && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full flex-shrink-0">VENCIDO</span>}
+                    {soon && !urgent && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full flex-shrink-0">PRÓXIMO</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Detail sheets — mobile only */}
         {mobileDetailTarea && token && (
           <TareaDetailSheet
@@ -1150,45 +1198,20 @@ export default function AgendaPage() {
         {vista === "tablero" && !loading && (
           <div className="space-y-2">
             <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-            <div className="flex items-center gap-2 flex-wrap pt-0.5">
-              <FilterGroup
-                groups={[
-                  {
-                    label: "Vencimientos",
-                    value: filtroTipoVenc,
-                    onChange: setFiltroTipoVenc,
-                    activeColor: "purple",
-                    options: [
-                      { value: "", label: "Todos" },
-                      { value: "vencimiento", label: "Vencimiento" },
-                      { value: "audiencia", label: "Audiencia" },
-                      { value: "presentacion", label: "Presentación" },
-                      { value: "pericia", label: "Pericia" },
-                      { value: "otro", label: "Otro" },
-                    ],
-                  },
-                  {
-                    label: "Tareas",
-                    value: filtroTipoTarea,
-                    onChange: setFiltroTipoTarea,
-                    activeColor: "blue",
-                    options: [
-                      { value: "", label: "Todos" },
-                      { value: "judicial", label: "Judicial" },
-                      { value: "extrajudicial", label: "Extrajudicial" },
-                      { value: "administrativa", label: "Administrativa" },
-                      { value: "operativa", label: "Operativa" },
-                    ],
-                  },
-                ]}
-              />
-              <button
-                onClick={() => setFiltroParalizado(p => !p)}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                Paralizadas
-              </button>
+            <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="purple" />
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
+                <button
+                  onClick={() => setFiltroParalizado(p => !p)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                  Paralizadas
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1208,14 +1231,45 @@ export default function AgendaPage() {
           loading ? (
             <div className="grid grid-cols-2 gap-4">{[1,2].map(i => <div key={i}><Skeleton /></div>)}</div>
           ) : (
-            <AgendaTablero
-              vencimientos={vFiltradas} tareas={tFiltradas} expLookup={expLookup} token={token!}
-              onToggleVenc={toggleVencimiento} onToggleTarea={handleToggleTarea}
-              onEditVenc={setEditingV} onEditTarea={setEditingT}
-              onDeleteVenc={deleteVencimiento} onDeleteTarea={deleteTarea}
-              onDetailVenc={(v) => router.push(`/vencimientos/${v.id}`)}
-              onDetailTarea={(t) => router.push(`/tareas/${t.id}`)}
-            />
+            <>
+              <AgendaTablero
+                vencimientos={vFiltradas} tareas={tFiltradas} expLookup={expLookup} token={token!}
+                onToggleVenc={toggleVencimiento} onToggleTarea={handleToggleTarea}
+                onEditVenc={setEditingV} onEditTarea={setEditingT}
+                onDeleteVenc={deleteVencimiento} onDeleteTarea={deleteTarea}
+                onDetailVenc={(v) => router.push(`/vencimientos/${v.id}`)}
+                onDetailTarea={(t) => router.push(`/tareas/${t.id}`)}
+              />
+              {honorariosProximos.length > 0 && (
+                <div className="bg-white border border-emerald-100 rounded-2xl overflow-hidden">
+                  <div className="px-4 py-3 border-b border-emerald-50 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">Cobros pendientes</span>
+                    <span className="text-xs text-ink-400">{honorariosProximos.length}</span>
+                  </div>
+                  <div className="divide-y divide-ink-50">
+                    {honorariosProximos.map(h => {
+                      const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
+                      const urgent = diff < 0;
+                      const soon = diff >= 0 && diff <= 7;
+                      return (
+                        <div key={h.id} className="px-4 py-3 flex items-center gap-3">
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${urgent ? "bg-red-500" : soon ? "bg-orange-400" : "bg-emerald-500"}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-ink-900 truncate">{h.concepto}</p>
+                            <p className="text-xs text-ink-400">
+                              Saldo: {h.moneda === "ARS" ? "$" : "U$D"} {Number(h.saldo_pendiente).toLocaleString("es-AR")}
+                              {h.fecha_vencimiento && ` · Vence ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}`}
+                            </p>
+                          </div>
+                          {urgent && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">VENCIDO</span>}
+                          {soon && !urgent && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">PRÓXIMO</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )
         )}
 

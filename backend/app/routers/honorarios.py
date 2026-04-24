@@ -5,7 +5,7 @@ Maneja honorarios acordados + pagos recibidos por expediente.
 from decimal import Decimal
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import func
 
 from app.core.deps import CurrentUser, DbSession
@@ -97,6 +97,33 @@ def listar_honorarios_expediente(
         .all()
     )
     return [HonorarioOut.from_orm_with_saldo(h) for h in honorarios]
+
+
+@router.get("/proximos", response_model=List[HonorarioOut])
+def honorarios_proximos(
+    db: DbSession,
+    current_user: CurrentUser,
+    dias: int = Query(30, ge=1, le=365),
+):
+    """Honorarios con fecha_vencimiento en los próximos N días y saldo pendiente > 0."""
+    from datetime import date, timedelta
+    tenant_id = current_user["studio_id"]
+    hoy = date.today().isoformat()
+    limite = (date.today() + timedelta(days=dias)).isoformat()
+    honorarios = (
+        db.query(Honorario)
+        .filter(
+            Honorario.tenant_id == tenant_id,
+            Honorario.fecha_vencimiento.isnot(None),
+            Honorario.fecha_vencimiento >= hoy,
+            Honorario.fecha_vencimiento <= limite,
+        )
+        .order_by(Honorario.fecha_vencimiento.asc())
+        .all()
+    )
+    # Filtrar solo los que tienen saldo pendiente
+    result = [HonorarioOut.from_orm_with_saldo(h) for h in honorarios]
+    return [h for h in result if h.saldo_pendiente > 0]
 
 
 @router.post("", response_model=HonorarioOut, status_code=status.HTTP_201_CREATED)
