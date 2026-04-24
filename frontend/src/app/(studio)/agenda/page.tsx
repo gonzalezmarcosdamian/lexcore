@@ -1020,7 +1020,7 @@ export default function AgendaPage() {
         {vista === "tablero" && !loading && (
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="purple" />
+              <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
             </div>
             <div className="flex items-center justify-between gap-2">
               <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
@@ -1200,7 +1200,7 @@ export default function AgendaPage() {
             <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
             <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="purple" />
+                <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
               </div>
               <div className="flex items-center justify-between gap-2">
                 <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
