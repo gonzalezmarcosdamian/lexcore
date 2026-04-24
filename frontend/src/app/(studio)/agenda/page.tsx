@@ -992,50 +992,59 @@ export default function AgendaPage() {
       ════════════════════════════════════════════ */}
       <div className="lg:hidden space-y-4">
 
-        {/* Row 1: Título + stats + toggle + acciones */}
+        {/* Row 1 mobile: título + toggle + acciones */}
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="min-w-0">
-              <h1 className="text-lg font-bold text-ink-900">Agenda</h1>
-              <p className="text-xs text-ink-400">
-                {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
-                {urgentes > 0 && <span className="ml-1 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
-              </p>
-            </div>
-            <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold flex-shrink-0">
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-ink-900">Agenda</h1>
+            <p className="text-xs text-ink-400">
+              {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
+              {urgentes > 0 && <span className="ml-1 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
               <button onClick={() => setVista("tablero")} className={`px-2.5 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500"}`}>Lista</button>
               <button onClick={() => setVista("calendario")} className={`px-2.5 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500"}`}>Cal.</button>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button onClick={() => router.push("/tareas/nueva")} className="flex items-center gap-1 text-xs font-bold bg-blue-600 text-white px-2.5 py-2 rounded-lg transition active:scale-95">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
               Tarea
             </button>
             <button onClick={() => router.push("/movimientos/nuevo")} className="flex items-center gap-1 text-xs font-bold bg-orange-600 text-white px-2.5 py-2 rounded-lg transition active:scale-95">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-              Movimiento
+              Mov.
             </button>
           </div>
         </div>
 
-        {/* Filtros tipo — mobile */}
+        {/* Row 2 mobile: control compacto en una sola barra */}
         {vista === "tablero" && !loading && (
-          <div className="space-y-1.5">
-            {/* Una sola línea con separador + Paralizadas al final */}
-            <div className="bg-ink-50 border border-ink-100 rounded-xl px-2 py-1.5 flex items-center gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-              <FilterPillsRow label="MOV" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Venc. procesal"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
-              <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
-              <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
-              <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
-              <button
-                onClick={() => setFiltroParalizado(p => !p)}
-                className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-              >
-                <svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                Paraliz.
-              </button>
-            </div>
+          <div className="flex items-center gap-1.5 bg-white border border-ink-100 rounded-xl px-2.5 py-2 shadow-sm overflow-x-auto" style={{scrollbarWidth:"none"}}>
+            <PeriodSelector value={periodoValue} onChange={setPeriodoValue} compact />
+            <div className="w-px h-4 bg-ink-100 flex-shrink-0" />
+            <select value={filtroTipoVenc} onChange={e => setFiltroTipoVenc(e.target.value)}
+              className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none flex-shrink-0 min-w-[90px]">
+              <option value="">Mov: Todos</option>
+              <option value="vencimiento">Venc. procesal</option>
+              <option value="audiencia">Audiencia</option>
+              <option value="presentacion">Presentación</option>
+              <option value="pericia">Pericia</option>
+              <option value="acto_procesal">Acto Procesal</option>
+              <option value="otro">Otro</option>
+            </select>
+            <select value={filtroTipoTarea} onChange={e => setFiltroTipoTarea(e.target.value)}
+              className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none flex-shrink-0 min-w-[90px]">
+              <option value="">Tareas: Todas</option>
+              <option value="judicial">Judicial</option>
+              <option value="extrajudicial">Extrajudicial</option>
+              <option value="administrativa">Administrativa</option>
+              <option value="operativa">Operativa</option>
+            </select>
+            <button onClick={() => setFiltroParalizado(p => !p)}
+              className={`flex-shrink-0 p-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-700 border-blue-300" : "border-ink-200 text-ink-400"}`}
+              title="Paralizadas">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+            </button>
           </div>
         )}
 
@@ -1180,26 +1189,25 @@ export default function AgendaPage() {
 
         {/* Row 1: Título + Vista */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
-              <p className="text-xs text-ink-400 mt-0.5">
-                {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
-                {urgentes > 0 && <span className="ml-1.5 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
-              </p>
-            </div>
+          {/* Row 1 left: título + stats */}
+          <div>
+            <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
+            <p className="text-xs text-ink-400 mt-0.5">
+              {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
+              {urgentes > 0 && <span className="ml-1.5 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
+            </p>
+          </div>
+          {/* Row 1 right: toggle + acciones */}
+          <div className="flex items-center gap-2">
             <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
               <button onClick={() => setVista("tablero")} className={`px-3 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>Tablero</button>
               <button onClick={() => setVista("calendario")} className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>Calendario</button>
             </div>
-          </div>
-          {/* Acciones principales */}
-          <div className="flex items-center gap-2">
-            <Link href="/tareas/nueva" className="flex items-center gap-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition shadow-sm">
+            <Link href="/tareas/nueva" className="flex items-center gap-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl transition">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
               + Tarea
             </Link>
-            <Link href="/movimientos/nuevo" className="flex items-center gap-1.5 text-sm font-semibold bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl transition shadow-sm">
+            <Link href="/movimientos/nuevo" className="flex items-center gap-1.5 text-sm font-semibold bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-xl transition">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
               + Movimiento
             </Link>
@@ -1207,29 +1215,52 @@ export default function AgendaPage() {
           </div>
         </div>
 
-        {/* Filtros — solo en tablero */}
+        {/* Row 2: barra de control compacta — periodo + filtros dropdown + paralizadas */}
         {vista === "tablero" && !loading && (
-          <div className="space-y-2">
-            {/* Row 2: Período + Paralizadas (ícono) */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 min-w-0">
-                <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-              </div>
-              <button
-                onClick={() => setFiltroParalizado(p => !p)}
-                title={filtroParalizado ? "Mostrando paralizadas" : "Mostrar paralizadas"}
-                className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-ink-200 text-ink-400 hover:bg-ink-50"}`}
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                {filtroParalizado && <span>Paralizadas</span>}
-              </button>
-            </div>
-            {/* Row 3: Filtros de tipo en una línea */}
-            <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 flex items-center gap-3 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-              <FilterPillsRow label="MOV" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Venc. procesal"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
-              <div className="w-px h-5 bg-ink-200 flex-shrink-0" />
-              <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
-            </div>
+          <div className="flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-3 py-2 shadow-sm">
+            {/* Período */}
+            <PeriodSelector value={periodoValue} onChange={setPeriodoValue} compact />
+            <div className="w-px h-5 bg-ink-100 flex-shrink-0" />
+            {/* Tipo MOV — select compacto */}
+            <label className="text-[10px] font-bold text-ink-400 uppercase tracking-wide flex-shrink-0">Mov</label>
+            <select
+              value={filtroTipoVenc}
+              onChange={e => setFiltroTipoVenc(e.target.value)}
+              className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:ring-2 focus:ring-orange-400 font-medium min-w-[110px]"
+            >
+              <option value="">Todos</option>
+              <option value="vencimiento">Venc. procesal</option>
+              <option value="audiencia">Audiencia</option>
+              <option value="presentacion">Presentación</option>
+              <option value="pericia">Pericia</option>
+              <option value="acto_procesal">Acto Procesal</option>
+              <option value="notificacion">Notificación</option>
+              <option value="otro">Otro</option>
+            </select>
+            <div className="w-px h-5 bg-ink-100 flex-shrink-0" />
+            {/* Tipo TAREAS — select compacto */}
+            <label className="text-[10px] font-bold text-ink-400 uppercase tracking-wide flex-shrink-0">Tareas</label>
+            <select
+              value={filtroTipoTarea}
+              onChange={e => setFiltroTipoTarea(e.target.value)}
+              className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium min-w-[110px]"
+            >
+              <option value="">Todas</option>
+              <option value="judicial">Judicial</option>
+              <option value="extrajudicial">Extrajudicial</option>
+              <option value="administrativa">Administrativa</option>
+              <option value="operativa">Operativa</option>
+            </select>
+            <div className="w-px h-5 bg-ink-100 flex-shrink-0" />
+            {/* Paralizadas toggle */}
+            <button
+              onClick={() => setFiltroParalizado(p => !p)}
+              title={filtroParalizado ? "Ocultar paralizadas" : "Solo paralizadas"}
+              className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition flex-shrink-0 ${filtroParalizado ? "bg-blue-100 text-blue-700 border-blue-300" : "border-ink-200 text-ink-400 hover:bg-ink-50"}`}
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+              {filtroParalizado ? "Paralizadas" : "⚡"}
+            </button>
           </div>
         )}
 
