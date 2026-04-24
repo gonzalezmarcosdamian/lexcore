@@ -1202,6 +1202,55 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                     {meta.fecha_limite && <span className="text-xs text-ink-400">· vence {new Date(String(meta.fecha_limite) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>}
                   </div>
                 )}
+                {/* Adjuntos de tarea embebidos */}
+                {item.tipo === "tarea" && Array.isArray(meta.adjuntos) && (meta.adjuntos as any[]).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {(meta.adjuntos as any[]).map((doc: any, i: number) => {
+                      const kb = doc.size_bytes ? Math.round(doc.size_bytes / 1024) : null;
+                      return (
+                        <span key={i} className="inline-flex items-center gap-1 text-xs bg-blue-50 border border-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                          <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                          <span className="max-w-[160px] truncate">{doc.nombre}</span>
+                          {kb && <span className="text-blue-400 flex-shrink-0">{kb} KB</span>}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {/* Movimiento procesal — fecha prominente + estado + adjuntos embebidos */}
+                {item.tipo === "movimiento_procesal" && (
+                  <div className="mt-1.5 space-y-1.5">
+                    {meta.fecha && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                          📅 {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+                          {meta.hora && <span className="font-bold">· {String(meta.hora)}</span>}
+                        </span>
+                        {meta.estado === "cumplido"
+                          ? <span className="text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded">✓ Cumplido</span>
+                          : <span className="text-[10px] font-bold text-ink-400 bg-ink-50 border border-ink-200 px-1.5 py-0.5 rounded">Pendiente</span>
+                        }
+                      </div>
+                    )}
+                    {meta.descripcion && <p className="text-xs text-ink-500 leading-snug">{String(meta.descripcion)}</p>}
+                    {/* Adjuntos embebidos */}
+                    {Array.isArray(meta.adjuntos) && (meta.adjuntos as any[]).length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {(meta.adjuntos as any[]).map((doc: any, i: number) => {
+                          const kb = doc.size_bytes ? Math.round(doc.size_bytes / 1024) : null;
+                          const mb = doc.size_bytes && doc.size_bytes > 1024 * 1024 ? (doc.size_bytes / (1024 * 1024)).toFixed(1) : null;
+                          return (
+                            <span key={i} className="inline-flex items-center gap-1 text-xs bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">
+                              <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                              <span className="max-w-[160px] truncate">{doc.nombre}</span>
+                              <span className="text-amber-500 flex-shrink-0">{mb ? `${mb} MB` : kb ? `${kb} KB` : ""}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {item.tipo === "vencimiento" && meta.fecha != null && (
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className="text-xs text-amber-600 font-medium">
@@ -1261,13 +1310,9 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                 })}
               </div>
             )}
-            <p className="text-xs text-ink-400 mt-1.5">
+            {/* Timestamp footer — no mostrar para movimiento_procesal (fecha ya visible arriba) */}
+            {item.tipo !== "movimiento_procesal" && <p className="text-xs text-ink-400 mt-1.5">
               {(() => {
-                // movimiento_procesal usa fecha+hora del acto
-                if (item.tipo === "movimiento_procesal" && meta.fecha) {
-                  const d = new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
-                  return meta.hora ? `${d} · ${String(meta.hora)}` : d;
-                }
                 const fechaActo = (meta as any).fecha_manual as string | undefined;
                 const horaActo  = (meta as any).hora_acto as string | undefined;
                 if (fechaActo) {
@@ -1276,7 +1321,7 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                 }
                 return new Date(item.created_at).toLocaleString("es-AR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Buenos_Aires" });
               })()}
-            </p>
+            </p>}
           </>
         )}
       </div>

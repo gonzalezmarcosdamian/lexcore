@@ -12,7 +12,7 @@ import { todayAR } from "@/lib/date";
 const TIPO_LABEL: Record<string, string> = {
   vencimiento: "Vencimiento", audiencia: "Audiencia",
   presentacion: "Presentacion", pericia: "Pericia",
-  diligencia: "Diligencia", notificacion: "Notificacion", otro: "Otro",
+  acto_procesal: "Acto Procesal", notificacion: "Notificacion", otro: "Otro",
 };
 
 function formatFechaLarga(f: string) {

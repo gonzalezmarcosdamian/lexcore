@@ -434,7 +434,10 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             created_at=t.created_at,
         ))
 
-    # Documentos (del expediente + adjuntos a tareas/movimientos)
+    # Documentos
+    # - Docs adjuntos a movimientos procesales: NO son ítems sueltos, van embebidos en el movimiento
+    # - Docs adjuntos a tareas: ídem, embebidos en la tarea
+    # - Docs del expediente sin padre (expediente_id directo, sin movimiento ni tarea): SÍ son ítems independientes
     tarea_ids = [t.id for t in db.query(Tarea.id).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()]
     mov_ids = [m.id for m in db.query(Movimiento.id).filter(Movimiento.expediente_id == expediente_id, Movimiento.tenant_id == tenant_id).all()]
     from sqlalchemy import or_
@@ -443,22 +446,46 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         doc_filter.append(Documento.tarea_id.in_(tarea_ids))
     if mov_ids:
         doc_filter.append(Documento.movimiento_id.in_(mov_ids))
-    tarea_map = {t.id: t.titulo for t in db.query(Tarea).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()}
-    mov_map = {m.id: m.titulo for m in db.query(Movimiento).filter(Movimiento.expediente_id == expediente_id, Movimiento.tenant_id == tenant_id).all()}
+
+    # Construir mapa movimiento_id → lista de adjuntos para embeber en el movimiento
+    mov_adjuntos: dict[str, list[dict]] = {}
+    tarea_adjuntos: dict[str, list[dict]] = {}
 
     for d in db.query(Documento).filter(Documento.tenant_id == tenant_id, or_(*doc_filter)).all():
         nombre_display = d.label or d.nombre
-        adjunto_en = None
-        if d.tarea_id and d.tarea_id in tarea_map:
-            adjunto_en = f"Tarea: {tarea_map[d.tarea_id]}"
-        elif d.movimiento_id and d.movimiento_id in mov_map:
-            adjunto_en = f"Movimiento: {mov_map[d.movimiento_id]}"
-        items.append(ActividadItem(
-            id=d.id, tipo="documento", subtipo="subido",
-            descripcion=nombre_display,
-            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type, "adjunto_en": adjunto_en, "tarea_id": d.tarea_id, "movimiento_id": d.movimiento_id},
-            created_at=d.created_at,
-        ))
+        doc_info = {"id": d.id, "nombre": nombre_display, "size_bytes": d.size_bytes, "content_type": d.content_type, "file_key": d.file_key}
+
+        if d.movimiento_id and d.movimiento_id in (set(mov_ids)):
+            # Embeber en el movimiento — NO agregar como ítem suelto
+            if d.movimiento_id not in mov_adjuntos:
+                mov_adjuntos[d.movimiento_id] = []
+            mov_adjuntos[d.movimiento_id].append(doc_info)
+
+        elif d.tarea_id and d.tarea_id in (set(tarea_ids)):
+            # Embeber en la tarea — NO agregar como ítem suelto
+            if d.tarea_id not in tarea_adjuntos:
+                tarea_adjuntos[d.tarea_id] = []
+            tarea_adjuntos[d.tarea_id].append(doc_info)
+
+        else:
+            # Documento directo del expediente sin padre → ítem independiente en bitácora
+            items.append(ActividadItem(
+                id=d.id, tipo="documento", subtipo="subido",
+                descripcion=nombre_display,
+                meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type},
+                created_at=d.created_at,
+            ))
+
+    # Inyectar adjuntos en el meta de los movimientos procesales
+    for item in items:
+        if item.tipo == "movimiento_procesal" and item.id in mov_adjuntos:
+            meta = dict(item.meta or {})
+            meta["adjuntos"] = mov_adjuntos[item.id]
+            item.meta = meta
+        elif item.tipo == "tarea" and item.id in tarea_adjuntos:
+            meta = dict(item.meta or {})
+            meta["adjuntos"] = tarea_adjuntos[item.id]
+            item.meta = meta
 
     def _sort_key(item: ActividadItem) -> str:
         m = item.meta or {}
