@@ -123,20 +123,18 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
     }
   };
 
-  // ── Usuario sin Google: invitar a conectar (muy discreto) ───────────────
+  // ── Usuario sin Google: solo ícono discreto, sin texto ─────────────────
   if (!isGoogleUser) {
     return (
-      <div className="flex items-center gap-2 text-xs text-ink-400">
+      <button
+        onClick={handleConnect}
+        disabled={connecting}
+        title="Conectar Google Calendar"
+        className="hidden lg:flex items-center gap-1.5 text-xs text-ink-400 hover:text-brand-600 border border-ink-200 hover:border-brand-300 px-2.5 py-1.5 rounded-lg transition disabled:opacity-50"
+      >
         <CalIcon />
-        <span>Google Calendar no conectado</span>
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          className="text-blue-500 hover:text-blue-700 font-medium underline underline-offset-2 transition disabled:opacity-50"
-        >
-          {connecting ? "…" : "Conectar"}
-        </button>
-      </div>
+        {connecting ? "…" : <span className="hidden xl:inline">Conectar Calendar</span>}
+      </button>
     );
   }
 
