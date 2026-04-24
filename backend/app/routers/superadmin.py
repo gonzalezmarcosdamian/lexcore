@@ -219,7 +219,7 @@ def sync_metrics(db: DbSession, current_user: CurrentUser):
     """Genera un snapshot manual con queries a la DB."""
     from app.models.studio import Studio
     from app.models.user import User
-    from app.models.expediente import Expediente, Vencimiento
+    from app.models.expediente import Expediente, Movimiento as Vencimiento
     from app.models.documento import Documento
     from app.models.tarea import Tarea
     from app.models.metrics_snapshot import MetricsSnapshot
@@ -272,7 +272,7 @@ def studio_detail(studio_id: str, db: DbSession, current_user: CurrentUser):
     """Detalle completo de un studio: usuarios, actividad, historial de suscripción."""
     from app.models.studio import Studio
     from app.models.user import User
-    from app.models.expediente import Expediente, Vencimiento
+    from app.models.expediente import Expediente, Movimiento as Vencimiento
     from app.models.documento import Documento
     from app.models.tarea import Tarea
     from app.models.subscription_event import SubscriptionEvent

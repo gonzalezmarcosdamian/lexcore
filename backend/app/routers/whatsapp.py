@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_db
 from app.models.cliente import Cliente
-from app.models.expediente import Expediente, EstadoExpediente, Vencimiento
+from app.models.expediente import Expediente, EstadoExpediente, Movimiento as Vencimiento
 from app.models.studio import Studio
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ def _estado_expedientes(db: Session, studio_id: str, cliente_id: str) -> str:
         vencimientos = db.query(Vencimiento).filter(
             Vencimiento.tenant_id == studio_id,
             Vencimiento.expediente_id == exp.id,
-            Vencimiento.cumplido == False,
+            Vencimiento.estado == "pendiente",
             Vencimiento.fecha >= str(hoy),
             Vencimiento.fecha <= str(proximos_dias),
         ).order_by(Vencimiento.fecha).limit(2).all()

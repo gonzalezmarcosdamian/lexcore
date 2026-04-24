@@ -201,12 +201,12 @@ def delete_tarea(db, tarea_id: str, tenant_id: str) -> None:
 
 def push_all_for_studio(db, tenant_id: str, user_id: str):
     """Resync completo — equivalente al botón manual. Lo llama google_calendar.py."""
-    from app.models.expediente import Vencimiento
+    from app.models.expediente import Movimiento as Vencimiento
     from app.models.tarea import Tarea, TareaEstado
 
     vencimientos = db.query(Vencimiento).filter(
         Vencimiento.tenant_id == tenant_id,
-        Vencimiento.cumplido == False,  # noqa: E712
+        Vencimiento.estado == "pendiente",  # noqa: E712
     ).all()
     tareas = db.query(Tarea).filter(
         Tarea.tenant_id == tenant_id,

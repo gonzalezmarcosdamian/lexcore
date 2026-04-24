@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 
 from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
-from app.models.expediente import Expediente, Movimiento, Vencimiento
+from app.models.expediente import Expediente, Movimiento, Movimiento as Vencimiento
 from app.models.honorario import Honorario, PagoHonorario
 from app.models.resumen import ExpedienteResumen
 from app.models.tarea import Tarea
@@ -73,7 +73,7 @@ def _build_context(db, exp: Expediente, tenant_id: str) -> str:
     vencimientos = db.query(Vencimiento).filter(
         Vencimiento.expediente_id == exp.id,
         Vencimiento.tenant_id == tenant_id,
-        Vencimiento.cumplido == False,  # noqa: E712
+        Vencimiento.estado == "pendiente",  # noqa: E712
     ).order_by(Vencimiento.fecha).limit(5).all()
     if vencimientos:
         lines.append("Vencimientos pendientes:")
