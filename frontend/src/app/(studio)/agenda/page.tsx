@@ -992,41 +992,31 @@ export default function AgendaPage() {
       ════════════════════════════════════════════ */}
       <div className="lg:hidden space-y-4">
 
-        {/* Header: 1 línea */}
+        {/* Row 1: Título + stats + toggle + acciones */}
         <div className="flex items-center justify-between gap-2">
-          <div>
-            <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
-            <p className="text-sm text-ink-500">
-              {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
-              {urgentes > 0 && <span className="ml-1.5 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Vista toggle compacto */}
-            <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="min-w-0">
+              <h1 className="text-lg font-bold text-ink-900">Agenda</h1>
+              <p className="text-xs text-ink-400">
+                {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
+                {urgentes > 0 && <span className="ml-1 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
+              </p>
+            </div>
+            <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold flex-shrink-0">
               <button onClick={() => setVista("tablero")} className={`px-2.5 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500"}`}>Lista</button>
               <button onClick={() => setVista("calendario")} className={`px-2.5 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500"}`}>Cal.</button>
             </div>
-            <CalendarSyncButton variant="compact" />
           </div>
-        </div>
-
-        {/* Botones de acción */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => router.push("/tareas/nueva")}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl transition"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Tarea
-          </button>
-          <button
-            onClick={() => router.push("/movimientos/nuevo")}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl transition"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-            Movimiento
-          </button>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button onClick={() => router.push("/tareas/nueva")} className="flex items-center gap-1 text-xs font-bold bg-blue-600 text-white px-2.5 py-2 rounded-lg transition active:scale-95">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Tarea
+            </button>
+            <button onClick={() => router.push("/movimientos/nuevo")} className="flex items-center gap-1 text-xs font-bold bg-orange-600 text-white px-2.5 py-2 rounded-lg transition active:scale-95">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Movimiento
+            </button>
+          </div>
         </div>
 
         {/* Filtros tipo — mobile */}
