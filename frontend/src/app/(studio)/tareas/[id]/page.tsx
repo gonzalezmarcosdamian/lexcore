@@ -55,12 +55,6 @@ export default function TareaDetailPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      router.replace("/agenda");
-    }
-  }, [router]);
-
-  useEffect(() => {
     if (!token) return;
     Promise.all([
       api.get<Tarea>(`/tareas/${id}`, token),
