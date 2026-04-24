@@ -108,7 +108,15 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
   const [estado, setEstado] = useState(v.estado);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string,string>>({});
   const save = async () => {
+    const fe: Record<string,string> = {};
+    if (!descripcion.trim()) fe.titulo = "El titulo es obligatorio";
+    else if (descripcion.trim().length < 3) fe.titulo = "Minimo 3 caracteres";
+    if (!fecha) fe.fecha = "La fecha es obligatoria";
+    if (!hora) fe.hora = "La hora es obligatoria";
+    setFieldErrors(fe);
+    if (Object.keys(fe).length > 0) return;
     setSaving(true);
     try {
       const updated = await api.patch<Vencimiento>(`/movimientos/${v.id}`, { titulo: descripcion, fecha, hora: hora || null, tipo, estado }, token);
@@ -143,17 +151,20 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Titulo</label>
-            <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
+            <label className="block text-xs font-medium text-ink-600 mb-1">Titulo *</label>
+            <input value={descripcion} onChange={(e) => { setDescripcion(e.target.value); setFieldErrors(v => ({ ...v, titulo: "" })); }} className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${fieldErrors.titulo ? "border-red-400 focus:ring-red-400" : "border-ink-200 focus:ring-brand-400"}`} />
+            {fieldErrors.titulo && <p className="text-xs text-red-500 mt-1">{fieldErrors.titulo}</p>}
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha</label>
-              <DateInput value={fecha} onChange={setFecha} />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
+              <DateInput value={fecha} onChange={v => { setFecha(v); setFieldErrors(e => ({ ...e, fecha: "" })); }} ringColor={fieldErrors.fecha ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+              {fieldErrors.fecha && <p className="text-xs text-red-500 mt-1">{fieldErrors.fecha}</p>}
             </div>
             <div>
-              <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-              <TimeInput value={hora} onChange={setHora} />
+              <label className="block text-xs font-medium text-ink-600 mb-1">Hora *</label>
+              <TimeInput value={hora} onChange={v => { setHora(v); setFieldErrors(e => ({ ...e, hora: "" })); }} ringColor={fieldErrors.hora ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+              {fieldErrors.hora && <p className="text-xs text-red-500 mt-1">{fieldErrors.hora}</p>}
             </div>
           </div>
           <div>

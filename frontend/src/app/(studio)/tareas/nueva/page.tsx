@@ -37,7 +37,17 @@ function NuevaTareaInner() {
     descripcion: "",
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string,string>>({});
+  const [touched, setTouched] = useState(false);
+
+  const validate = (f = form) => {
+    const e: Record<string,string> = {};
+    if (!f.titulo.trim()) e.titulo = "El titulo es obligatorio";
+    else if (f.titulo.trim().length < 3) e.titulo = "Minimo 3 caracteres";
+    if (!f.fecha_limite) e.fecha_limite = "La fecha es obligatoria";
+    if (!f.hora) e.hora = "La hora es obligatoria";
+    return e;
+  };
   const [adjunto, setAdjunto] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -46,14 +56,15 @@ function NuevaTareaInner() {
     api.get<Expediente[]>("/expedientes", token).then(setExpedientes).catch(() => {});
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
     if (!token) return;
-    if (!form.titulo.trim()) { setError("El titulo es obligatorio"); return; }
-    if (!form.fecha_limite) { setError("La fecha es obligatoria"); return; }
-    if (!form.hora) { setError("La hora es obligatoria"); return; }
+    setTouched(true);
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setSaving(true);
-    setError("");
+    setErrors({});
     try {
       const created = await api.post<{ id: string }>("/tareas", {
         titulo: form.titulo.trim(),
@@ -78,7 +89,7 @@ function NuevaTareaInner() {
 
       router.push(form.expediente_id ? `/expedientes/${form.expediente_id}` : "/agenda");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error al crear la tarea");
+      setErrors({ _: err instanceof Error ? err.message : "Error al crear la tarea" });
       setSaving(false);
     }
   };
@@ -120,11 +131,13 @@ function NuevaTareaInner() {
           <label className={labelClass}>Titulo *</label>
           <input
             value={form.titulo}
-            onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-            className={inputClass}
+            onChange={e => { setForm(f => ({ ...f, titulo: e.target.value })); if (touched) setErrors(v => ({ ...v, titulo: e.target.value.trim().length < 3 ? (e.target.value.trim() ? "Minimo 3 caracteres" : "El titulo es obligatorio") : "" })); }}
+            onBlur={() => { if (form.titulo.trim().length < 3) setErrors(v => ({ ...v, titulo: form.titulo.trim() ? "Minimo 3 caracteres" : "El titulo es obligatorio" })); }}
+            className={`${inputClass} ${errors.titulo ? "border-red-400 focus:ring-red-400" : ""}`}
             placeholder="Ej: Redactar escrito de responde"
             autoFocus
           />
+          {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo}</p>}
         </div>
 
         {/* Expediente */}
@@ -142,11 +155,13 @@ function NuevaTareaInner() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Fecha limite *</label>
-            <DateInput value={form.fecha_limite} onChange={v => setForm(f => ({ ...f, fecha_limite: v }))} required />
+            <DateInput value={form.fecha_limite} onChange={v => { setForm(f => ({ ...f, fecha_limite: v })); if (touched) setErrors(e => ({ ...e, fecha_limite: v ? "" : "La fecha es obligatoria" })); }} ringColor={errors.fecha_limite ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+            {errors.fecha_limite && <p className="text-xs text-red-500 mt-1">{errors.fecha_limite}</p>}
           </div>
           <div>
             <label className={labelClass}>Hora *</label>
-            <TimeInput value={form.hora} onChange={v => setForm(f => ({ ...f, hora: v }))} required />
+            <TimeInput value={form.hora} onChange={v => { setForm(f => ({ ...f, hora: v })); if (touched) setErrors(e => ({ ...e, hora: v ? "" : "La hora es obligatoria" })); }} ringColor={errors.hora ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+            {errors.hora && <p className="text-xs text-red-500 mt-1">{errors.hora}</p>}
           </div>
         </div>
 
@@ -184,7 +199,9 @@ function NuevaTareaInner() {
           )}
         </div>
 
-        {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">{error}</p>}
+        {Object.values(errors).some(Boolean) && touched && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">Corrige los errores antes de continuar</p>
+        )}
 
         <div className="flex gap-3 pt-2">
           <Link href="/agenda" className="flex-1 text-center text-sm font-semibold border border-ink-200 text-ink-600 px-4 py-3 rounded-xl hover:bg-ink-50 transition">

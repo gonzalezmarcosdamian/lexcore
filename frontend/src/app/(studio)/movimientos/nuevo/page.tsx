@@ -40,7 +40,19 @@ function NuevoMovimientoInner() {
     descripcion: "",
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string,string>>({});
+  const [touched, setTouched] = useState(false);
+
+  const validate = (f = form) => {
+    const e: Record<string,string> = {};
+    if (!f.titulo.trim()) e.titulo = "El titulo es obligatorio";
+    else if (f.titulo.trim().length < 3) e.titulo = "Minimo 3 caracteres";
+    if (!f.expediente_id) e.expediente_id = "Selecciona un expediente";
+    if (!f.fecha) e.fecha = "La fecha es obligatoria";
+    if (!f.hora) e.hora = "La hora es obligatoria";
+    else if (!/^\d{2}:\d{2}$/.test(f.hora)) e.hora = "Formato HH:MM";
+    return e;
+  };
   const [adjuntos, setAdjuntos] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -49,15 +61,15 @@ function NuevoMovimientoInner() {
     api.get<Expediente[]>("/expedientes", token).then(setExpedientes).catch(() => {});
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
     if (!token) return;
-    if (!form.titulo.trim()) { setError("El titulo es obligatorio"); return; }
-    if (!form.expediente_id) { setError("El expediente es obligatorio"); return; }
-    if (!form.fecha) { setError("La fecha es obligatoria"); return; }
-    if (!form.hora) { setError("La hora es obligatoria"); return; }
+    setTouched(true);
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
     setSaving(true);
-    setError("");
+    setErrors({});
     try {
       const created = await api.post<{ id: string }>("/movimientos", {
         titulo: form.titulo.trim(),
@@ -85,7 +97,7 @@ function NuevoMovimientoInner() {
 
       router.push(form.expediente_id ? `/expedientes/${form.expediente_id}` : "/agenda");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error al crear el movimiento");
+      setErrors({ _: err instanceof Error ? err.message : "Error al crear el movimiento" });
       setSaving(false);
     }
   };
@@ -127,11 +139,13 @@ function NuevoMovimientoInner() {
           <label className={labelClass}>Titulo *</label>
           <input
             value={form.titulo}
-            onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
-            className={inputClass}
+            onChange={e => { setForm(f => ({ ...f, titulo: e.target.value })); if (touched) setErrors(v => ({ ...v, titulo: e.target.value.trim().length < 3 ? "Minimo 3 caracteres" : "" })); }}
+            onBlur={() => { if (form.titulo.trim().length < 3) setErrors(v => ({ ...v, titulo: form.titulo.trim() ? "Minimo 3 caracteres" : "El titulo es obligatorio" })); }}
+            className={`${inputClass} ${errors.titulo ? "border-red-400 focus:ring-red-400" : ""}`}
             placeholder="Ej: Audiencia de vista de causa"
             autoFocus
           />
+          {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo}</p>}
         </div>
 
         {/* Expediente */}
@@ -140,20 +154,23 @@ function NuevoMovimientoInner() {
           <ExpedienteSelect
             expedientes={expedientes}
             value={form.expediente_id}
-            onChange={id => setForm(f => ({ ...f, expediente_id: id }))}
+            onChange={id => { setForm(f => ({ ...f, expediente_id: id })); if (touched) setErrors(v => ({ ...v, expediente_id: id ? "" : "Selecciona un expediente" })); }}
             placeholder="Seleccionar expediente"
           />
+          {errors.expediente_id && <p className="text-xs text-red-500 mt-1">{errors.expediente_id}</p>}
         </div>
 
         {/* Fecha + Hora */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass}>Fecha *</label>
-            <DateInput value={form.fecha} onChange={v => setForm(f => ({ ...f, fecha: v }))} required />
+            <DateInput value={form.fecha} onChange={v => { setForm(f => ({ ...f, fecha: v })); if (touched) setErrors(e => ({ ...e, fecha: v ? "" : "La fecha es obligatoria" })); }} ringColor={errors.fecha ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+            {errors.fecha && <p className="text-xs text-red-500 mt-1">{errors.fecha}</p>}
           </div>
           <div>
             <label className={labelClass}>Hora *</label>
-            <TimeInput value={form.hora} onChange={v => setForm(f => ({ ...f, hora: v }))} required />
+            <TimeInput value={form.hora} onChange={v => { setForm(f => ({ ...f, hora: v })); if (touched) setErrors(e => ({ ...e, hora: v ? "" : "La hora es obligatoria" })); }} ringColor={errors.hora ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+            {errors.hora && <p className="text-xs text-red-500 mt-1">{errors.hora}</p>}
           </div>
         </div>
 
@@ -198,7 +215,9 @@ function NuevoMovimientoInner() {
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">{error}</p>}
+        {Object.values(errors).some(Boolean) && touched && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">Corrige los errores antes de continuar</p>
+        )}
 
         <div className="flex gap-3 pt-2">
           <Link href="/agenda" className="flex-1 text-center text-sm font-semibold border border-ink-200 text-ink-600 px-4 py-3 rounded-xl hover:bg-ink-50 transition">

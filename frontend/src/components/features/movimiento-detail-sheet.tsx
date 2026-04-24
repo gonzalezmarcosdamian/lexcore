@@ -46,6 +46,7 @@ export function MovimientoDetailSheet({ movimientoId, token, onClose, onDeleted,
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ titulo: "", descripcion: "", fecha: "", hora: "", tipo: "vencimiento" });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editErrors, setEditErrors] = useState<Record<string,string>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -77,6 +78,13 @@ export function MovimientoDetailSheet({ movimientoId, token, onClose, onDeleted,
 
   const handleSaveEdit = async () => {
     if (!mov) return;
+    const e: Record<string,string> = {};
+    if (!editForm.titulo.trim()) e.titulo = "El titulo es obligatorio";
+    else if (editForm.titulo.trim().length < 3) e.titulo = "Minimo 3 caracteres";
+    if (!editForm.fecha) e.fecha = "La fecha es obligatoria";
+    if (!editForm.hora) e.hora = "La hora es obligatoria";
+    setEditErrors(e);
+    if (Object.keys(e).length > 0) return;
     setSavingEdit(true);
     try {
       const updated = await api.patch<Movimiento>(`/movimientos/${movimientoId}`, {
@@ -145,7 +153,8 @@ export function MovimientoDetailSheet({ movimientoId, token, onClose, onDeleted,
                 <div className="bg-white rounded-2xl border border-ink-200 p-4 space-y-3">
                   <div>
                     <label className="block text-xs font-medium text-ink-600 mb-1">Titulo *</label>
-                    <input value={editForm.titulo} onChange={e => setEditForm(f => ({ ...f, titulo: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm" />
+                    <input value={editForm.titulo} onChange={e => { setEditForm(f => ({ ...f, titulo: e.target.value })); setEditErrors(v => ({ ...v, titulo: "" })); }} className={`w-full border rounded-xl px-3 py-2.5 text-sm ${editErrors.titulo ? "border-red-400" : "border-ink-200"}`} />
+                    {editErrors.titulo && <p className="text-xs text-red-500 mt-1">{editErrors.titulo}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-ink-600 mb-1">Descripcion</label>
@@ -169,7 +178,7 @@ export function MovimientoDetailSheet({ movimientoId, token, onClose, onDeleted,
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => setEditing(false)} className="flex-1 text-sm font-semibold border border-ink-200 text-ink-600 px-4 py-2.5 rounded-xl transition">Cancelar</button>
-                    <button onClick={handleSaveEdit} disabled={savingEdit || !editForm.titulo.trim() || !editForm.fecha} className="flex-1 text-sm font-semibold bg-brand-600 text-white px-4 py-2.5 rounded-xl transition disabled:opacity-40">
+                    <button onClick={handleSaveEdit} disabled={savingEdit} className="flex-1 text-sm font-semibold bg-brand-600 text-white px-4 py-2.5 rounded-xl transition disabled:opacity-40">
                       {savingEdit ? "Guardando..." : "Guardar"}
                     </button>
                   </div>

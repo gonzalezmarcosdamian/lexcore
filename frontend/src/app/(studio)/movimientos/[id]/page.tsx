@@ -44,6 +44,7 @@ export default function MovimientoDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({ titulo: "", descripcion: "", fecha: "", hora: "", tipo: "vencimiento" });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editErrors, setEditErrors] = useState<Record<string,string>>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -75,6 +76,13 @@ export default function MovimientoDetailPage() {
 
   const handleSaveEdit = async () => {
     if (!token || !mov) return;
+    const e: Record<string,string> = {};
+    if (!editForm.titulo.trim()) e.titulo = "El titulo es obligatorio";
+    else if (editForm.titulo.trim().length < 3) e.titulo = "Minimo 3 caracteres";
+    if (!editForm.fecha) e.fecha = "La fecha es obligatoria";
+    if (!editForm.hora) e.hora = "La hora es obligatoria";
+    setEditErrors(e);
+    if (Object.keys(e).length > 0) return;
     setSavingEdit(true);
     try {
       const updated = await api.patch<Movimiento>(`/movimientos/${id}`, {
@@ -175,7 +183,8 @@ export default function MovimientoDetailPage() {
           <div className="p-4 space-y-3">
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Titulo *</label>
-              <input value={editForm.titulo} onChange={e => setEditForm(f => ({ ...f, titulo: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm" />
+              <input value={editForm.titulo} onChange={e => { setEditForm(f => ({ ...f, titulo: e.target.value })); setEditErrors(v => ({ ...v, titulo: "" })); }} className={`w-full border rounded-xl px-3 py-2.5 text-sm ${editErrors.titulo ? "border-red-400" : "border-ink-200"}`} />
+              {editErrors.titulo && <p className="text-xs text-red-500 mt-1">{editErrors.titulo}</p>}
             </div>
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">Descripcion</label>
@@ -184,11 +193,13 @@ export default function MovimientoDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-ink-600 mb-1">Fecha *</label>
-                <DateInput value={editForm.fecha} onChange={v => setEditForm(f => ({ ...f, fecha: v }))} required />
+                <DateInput value={editForm.fecha} onChange={v => { setEditForm(f => ({ ...f, fecha: v })); setEditErrors(e => ({ ...e, fecha: "" })); }} ringColor={editErrors.fecha ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+                {editErrors.fecha && <p className="text-xs text-red-500 mt-1">{editErrors.fecha}</p>}
               </div>
               <div>
-                <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-                <TimeInput value={editForm.hora} onChange={v => setEditForm(f => ({ ...f, hora: v }))} />
+                <label className="block text-xs font-medium text-ink-600 mb-1">Hora *</label>
+                <TimeInput value={editForm.hora} onChange={v => { setEditForm(f => ({ ...f, hora: v })); setEditErrors(e => ({ ...e, hora: "" })); }} ringColor={editErrors.hora ? "focus-within:ring-red-400" : "focus-within:ring-brand-400"} />
+                {editErrors.hora && <p className="text-xs text-red-500 mt-1">{editErrors.hora}</p>}
               </div>
             </div>
             <div>
@@ -199,7 +210,7 @@ export default function MovimientoDetailPage() {
             </div>
             <div className="flex gap-2">
               <button onClick={() => setEditing(false)} className="flex-1 text-sm font-semibold border border-ink-200 text-ink-600 px-4 py-2.5 rounded-xl">Cancelar</button>
-              <button onClick={handleSaveEdit} disabled={savingEdit || !editForm.titulo.trim() || !editForm.fecha} className="flex-1 text-sm font-semibold bg-brand-600 text-white px-4 py-2.5 rounded-xl disabled:opacity-40">
+              <button onClick={handleSaveEdit} disabled={savingEdit} className="flex-1 text-sm font-semibold bg-brand-600 text-white px-4 py-2.5 rounded-xl disabled:opacity-40">
                 {savingEdit ? "Guardando..." : "Guardar"}
               </button>
             </div>
