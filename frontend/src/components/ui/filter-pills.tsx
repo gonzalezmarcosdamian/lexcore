@@ -10,7 +10,7 @@ interface FilterPillsRowProps {
   options: FilterOption[];
   value: string;
   onChange: (v: string) => void;
-  activeColor?: "brand" | "purple" | "blue" | "amber" | "red";
+  activeColor?: "brand" | "purple" | "blue" | "amber" | "orange" | "red";
 }
 
 const COLOR_MAP = {
@@ -18,6 +18,7 @@ const COLOR_MAP = {
   purple: { active: "bg-purple-600 text-white shadow-sm shadow-purple-600/30",  hover: "hover:bg-purple-50 hover:text-purple-700" },
   blue:   { active: "bg-blue-600 text-white shadow-sm shadow-blue-600/30",      hover: "hover:bg-blue-50 hover:text-blue-700" },
   amber:  { active: "bg-amber-600 text-white shadow-sm shadow-amber-600/30",    hover: "hover:bg-amber-50 hover:text-amber-700" },
+  orange: { active: "bg-orange-600 text-white shadow-sm shadow-orange-600/30",  hover: "hover:bg-orange-50 hover:text-orange-700" },
   red:    { active: "bg-red-600 text-white shadow-sm shadow-red-600/30",        hover: "hover:bg-red-50 hover:text-red-700" },
 };
 

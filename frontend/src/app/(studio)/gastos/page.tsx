@@ -102,6 +102,7 @@ export default function ContablePage() {
   const hoy = new Date();
   const [mes, setMes] = useState(hoy.getMonth() + 1);
   const [anio, setAnio] = useState(hoy.getFullYear());
+  const [vistaAnual, setVistaAnual] = useState(false);
 
   // Data
   const [gastos, setGastos] = useState<Gasto[]>([]);
@@ -191,11 +192,11 @@ export default function ContablePage() {
     if (!token) return;
     setLoadingGastos(true);
     api
-      .get<Gasto[]>("/gastos", token, { mes, anio })
+      .get<Gasto[]>("/gastos", token, vistaAnual ? { anio } : { mes, anio })
       .then(setGastos)
       .catch(() => {})
       .finally(() => setLoadingGastos(false));
-  }, [token, mes, anio]);
+  }, [token, mes, anio, vistaAnual]);
 
   const fetchPlantillas = useCallback(() => {
     if (!token) return;
@@ -213,11 +214,11 @@ export default function ContablePage() {
   const fetchIngresos = useCallback(() => {
     if (!token) return;
     setLoadingIngresos(true);
-    api.get<Ingreso[]>("/ingresos", token, { mes, anio })
+    api.get<Ingreso[]>("/ingresos", token, vistaAnual ? { anio } : { mes, anio })
       .then(setIngresos)
       .catch(() => {})
       .finally(() => { setLoadingIngresos(false); setIngresosFetched(true); });
-  }, [token, mes, anio]);
+  }, [token, mes, anio, vistaAnual]);
 
   useEffect(() => {
     if (tab === "ingresos") fetchIngresos();
@@ -419,10 +420,12 @@ export default function ContablePage() {
   // ── Navigation ──
 
   const goPrev = () => {
+    if (vistaAnual) { setAnio(a => a - 1); return; }
     const { mes: m, anio: a } = prevMes(mes, anio);
     setMes(m); setAnio(a);
   };
   const goNext = () => {
+    if (vistaAnual) { setAnio(a => a + 1); return; }
     const { mes: m, anio: a } = nextMes(mes, anio);
     setMes(m); setAnio(a);
   };
@@ -477,8 +480,15 @@ export default function ContablePage() {
       {tab === "periodo" && (
         <div className="space-y-5">
 
-          {/* Navegación de mes */}
-          <div className="flex items-center justify-between">
+          {/* Navegación de mes/año */}
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              {/* Toggle Mes / Año */}
+              <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
+                <button onClick={() => setVistaAnual(false)} className={`px-3 py-1.5 transition ${!vistaAnual ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>Mes</button>
+                <button onClick={() => setVistaAnual(true)} className={`px-3 py-1.5 transition ${vistaAnual ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>Año</button>
+              </div>
+            </div>
             <div className="flex items-center gap-3">
               <button onClick={goPrev} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -486,9 +496,9 @@ export default function ContablePage() {
                 </svg>
               </button>
               <span className="text-base font-semibold text-ink-900 capitalize min-w-[160px] text-center">
-                {periodoLabel(mes, anio)}
+                {vistaAnual ? String(anio) : periodoLabel(mes, anio)}
               </span>
-              <button onClick={goNext} disabled={isCurrentMonth} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition disabled:opacity-30">
+              <button onClick={goNext} disabled={!vistaAnual && isCurrentMonth} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition disabled:opacity-30">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>

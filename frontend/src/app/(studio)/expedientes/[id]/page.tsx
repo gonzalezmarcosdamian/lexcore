@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -1026,32 +1026,50 @@ export default function ExpedienteDetailPage() {
                   const m = item.meta as DocMeta;
                   return !m.tarea_id && !m.vencimiento_id;
                 });
-                return feedItems.length === 0 ? (
-                  <p className="text-sm text-ink-400 text-center py-6">Sin actividad registrada</p>
-                ) : (
-                  <div className="relative">
-                    <div className="absolute left-[18px] top-3 bottom-3 w-px bg-ink-100" />
-                    <div className="space-y-2">
-                      {feedItems.map((item) => (
-                        <ActividadRow
-                          key={`${item.tipo}-${item.id}`}
-                          item={item}
-                          adjuntos={adjuntosPor[item.id]}
-                          editingMovId={editingMovId}
-                          editingMovTexto={editingMovTexto}
-                          editingMovFecha={editingMovFecha}
-                          deletingMovId={deletingMovId}
-                          onEditStart={(id, texto, fecha) => { setEditingMovId(id); setEditingMovTexto(texto); setEditingMovFecha(fecha ?? ""); }}
-                          onEditSave={handleSaveMov}
-                          onEditCancel={() => setEditingMovId(null)}
-                          onEditChange={(texto) => setEditingMovTexto(texto)}
-                          onFechaChange={(f) => setEditingMovFecha(f)}
-                          onDeleteConfirm={() => setDeletingMovId(item.id)}
-                          onDeleteCancel={() => setDeletingMovId(null)}
-                          onDelete={handleDeleteMov}
-                        />
-                      ))}
-                    </div>
+                if (feedItems.length === 0) return <p className="text-sm text-ink-400 text-center py-6">Sin actividad registrada</p>;
+
+                // Agrupar por mes/año
+                const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+                const grupos: { key: string; label: string; items: ActividadItem[] }[] = [];
+                for (const item of feedItems) {
+                  const fecha = (item.meta as any)?.fecha || (item.meta as any)?.fecha_acuerdo || (item.meta as any)?.fecha_pago || (item.meta as any)?.fecha_limite || item.created_at?.slice?.(0,10);
+                  const d = fecha ? new Date(String(fecha).slice(0,10) + "T12:00:00") : new Date(item.created_at);
+                  const key = isNaN(d.getTime()) ? "sin-fecha" : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+                  const label = isNaN(d.getTime()) ? "Sin fecha" : `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+                  if (!grupos.length || grupos[grupos.length-1].key !== key) grupos.push({ key, label, items: [] });
+                  grupos[grupos.length-1].items.push(item);
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {grupos.map((grupo, gi) => (
+                      <GrupoMes key={grupo.key} label={grupo.label} count={grupo.items.length} defaultOpen={gi === 0}>
+                        <div className="relative pt-2">
+                          <div className="absolute left-[18px] top-3 bottom-3 w-px bg-ink-100" />
+                          <div className="space-y-2">
+                            {grupo.items.map((item) => (
+                              <ActividadRow
+                                key={`${item.tipo}-${item.id}`}
+                                item={item}
+                                adjuntos={adjuntosPor[item.id]}
+                                editingMovId={editingMovId}
+                                editingMovTexto={editingMovTexto}
+                                editingMovFecha={editingMovFecha}
+                                deletingMovId={deletingMovId}
+                                onEditStart={(id, texto, fecha) => { setEditingMovId(id); setEditingMovTexto(texto); setEditingMovFecha(fecha ?? ""); }}
+                                onEditSave={handleSaveMov}
+                                onEditCancel={() => setEditingMovId(null)}
+                                onEditChange={(texto) => setEditingMovTexto(texto)}
+                                onFechaChange={(f) => setEditingMovFecha(f)}
+                                onDeleteConfirm={() => setDeletingMovId(item.id)}
+                                onDeleteCancel={() => setDeletingMovId(null)}
+                                onDelete={handleDeleteMov}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </GrupoMes>
+                    ))}
                   </div>
                 );
               })()}
@@ -1098,12 +1116,31 @@ export default function ExpedienteDetailPage() {
 
 // ── Fila de actividad ─────────────────────────────────────────────────────────
 
+function GrupoMes({ label, count, children, defaultOpen }: { label: string; count: number; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = React.useState(defaultOpen ?? true);
+  return (
+    <div className="rounded-xl border border-ink-100 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-2.5 bg-ink-50 hover:bg-ink-100 transition"
+      >
+        <div className="flex items-center gap-2">
+          <svg className={`w-3.5 h-3.5 text-ink-400 transition-transform ${open ? "rotate-0" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          <span className="text-xs font-bold text-ink-600 uppercase tracking-wide">{label}</span>
+        </div>
+        <span className="text-[10px] text-ink-400 bg-ink-200 px-1.5 py-0.5 rounded-full">{count}</span>
+      </button>
+      {open && <div className="px-4 pb-3">{children}</div>}
+    </div>
+  );
+}
+
 const ACTIVIDAD_CONFIG: Record<string, { color: string; bg: string; icon: string }> = {
   movimiento: { color: "text-brand-600", bg: "bg-brand-100", icon: "📝" },
   honorario:          { color: "text-emerald-600", bg: "bg-emerald-100", icon: "💼" },
   pago:               { color: "text-green-600", bg: "bg-green-100", icon: "💵" },
   vencimiento:        { color: "text-amber-600", bg: "bg-amber-100", icon: "📅" },
-  movimiento_procesal:{ color: "text-amber-600", bg: "bg-amber-100", icon: "📋" },
+  movimiento_procesal:{ color: "text-orange-600", bg: "bg-orange-100", icon: "📋" },
   tarea:              { color: "text-blue-600", bg: "bg-blue-100", icon: "✅" },
   documento:          { color: "text-ink-600", bg: "bg-ink-100", icon: "📄" },
 };
@@ -1222,7 +1259,7 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                   <div className="mt-1.5 space-y-1.5">
                     {meta.fecha && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                        <span className="inline-flex items-center gap-1.5 text-sm font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-lg">
                           📅 {(() => {
                             const f = String(meta.fecha).slice(0, 10); // solo YYYY-MM-DD
                             const d = new Date(f + "T12:00:00");
@@ -1244,10 +1281,10 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                           const kb = doc.size_bytes ? Math.round(doc.size_bytes / 1024) : null;
                           const mb = doc.size_bytes && doc.size_bytes > 1024 * 1024 ? (doc.size_bytes / (1024 * 1024)).toFixed(1) : null;
                           return (
-                            <span key={i} className="inline-flex items-center gap-1 text-xs bg-amber-50 border border-amber-200 text-amber-800 px-2 py-0.5 rounded-full">
+                            <span key={i} className="inline-flex items-center gap-1 text-xs bg-orange-50 border border-orange-200 text-orange-800 px-2 py-0.5 rounded-full">
                               <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                               <span className="max-w-[160px] truncate">{doc.nombre}</span>
-                              <span className="text-amber-500 flex-shrink-0">{mb ? `${mb} MB` : kb ? `${kb} KB` : ""}</span>
+                              <span className="text-orange-500 flex-shrink-0">{mb ? `${mb} MB` : kb ? `${kb} KB` : ""}</span>
                             </span>
                           );
                         })}
@@ -1280,10 +1317,18 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                   </div>
                 )}
                 {item.tipo === "honorario" && meta.monto != null && (
-                  <p className="text-xs text-emerald-600 font-medium mt-1">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR")}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-sm font-bold text-emerald-700">{String(meta.moneda)} {Number(meta.monto).toLocaleString("es-AR", { minimumFractionDigits: 0 })}</span>
+                    {meta.fecha_acuerdo && <span className="text-xs text-ink-400">acordado {new Date(String(meta.fecha_acuerdo) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}</span>}
+                    {meta.fecha_vencimiento && <span className="text-xs bg-orange-50 border border-orange-200 text-orange-700 px-1.5 py-0.5 rounded-full">vence {new Date(String(meta.fecha_vencimiento) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>}
+                  </div>
                 )}
                 {item.tipo === "pago" && meta.importe != null && (
-                  <p className="text-xs text-green-600 font-medium mt-1">{String(meta.moneda)} {Number(meta.importe).toLocaleString("es-AR")} · {String(meta.tipo)}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-sm font-bold text-green-700">{String(meta.moneda)} {Number(meta.importe).toLocaleString("es-AR", { minimumFractionDigits: 0 })}</span>
+                    <span className="text-xs text-ink-400 capitalize">{String(meta.tipo)}</span>
+                    {meta.fecha_pago && <span className="text-xs text-ink-400">{new Date(String(meta.fecha_pago) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}</span>}
+                  </div>
                 )}
               </div>
               {isMovimiento && (
@@ -1314,8 +1359,8 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                 })}
               </div>
             )}
-            {/* Timestamp footer — no mostrar para movimiento_procesal (fecha ya visible arriba) */}
-            {item.tipo !== "movimiento_procesal" && <p className="text-xs text-ink-400 mt-1.5">
+            {/* Timestamp footer — no para movimiento_procesal, honorario ni pago (fechas ya visibles arriba) */}
+            {item.tipo !== "movimiento_procesal" && item.tipo !== "honorario" && item.tipo !== "pago" && <p className="text-xs text-ink-400 mt-1.5">
               {(() => {
                 const fechaActo = (meta as any).fecha_manual as string | undefined;
                 const horaActo  = (meta as any).hora_acto as string | undefined;

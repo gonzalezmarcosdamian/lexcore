@@ -1,16 +1,28 @@
 /**
- * Paleta central de colores por tipo de item.
- * Importar desde acá — nunca hardcodear en componentes.
+ * Paleta central — DECISION FINAL (Gonzalo 2026-04-25):
+ *   Tareas      = AZUL   (trabajo interno a hacer)
+ *   Movimientos = NARANJA (actos procesales externos, plazos)
+ *   Honorarios  = VERDE ESMERALDA
  */
 
 export const ITEM_COLORS = {
+  movimiento: {
+    dot:     "bg-orange-500",
+    badge:   "bg-orange-100 text-orange-700",
+    border:  "border-l-orange-500",
+    bg:      "bg-orange-50",
+    text:    "text-orange-700",
+    button:  "bg-orange-600 hover:bg-orange-700 text-white",
+    urgent:  { dot: "bg-red-500", badge: "bg-red-100 text-red-700", border: "border-l-red-500" },
+  },
+  // alias backward compat
   vencimiento: {
-    dot:     "bg-amber-400",
-    badge:   "bg-amber-100 text-amber-700",
-    border:  "border-l-amber-400",
-    bg:      "bg-amber-50",
-    text:    "text-amber-700",
-    button:  "bg-amber-600 hover:bg-amber-700 text-white",
+    dot:     "bg-orange-500",
+    badge:   "bg-orange-100 text-orange-700",
+    border:  "border-l-orange-500",
+    bg:      "bg-orange-50",
+    text:    "text-orange-700",
+    button:  "bg-orange-600 hover:bg-orange-700 text-white",
     urgent:  { dot: "bg-red-500", badge: "bg-red-100 text-red-700", border: "border-l-red-500" },
   },
   tarea: {

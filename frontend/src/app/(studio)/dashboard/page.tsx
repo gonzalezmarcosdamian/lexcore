@@ -171,7 +171,7 @@ export default function DashboardPage() {
       cumplido: v.estado === "cumplido",
       expediente_id: v.expediente_id,
       fecha: v.fecha,
-      color: (v.estado === "cumplido" ? "blue" : isUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
+      color: (v.estado === "cumplido" ? "blue" : isUrgente(v.fecha) ? "red" : "orange") as CalEvent["color"],
     })),
     ...tareas.filter(t => t.fecha_limite).map(t => ({
       id: t.id,
@@ -182,7 +182,7 @@ export default function DashboardPage() {
       expediente_id: t.expediente_id,
       fecha: t.fecha_limite!,
       fecha_limite: t.fecha_limite!,
-      color: (t.estado === "en_curso" ? "blue" : t.fecha_limite! < today ? "red" : "amber") as CalEvent["color"],
+      color: (t.estado === "en_curso" ? "blue" : t.fecha_limite! < today ? "red" : "orange") as CalEvent["color"],
     })),
   ], [proximos, tareas]);
 
@@ -653,7 +653,7 @@ function TareaRow({ tarea, exp, onHecha, onEdit, onDelete, onDetail, marking, de
           )}
           {tarea.fecha_limite && (
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
-              vencida ? "bg-red-100 text-red-600" : esHoy ? "bg-amber-100 text-amber-700" : "bg-ink-100 text-ink-500"
+              vencida ? "bg-red-100 text-red-600" : esHoy ? "bg-amber-100 text-orange-700" : "bg-ink-100 text-ink-500"
             }`}>
               {vencida ? `venció ${formatFecha(tarea.fecha_limite)}` : formatFechaLarga(tarea.fecha_limite)}{tarea.hora ? ` · ${tarea.hora}` : ""}
             </span>
@@ -753,7 +753,7 @@ function AgendaWidget({
         <h2 className="text-sm font-semibold text-ink-700">Agenda</h2>
         <div className="flex items-center gap-2">
           <Link href="/tareas/nueva" className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Tarea</Link>
-          <Link href="/movimientos/nuevo" className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Movimiento</Link>
+          <Link href="/movimientos/nuevo" className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Movimiento</Link>
           <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
         </div>
       </div>
@@ -806,12 +806,12 @@ function AgendaWidget({
                     {evs.map((e, j) => {
                       const colorCls =
                         e.color === "red"    ? "bg-red-50 border-red-200 text-red-700" :
-                        e.color === "amber"  ? "bg-amber-50 border-amber-200 text-amber-700" :
+                        e.color === "orange"  ? "bg-amber-50 border-orange-200 text-orange-700" :
                         e.color === "blue"   ? "bg-blue-50 border-blue-200 text-blue-700" :
                                                "bg-ink-50 border-ink-200 text-ink-700";
                       const dotCls =
                         e.color === "red"    ? "bg-red-500" :
-                        e.color === "amber"  ? "bg-amber-400" :
+                        e.color === "orange"  ? "bg-orange-500" :
                         e.color === "blue"   ? "bg-blue-500" : "bg-ink-300";
                       return (
                         <button
@@ -837,7 +837,7 @@ function AgendaWidget({
                     {evs.slice(0, 3).map((e, j) => (
                       <span key={j} className={`w-1.5 h-1.5 rounded-full ${
                         e.color === "red" ? "bg-red-500" :
-                        e.color === "amber" ? "bg-amber-400" :
+                        e.color === "orange" ? "bg-orange-500" :
                         e.color === "blue" ? "bg-blue-500" : "bg-ink-300"
                       }`} />
                     ))}
@@ -906,7 +906,7 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, markin
   const vencida = isVencida(v.fecha);
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
-      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.estado === "cumplido" ? "bg-green-500" : urg || vencida ? "bg-red-500" : warning ? "bg-amber-400" : "bg-amber-300"}`} />
+      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.estado === "cumplido" ? "bg-green-500" : urg || vencida ? "bg-red-500" : warning ? "bg-orange-500" : "bg-orange-400"}`} />
       <div className="flex-1 min-w-0">
         <button onClick={() => onDetail(v)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{v.titulo}</button>
         {exp ? (

@@ -11,7 +11,7 @@ export type CalEvent = {
   estado?: string;
   cumplido?: boolean;  // backward compat
   expediente_id?: string | null;
-  color: "blue" | "purple" | "red" | "amber" | "green";
+  color: "blue" | "purple" | "red" | "orange" | "green";
 };
 
 export type DiaInhabil = {
@@ -41,7 +41,7 @@ const COLOR_CLS: Record<string, string> = {
   blue:   "bg-blue-100 text-blue-800",
   purple: "bg-purple-100 text-purple-800",
   red:    "bg-red-100 text-red-800",
-  amber:  "bg-amber-100 text-amber-700",
+  orange: "bg-orange-100 text-orange-700",
   green:  "bg-emerald-100 text-emerald-700",
 };
 
@@ -49,7 +49,7 @@ const DOT_CLS: Record<string, string> = {
   blue:   "bg-blue-500",
   purple: "bg-purple-400",
   red:    "bg-red-500",
-  amber:  "bg-amber-400",
+  orange: "bg-orange-500",
   green:  "bg-emerald-500",
 };
 
@@ -251,7 +251,7 @@ export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, on
           <div className="w-2.5 h-2.5 rounded bg-blue-100 border border-blue-200" />Tarea
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-ink-500">
-          <div className="w-2.5 h-2.5 rounded bg-amber-100 border border-amber-200" />Vencimiento
+          <div className="w-2.5 h-2.5 rounded bg-orange-100 border border-orange-200" />Vencimiento
         </div>
         <div className="flex items-center gap-1.5 text-[10px] text-ink-500">
           <div className="w-2.5 h-2.5 rounded-full bg-red-300" />Inhábil

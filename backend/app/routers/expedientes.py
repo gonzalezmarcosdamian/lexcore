@@ -407,19 +407,19 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             meta={"fecha": mov.fecha, "hora": mov.hora, "tipo": mov.tipo, "estado": mov.estado, "descripcion": mov.descripcion},
         ))
 
-    # Honorarios
+    # Honorarios — ordenar por fecha_acuerdo, no created_at
     for h in db.query(Honorario).filter(Honorario.expediente_id == expediente_id, Honorario.tenant_id == tenant_id).all():
         items.append(ActividadItem(
             id=h.id, tipo="honorario", subtipo="creado",
             descripcion=f"Honorario: {h.concepto}",
-            meta={"monto": float(h.monto_acordado), "moneda": h.moneda.value},
+            meta={"monto": float(h.monto_acordado), "moneda": h.moneda.value, "fecha_acuerdo": h.fecha_acuerdo, "fecha_vencimiento": h.fecha_vencimiento},
             created_at=h.created_at,
         ))
         for p in h.pagos:
             items.append(ActividadItem(
                 id=p.id, tipo="pago", subtipo=str(p.tipo),
-                descripcion=f"Pago registrado — {p.tipo}: {p.moneda} {p.importe:,.0f}",
-                meta={"importe": float(p.importe), "moneda": p.moneda.value, "tipo": str(p.tipo)},
+                descripcion=f"Pago: {h.concepto}",
+                meta={"importe": float(p.importe), "moneda": p.moneda.value, "tipo": str(p.tipo), "fecha_pago": p.fecha},
                 created_at=p.created_at,
             ))
 
@@ -501,11 +501,14 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         if item.tipo == "tarea" and m.get("fecha_limite"):
             hora = str(m.get("hora") or "23:59")
             return str(m["fecha_limite"]) + "T" + hora + ":00"
-        # Para honorarios, pagos, documentos sin fecha del acto → usar created_at como tiebreaker
-        # pero prefijado con "0000" para que queden siempre al final
+        if item.tipo == "honorario" and m.get("fecha_acuerdo"):
+            return str(m["fecha_acuerdo"]) + "T12:00:00"
+        if item.tipo == "pago" and m.get("fecha_pago"):
+            return str(m["fecha_pago"]) + "T12:00:00"
+        # Documentos sin padre: usar created_at
         ca = item.created_at
         iso = ca.isoformat() if hasattr(ca, "isoformat") else str(ca)
-        return "0001-01-01T00:00:00" if not iso else iso
+        return iso if iso else "0001-01-01T00:00:00"
 
     items.sort(key=_sort_key, reverse=True)
     return items

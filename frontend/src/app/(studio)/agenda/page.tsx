@@ -306,7 +306,7 @@ function VencimientoCard({
         className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
           v.estado === "cumplido"      ? "bg-green-50 border-green-100 opacity-70" :
           vencida         ? "bg-red-50 border-red-200" :
-          urgente         ? "bg-amber-50 border-amber-200" :
+          urgente         ? "bg-amber-50 border-orange-200" :
                             "bg-white border-ink-100 hover:border-ink-200"
         }`}
       >
@@ -317,7 +317,7 @@ function VencimientoCard({
               <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               {v.tipo ?? "Vencimiento"}
             </span>
-            {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
+            {urgente && <span className="text-[10px] font-bold text-orange-600">⚡ Urgente</span>}
             {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
           </div>
           <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${v.estado === "cumplido" ? "line-through text-ink-400" : "text-ink-900"}`}>{v.titulo}</button>
@@ -471,7 +471,7 @@ function AgendaItemMobile({
   const badgeCls = hecho
     ? "bg-green-100 text-green-700"
     : isVencido ? "bg-red-100 text-red-700"
-    : isUrgente ? "bg-amber-100 text-amber-700"
+    : isUrgente ? "bg-amber-100 text-orange-700"
     : "bg-ink-100 text-ink-600";
 
   const badgeLabel = hecho
@@ -481,7 +481,7 @@ function AgendaItemMobile({
     : "PENDIENTE";
 
   const dotCls = (tipo === "vencimiento" || tipo === "movimiento")
-    ? (isUrgente || isVencido ? "bg-red-500" : "bg-amber-400")
+    ? (isUrgente || isVencido ? "bg-red-500" : "bg-orange-500")
     : "bg-blue-500";
 
   return (
@@ -491,7 +491,7 @@ function AgendaItemMobile({
         hecho           ? "bg-green-50/60 border-green-100 opacity-75" :
         isParalizado    ? "bg-gradient-to-br from-slate-100/90 via-blue-50/60 to-slate-100/90 border-blue-200" :
         isVencido       ? "bg-red-50 border-red-200" :
-        isUrgente       ? "bg-amber-50 border-amber-200" :
+        isUrgente       ? "bg-amber-50 border-orange-200" :
                           "bg-white border-ink-100"
       }`}
     >
@@ -852,7 +852,7 @@ export default function AgendaPage() {
       cumplido: v.estado === "cumplido",
       expediente_id: v.expediente_id,
       fecha: v.fecha,
-      color: (v.estado === "cumplido" ? "blue" : esUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
+      color: (v.estado === "cumplido" ? "blue" : esUrgente(v.fecha) ? "red" : "orange") as CalEvent["color"],
     })),
     ...tareas.filter(t => t.fecha_limite).map(t => ({
       id: t.id,
@@ -863,7 +863,7 @@ export default function AgendaPage() {
       expediente_id: t.expediente_id,
       fecha: t.fecha_limite!,
       fecha_limite: t.fecha_limite!,
-      color: (t.estado === "en_curso" ? "blue" : esVencida(t.fecha_limite!) ? "red" : "amber") as CalEvent["color"],
+      color: (t.estado === "en_curso" ? "blue" : esVencida(t.fecha_limite!) ? "red" : "orange") as CalEvent["color"],
     })),
   ], [vencimientos, tareas]);
 
@@ -932,10 +932,10 @@ export default function AgendaPage() {
                   setDiaPickerFecha(null);
                   router.push(`/movimientos/nuevo${fecha ? `?fecha=${fecha}` : ""}`);
                 }}
-                className="flex-1 flex flex-col items-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl py-4 transition"
+                className="flex-1 flex flex-col items-center gap-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl py-4 transition"
               >
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span className="text-xs font-semibold text-amber-700">Movimiento</span>
+                <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span className="text-xs font-semibold text-orange-700">Movimiento</span>
               </button>
             </div>
           </div>
@@ -1022,7 +1022,7 @@ export default function AgendaPage() {
           </button>
           <button
             onClick={() => router.push("/movimientos/nuevo")}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl transition"
+            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-xl transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
             Movimiento
@@ -1034,7 +1034,7 @@ export default function AgendaPage() {
           <div className="space-y-1.5">
             {/* Una sola línea con separador + Paralizadas al final */}
             <div className="bg-ink-50 border border-ink-100 rounded-xl px-2 py-1.5 flex items-center gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-              <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
+              <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
               <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
               <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
               <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
@@ -1203,7 +1203,7 @@ export default function AgendaPage() {
               <button onClick={() => setVista("calendario")} className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>📅 Calendario</button>
             </div>
             <Link href="/tareas/nueva" className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Tarea</Link>
-            <Link href="/movimientos/nuevo" className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Movimiento</Link>
+            <Link href="/movimientos/nuevo" className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Movimiento</Link>
             <CalendarSyncButton variant="compact" />
           </div>
         </div>
@@ -1226,7 +1226,7 @@ export default function AgendaPage() {
             </div>
             {/* Filtros en una sola línea con separador */}
             <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 flex items-center gap-3 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-              <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
+              <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
               <div className="w-px h-5 bg-ink-200 flex-shrink-0" />
               <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
             </div>

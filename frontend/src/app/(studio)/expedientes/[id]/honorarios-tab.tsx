@@ -44,6 +44,34 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
 
   const [pagoForm, setPagoForm] = useState<Record<string, { importe: string; moneda: Moneda; fecha: string; comprobante: string; tipo: "capital" | "interes" }>>({});
 
+  // Cuotas
+  const [usarCuotas, setUsarCuotas] = useState(false);
+  const [nCuotas, setNCuotas] = useState(3);
+  const [intervaloCuotas, setIntervaloCuotas] = useState<"mensual" | "quincenal" | "semanal">("mensual");
+
+  const generarCuotas = () => {
+    if (!form.monto_acordado || !form.fecha_vencimiento || !form.concepto) return [];
+    const total = parseFloat(form.monto_acordado);
+    const base = Math.floor((total / nCuotas) * 100) / 100;
+    const cuotas = [];
+    for (let i = 0; i < nCuotas; i++) {
+      const fecha = new Date(form.fecha_vencimiento + "T12:00:00");
+      if (intervaloCuotas === "mensual") fecha.setMonth(fecha.getMonth() + i);
+      else if (intervaloCuotas === "quincenal") fecha.setDate(fecha.getDate() + i * 15);
+      else fecha.setDate(fecha.getDate() + i * 7);
+      const monto = i === nCuotas - 1 ? Math.round((total - base * (nCuotas - 1)) * 100) / 100 : base;
+      cuotas.push({
+        concepto: `${form.concepto} — cuota ${i + 1}/${nCuotas}`,
+        monto_acordado: monto,
+        moneda: form.moneda,
+        fecha_acuerdo: form.fecha_acuerdo,
+        fecha_vencimiento: fecha.toISOString().slice(0, 10),
+        notas: form.notas,
+      });
+    }
+    return cuotas;
+  };
+
   const load = () =>
     api.get<Honorario[]>(`/honorarios/expediente/${expedienteId}`, token)
       .then(setHonorarios)
@@ -54,11 +82,20 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
 
   const crearHonorario = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.concepto.trim()) { setError("El concepto es obligatorio"); return; }
+    if (!form.monto_acordado || parseFloat(form.monto_acordado) <= 0) { setError("El monto debe ser mayor a cero"); return; }
     setSaving(true);
     setError("");
     try {
-      await api.post("/honorarios", { ...form, expediente_id: expedienteId, monto_acordado: parseFloat(form.monto_acordado) }, token);
+      if (usarCuotas) {
+        const cuotas = generarCuotas();
+        if (cuotas.length === 0) { setError("Completá concepto, monto y fecha de primera cuota"); setSaving(false); return; }
+        await Promise.all(cuotas.map(c => api.post("/honorarios", { ...c, expediente_id: expedienteId }, token)));
+      } else {
+        await api.post("/honorarios", { ...form, expediente_id: expedienteId, monto_acordado: parseFloat(form.monto_acordado) }, token);
+      }
       setForm({ concepto: "", monto_acordado: "", moneda: "ARS", fecha_acuerdo: today, fecha_vencimiento: "", notas: "" });
+      setUsarCuotas(false);
       setShowForm(false);
       load();
       onCreated?.();
@@ -143,47 +180,54 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
           onCancel={() => setConfirmEliminarId(null)}
         />
       )}
-      {/* Hero summary */}
+      {/* Resumen liviano */}
       {honorarios.length > 0 && (
-        <div className="bg-gradient-to-br from-ink-900 to-ink-800 rounded-2xl p-5 text-white">
-          <p className="text-xs font-semibold text-ink-300 uppercase tracking-wider mb-3">
-            Resumen de honorarios · {honorarios.length} acuerdo{honorarios.length !== 1 ? "s" : ""}
+        <div className="bg-white border border-ink-100 rounded-2xl p-4">
+          <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider mb-3">
+            Resumen · {honorarios.length} acuerdo{honorarios.length !== 1 ? "s" : ""}
           </p>
-          {acordadoARS > 0 && (
-            <div className="mb-3">
-              <div className="flex items-end justify-between mb-1">
-                <span className="text-xs text-ink-400">ARS acordado</span>
-                <span className="text-lg font-bold">{fmt(acordadoARS, "ARS")}</span>
-              </div>
-              {/* barra */}
-              <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-400 rounded-full" style={{ width: `${acordadoARS > 0 ? Math.min(100, (cobradoARS / acordadoARS) * 100) : 0}%` }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-ink-400 mt-1">
-                <span>Cobrado: {fmt(cobradoARS, "ARS")}{interesesARS > 0 ? ` + ${fmt(interesesARS, "ARS")} int.` : ""}</span>
-                <span className={saldoARS > 0 ? "text-amber-400 font-semibold" : "text-green-400 font-semibold"}>
-                  {saldoARS > 0 ? `Pendiente: ${fmt(saldoARS, "ARS")}` : "Saldado ✓"}
-                </span>
-              </div>
-            </div>
-          )}
-          {acordadoUSD > 0 && (
-            <div>
-              <div className="flex items-end justify-between mb-1">
-                <span className="text-xs text-ink-400">USD acordado</span>
-                <span className="text-lg font-bold">{fmt(acordadoUSD, "USD")}</span>
-              </div>
-              <div className="h-1.5 bg-ink-700 rounded-full overflow-hidden">
-                <div className="h-full bg-green-400 rounded-full" style={{ width: `${acordadoUSD > 0 ? Math.min(100, (cobradoUSD / acordadoUSD) * 100) : 0}%` }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-ink-400 mt-1">
-                <span>Cobrado: {fmt(cobradoUSD, "USD")}</span>
-                <span className={saldoUSD > 0 ? "text-amber-400 font-semibold" : "text-green-400 font-semibold"}>
-                  {saldoUSD > 0 ? `Pendiente: ${fmt(saldoUSD, "USD")}` : "Saldado ✓"}
-                </span>
-              </div>
-            </div>
-          )}
+          <div className="grid grid-cols-1 gap-3">
+            {acordadoARS > 0 && (() => {
+              const pct = acordadoARS > 0 ? Math.min(100, (cobradoARS / acordadoARS) * 100) : 0;
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-ink-500">ARS</span>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-ink-400">Acordado <span className="font-semibold text-ink-700">{fmt(acordadoARS, "ARS")}</span></span>
+                      <span className={saldoARS > 0 ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>
+                        {saldoARS > 0 ? `Saldo ${fmt(saldoARS, "ARS")}` : "Saldado ✓"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-[10px] text-ink-400 mt-0.5">{fmt(cobradoARS, "ARS")} cobrado{interesesARS > 0 ? ` · ${fmt(interesesARS, "ARS")} intereses` : ""} · {Math.round(pct)}%</p>
+                </div>
+              );
+            })()}
+            {acordadoUSD > 0 && (() => {
+              const pct = acordadoUSD > 0 ? Math.min(100, (cobradoUSD / acordadoUSD) * 100) : 0;
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-ink-500">USD</span>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-ink-400">Acordado <span className="font-semibold text-ink-700">{fmt(acordadoUSD, "USD")}</span></span>
+                      <span className={saldoUSD > 0 ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>
+                        {saldoUSD > 0 ? `Saldo ${fmt(saldoUSD, "USD")}` : "Saldado ✓"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-[10px] text-ink-400 mt-0.5">{fmt(cobradoUSD, "USD")} cobrado · {Math.round(pct)}%</p>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
 
@@ -229,16 +273,61 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
               <DateInput value={form.fecha_acuerdo} onChange={v => setForm({ ...form, fecha_acuerdo: v })} required />
             </div>
             <div>
-              <label className={labelCls}>Fecha de vencimiento</label>
+              <label className={labelCls}>{usarCuotas ? "Fecha primera cuota *" : "Fecha de vencimiento"}</label>
               <DateInput value={form.fecha_vencimiento} onChange={v => setForm({ ...form, fecha_vencimiento: v })} placeholder="DD/MM/AAAA" />
             </div>
           </div>
+
+          {/* Toggle cuotas */}
+          <div className="flex items-center gap-3 py-2 border-t border-ink-50">
+            <button
+              type="button"
+              onClick={() => setUsarCuotas(p => !p)}
+              className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${usarCuotas ? "bg-emerald-500" : "bg-ink-200"}`}
+            >
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${usarCuotas ? "translate-x-4" : "translate-x-0"}`} />
+            </button>
+            <span className="text-sm text-ink-600 font-medium">Dividir en cuotas</span>
+          </div>
+
+          {/* Configuración de cuotas */}
+          {usarCuotas && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Cantidad de cuotas</label>
+                  <select value={nCuotas} onChange={e => setNCuotas(Number(e.target.value))} className={inputCls}>
+                    {[2,3,4,5,6,8,10,12].map(n => <option key={n} value={n}>{n} cuotas</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Intervalo</label>
+                  <select value={intervaloCuotas} onChange={e => setIntervaloCuotas(e.target.value as any)} className={inputCls}>
+                    <option value="mensual">Mensual</option>
+                    <option value="quincenal">Quincenal</option>
+                    <option value="semanal">Semanal</option>
+                  </select>
+                </div>
+              </div>
+              {form.monto_acordado && form.fecha_vencimiento && (
+                <div className="text-xs text-emerald-700 bg-emerald-100 rounded-lg px-3 py-2">
+                  {generarCuotas().map((c, i) => (
+                    <div key={i} className="flex justify-between">
+                      <span>Cuota {i+1}</span>
+                      <span className="font-semibold">{fmt(c.monto_acordado, c.moneda)} · {new Date(c.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className={labelCls}>Notas (opcional)</label>
             <textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} className={`${inputCls} resize-none`} rows={2} placeholder="Porcentaje sobre resultado, cuotas, etc." />
           </div>
           <button type="submit" disabled={saving} className="w-full bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2 text-sm font-semibold transition disabled:opacity-50">
-            {saving ? "Guardando…" : "Guardar honorario"}
+            {saving ? "Guardando…" : usarCuotas ? `Crear ${nCuotas} cuotas` : "Guardar honorario"}
           </button>
         </form>
       )}
@@ -284,7 +373,10 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                       {saldo > 0 && pct > 0 && <Badge color="bg-amber-50 text-amber-700">Parcial</Badge>}
                       {vencBadge && <Badge color={vencBadge.cls}>{vencBadge.label}</Badge>}
                     </div>
-                    <p className="text-xs text-ink-400 mt-0.5">Acordado: {fmt(h.monto_acordado, h.moneda)} — {h.fecha_acuerdo}{h.fecha_vencimiento ? ` · Vence: ${h.fecha_vencimiento}` : ""}</p>
+                    <p className="text-xs text-ink-400 mt-0.5">
+                      Acordado: {fmt(h.monto_acordado, h.moneda)} — {h.fecha_acuerdo ? new Date(h.fecha_acuerdo + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : h.fecha_acuerdo}
+                      {h.fecha_vencimiento ? ` · Vence: ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}` : ""}
+                    </p>
                     {/* Barra de progreso capital */}
                     <div className="mt-2 h-1.5 bg-ink-100 rounded-full overflow-hidden">
                       <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
@@ -322,7 +414,7 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ml-2 ${p.tipo === "interes" ? "bg-blue-50 text-blue-600" : "bg-brand-50 text-brand-600"}`}>
                                 {p.tipo === "interes" ? "Interés" : "Capital"}
                               </span>
-                              <span className="text-xs text-ink-400 ml-2">{p.fecha}</span>
+                              <span className="text-xs text-ink-400 ml-2">{p.fecha ? new Date(p.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : ""}</span>
                               {p.comprobante && <span className="text-xs text-ink-400 ml-2">— {p.comprobante}</span>}
                             </div>
                             <button onClick={() => eliminarPago(h.id, p.id)} className="text-ink-300 hover:text-red-500 transition ml-2">
@@ -356,10 +448,10 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                       <div className="flex gap-2">
                         <input
                           type="number" min="0.01" step="0.01"
-                          placeholder="Importe"
+                          placeholder="Importe *"
                           value={pf.importe}
                           onChange={e => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, importe: e.target.value } }))}
-                          className="flex-1 bg-white border border-ink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                          className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${!pf.importe && saving ? "border-red-400 focus:ring-red-400" : "border-ink-200 focus:ring-brand-400"}`}
                         />
                         <select
                           value={pf.moneda}
@@ -372,7 +464,7 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                         <DateInput value={pf.fecha} onChange={v => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, fecha: v } }))} className="min-w-[140px]" />
                       </div>
                       <input
-                        placeholder="Comprobante (opcional)"
+                        placeholder="Nro. comprobante / referencia (opcional)"
                         value={pf.comprobante}
                         onChange={e => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, comprobante: e.target.value } }))}
                         className="w-full bg-white border border-ink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
