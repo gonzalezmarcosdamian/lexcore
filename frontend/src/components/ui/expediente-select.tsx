@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 export interface ExpedienteOption {
   id: string;
   numero?: string;
+  numero_judicial?: string | null;
   caratula?: string;
   cliente_nombre?: string;
 }
@@ -28,6 +29,7 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
     ? expedientes.filter(e => {
         const q = query.toLowerCase();
         return (
+          (e.numero_judicial ?? "").toLowerCase().includes(q) ||
           (e.numero ?? "").toLowerCase().includes(q) ||
           (e.caratula ?? "").toLowerCase().includes(q) ||
           (e.cliente_nombre ?? "").toLowerCase().includes(q)
@@ -57,8 +59,11 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
     setOpen(false);
   };
 
+  // Mostrar numero_judicial si existe (el que ingresa el abogado), sino el interno
+  const displayNumero = (e: ExpedienteOption) => e.numero_judicial || e.numero || "";
+
   const label = selected
-    ? `${selected.numero ? selected.numero + " · " : ""}${selected.cliente_nombre ?? selected.caratula ?? ""}`
+    ? `${displayNumero(selected) ? displayNumero(selected) + " · " : ""}${selected.cliente_nombre ?? selected.caratula ?? ""}`
     : placeholder;
 
   return (
@@ -102,8 +107,8 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
                 onClick={() => select(e.id)}
                 className={`px-3 py-2.5 text-sm cursor-pointer hover:bg-ink-50 transition ${value === e.id ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-900"}`}
               >
-                <span className="font-medium text-ink-500 mr-1">{e.numero}</span>
-                {e.cliente_nombre ?? e.caratula}
+                <span className="font-medium text-ink-700 mr-1">{displayNumero(e)}</span>
+                <span className="text-ink-500">{e.cliente_nombre ?? e.caratula}</span>
               </li>
             ))}
           </ul>
