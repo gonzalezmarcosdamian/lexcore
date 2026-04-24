@@ -1223,7 +1223,11 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                     {meta.fecha && (
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                          📅 {new Date(String(meta.fecha) + "T12:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+                          📅 {(() => {
+                            const f = String(meta.fecha).slice(0, 10); // solo YYYY-MM-DD
+                            const d = new Date(f + "T12:00:00");
+                            return isNaN(d.getTime()) ? f : d.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" });
+                          })()}
                           {meta.hora && <span className="font-bold">· {String(meta.hora)}</span>}
                         </span>
                         {meta.estado === "cumplido"
