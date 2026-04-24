@@ -1021,11 +1021,12 @@ export default function AgendaPage() {
         {/* Filtros tipo — mobile */}
         {vista === "tablero" && !loading && (
           <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
+            {/* Una sola línea con separador + Paralizadas al final */}
+            <div className="bg-ink-50 border border-ink-100 rounded-xl px-2 py-1.5 flex items-center gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
               <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
-            </div>
-            <div className="flex items-center justify-between gap-2">
+              <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
               <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
+              <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
               <button
                 onClick={() => setFiltroParalizado(p => !p)}
                 className={`flex-shrink-0 flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
@@ -1199,21 +1200,24 @@ export default function AgendaPage() {
         {/* Filtros */}
         {vista === "tablero" && !loading && (
           <div className="space-y-2">
-            <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
-            <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 space-y-1.5">
-              <div className="flex items-center justify-between gap-2">
-                <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
+            {/* Período + Paralizadas en la misma fila */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <PeriodSelector value={periodoValue} onChange={setPeriodoValue} />
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
-                <button
-                  onClick={() => setFiltroParalizado(p => !p)}
-                  className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                  Paralizadas
-                </button>
-              </div>
+              <button
+                onClick={() => setFiltroParalizado(p => !p)}
+                className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-600 border-blue-300" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+                Paralizadas
+              </button>
+            </div>
+            {/* Filtros en una sola línea con separador */}
+            <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 flex items-center gap-3 overflow-x-auto" style={{scrollbarWidth:"none"}}>
+              <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="amber" />
+              <div className="w-px h-5 bg-ink-200 flex-shrink-0" />
+              <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
             </div>
           </div>
         )}
