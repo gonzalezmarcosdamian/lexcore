@@ -1,36 +1,56 @@
 /**
- * Setup: hace login con Google o email y guarda la sesión.
- * Se ejecuta UNA VEZ antes de todos los tests.
- *
- * Variables de entorno requeridas:
- *   E2E_EMAIL    — email del usuario de prueba
- *   E2E_PASSWORD — contraseña
+ * Setup: login con email/password + guardar sesión completa.
  */
 import { test as setup, expect } from "@playwright/test";
 import path from "path";
 
 const authFile = path.join(__dirname, ".auth/user.json");
+const EMAIL = process.env.E2E_EMAIL ?? "e2e.test@lexcore.dev";
+const PASSWORD = process.env.E2E_PASSWORD ?? "TestLex2026!";
 
 setup("autenticar usuario de prueba", async ({ page }) => {
-  const email = process.env.E2E_EMAIL;
-  const password = process.env.E2E_PASSWORD;
+  await page.goto("/login");
+  await page.waitForLoadState("networkidle");
 
-  if (!email || !password) {
-    throw new Error("Falta E2E_EMAIL o E2E_PASSWORD en las variables de entorno");
+  // Llenar formulario
+  await page.locator('input[type="email"]').fill(EMAIL);
+  await page.locator('input[type="password"]').fill(PASSWORD);
+  await page.locator('button[type="submit"]').click();
+
+  // Esperar dashboard completo
+  await page.waitForURL(/dashboard/, { timeout: 20000 });
+  await page.waitForLoadState("networkidle");
+
+  // Esperar que el session token esté disponible
+  await page.waitForTimeout(2000);
+
+  // Verificar cookies de sesión
+  const cookies = await page.context().cookies();
+  const sessionCookies = cookies.filter(c =>
+    c.name.includes("session") || c.name.includes("next-auth")
+  );
+  console.log("Cookies de sesión:", sessionCookies.map(c => `${c.name}=${c.value.slice(0,20)}...`));
+
+  // Verificar que estamos autenticados
+  await expect(page.getByText(/bienvenido/i)).toBeVisible({ timeout: 5000 });
+
+  // Marcar splash/wizard como ya vistos para no bloquear los tests
+  await page.evaluate(() => {
+    localStorage.setItem("lexcore_onboarded", "1");
+    localStorage.setItem("lexcore_wizard_done", "1");
+  });
+
+  // Crear expediente de prueba si no hay ninguno (para tests de expedientes)
+  const token = await page.evaluate(() => {
+    try { return (window as any).__NEXT_DATA__?.props?.pageProps?.session?.user?.backendToken; } catch { return null; }
+  });
+  if (token) {
+    await page.request.post("http://localhost:8000/expedientes", {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { caratula: "Expediente E2E Test", fuero: "Civil", juzgado: "Juzgado 1" }
+    }).catch(() => {});
   }
 
-  await page.goto("/login");
-
-  // Esperar el formulario de login con email/password
-  await page.getByPlaceholder(/email/i).fill(email);
-  await page.getByPlaceholder(/contraseña|password/i).fill(password);
-  await page.getByRole("button", { name: /ingresar|login|entrar/i }).click();
-
-  // Esperar que llegue al dashboard
-  await page.waitForURL(/dashboard/, { timeout: 15000 });
-  await expect(page.getByText(/bienvenido/i)).toBeVisible({ timeout: 10000 });
-
-  // Guardar estado de autenticación
   await page.context().storageState({ path: authFile });
-  console.log("✅ Sesión guardada en", authFile);
+  console.log("✅ Sesión guardada:", EMAIL, "| Cookies:", cookies.length);
 });

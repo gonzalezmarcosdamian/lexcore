@@ -1,37 +1,33 @@
-/**
- * Tests específicos de mobile (iPhone 12 — 390px).
- * Verifican que las páginas de detalle carguen sin redirect.
- */
 import { test, expect } from "@playwright/test";
+import { goTo } from "./helpers";
 
-// Estos tests solo corren en el proyecto "mobile"
-test.describe("Mobile — detalle movimiento", () => {
-  test("movimientos/nuevo carga en mobile", async ({ page }) => {
-    await page.goto("/movimientos/nuevo");
-    await expect(page.getByText("Nuevo movimiento procesal")).toBeVisible();
-    // No debe redirigir a /agenda
+test.describe("Mobile — formularios de alta", () => {
+  test("movimientos/nuevo carga sin redirect", async ({ page }) => {
+    await goTo(page, "/movimientos/nuevo");
     await expect(page).not.toHaveURL(/\/agenda/);
+    await expect(page.getByText("Nuevo movimiento procesal")).toBeVisible({ timeout: 8000 });
   });
 
-  test("tareas/nueva carga en mobile", async ({ page }) => {
-    await page.goto("/tareas/nueva");
-    await expect(page.getByText("Nueva tarea")).toBeVisible();
+  test("tareas/nueva carga sin redirect", async ({ page }) => {
+    await goTo(page, "/tareas/nueva");
     await expect(page).not.toHaveURL(/\/agenda/);
+    await expect(page.getByText("Nueva tarea")).toBeVisible({ timeout: 8000 });
   });
 
-  test("honorarios/nuevo carga en mobile", async ({ page }) => {
-    await page.goto("/honorarios/nuevo");
-    await expect(page.getByText("Nuevo honorario")).toBeVisible();
+  test("honorarios/nuevo carga sin redirect", async ({ page }) => {
+    await goTo(page, "/honorarios/nuevo");
     await expect(page).not.toHaveURL(/\/agenda/);
+    await expect(page.getByText("Nuevo honorario")).toBeVisible({ timeout: 8000 });
   });
 
   test("dashboard carga en mobile", async ({ page }) => {
-    await page.goto("/dashboard");
-    await expect(page.getByText(/bienvenido/i)).toBeVisible();
+    await goTo(page, "/dashboard");
+    await expect(page.getByText(/bienvenido/i)).toBeVisible({ timeout: 10000 });
   });
 
   test("agenda carga en mobile", async ({ page }) => {
-    await page.goto("/agenda");
-    await expect(page.getByText("Agenda")).toBeVisible();
+    await goTo(page, "/agenda");
+    // Agenda tiene h1 con texto "Agenda"
+    await expect(page.getByText("Agenda").first()).toBeVisible({ timeout: 10000 });
   });
 });
