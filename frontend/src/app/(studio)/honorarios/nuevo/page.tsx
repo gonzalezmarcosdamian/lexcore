@@ -40,6 +40,7 @@ function NuevoHonorarioInner() {
   const [usarCuotas, setUsarCuotas] = useState(false);
   const [nCuotas, setNCuotas] = useState(3);
   const [intervalo, setIntervalo] = useState<"mensual" | "quincenal" | "semanal">("mensual");
+  const [diaMes, setDiaMes] = useState(1); // día del mes para cuotas mensuales
 
   useEffect(() => {
     if (!token) return;
@@ -50,17 +51,32 @@ function NuevoHonorarioInner() {
     const total = parseFloat(form.monto_acordado);
     if (!total || !form.fecha_vencimiento || !form.concepto) return [];
     const base = Math.floor((total / nCuotas) * 100) / 100;
+    const base0 = new Date(form.fecha_vencimiento + "T12:00:00");
+
     return Array.from({ length: nCuotas }, (_, i) => {
-      const f = new Date(form.fecha_vencimiento + "T12:00:00");
-      if (intervalo === "mensual") f.setMonth(f.getMonth() + i);
-      else if (intervalo === "quincenal") f.setDate(f.getDate() + i * 15);
-      else f.setDate(f.getDate() + i * 7);
+      let f: Date;
+      if (intervalo === "mensual") {
+        // Usar año/mes de base0 + i, con el día especificado (diaMes)
+        // Clamp al último día del mes para evitar overflow (ej: 31 en feb → 28)
+        const year = base0.getFullYear();
+        const month = base0.getMonth() + i;
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        f = new Date(year, month, Math.min(diaMes, lastDay), 12);
+      } else if (intervalo === "quincenal") {
+        f = new Date(base0);
+        f.setDate(f.getDate() + i * 15);
+      } else {
+        f = new Date(base0);
+        f.setDate(f.getDate() + i * 7);
+      }
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const fechaStr = `${f.getFullYear()}-${pad(f.getMonth() + 1)}-${pad(f.getDate())}`;
       return {
         concepto: `${form.concepto} — cuota ${i + 1}/${nCuotas}`,
         monto_acordado: i === nCuotas - 1 ? Math.round((total - base * (nCuotas - 1)) * 100) / 100 : base,
         moneda: form.moneda,
         fecha_acuerdo: form.fecha_acuerdo,
-        fecha_vencimiento: f.toISOString().slice(0, 10),
+        fecha_vencimiento: fechaStr,
         notas: form.notas,
         expediente_id: form.expediente_id,
       };
@@ -167,8 +183,13 @@ function NuevoHonorarioInner() {
             <DateInput value={form.fecha_acuerdo} onChange={v => setForm(f => ({ ...f, fecha_acuerdo: v }))} />
           </div>
           <div>
-            <label className={labelClass}>{usarCuotas ? "Fecha primera cuota *" : "Fecha de vencimiento"}</label>
-            <DateInput value={form.fecha_vencimiento} onChange={v => { setForm(f => ({ ...f, fecha_vencimiento: v })); setErrors(e => ({ ...e, fecha_venc: "" })); }}
+            <label className={labelClass}>{usarCuotas ? "Mes de la primera cuota *" : "Fecha de vencimiento"}</label>
+            <DateInput value={form.fecha_vencimiento} onChange={v => {
+              setForm(f => ({ ...f, fecha_vencimiento: v }));
+              setErrors(e => ({ ...e, fecha_venc: "" }));
+              // Sincronizar día del mes con la fecha elegida
+              if (v) setDiaMes(new Date(v + "T12:00:00").getDate());
+            }}
               ringColor={errors.fecha_venc ? "focus-within:ring-red-400" : "focus-within:ring-emerald-400"} placeholder="DD/MM/AAAA" />
             {errors.fecha_venc && <p className="text-xs text-red-500 mt-1">{errors.fecha_venc}</p>}
           </div>
@@ -186,11 +207,11 @@ function NuevoHonorarioInner() {
         {/* Config cuotas */}
         {usarCuotas && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className={labelClass}>Cantidad de cuotas</label>
+                <label className={labelClass}>Cuotas</label>
                 <select value={nCuotas} onChange={e => setNCuotas(Number(e.target.value))} className={inputClass}>
-                  {[2,3,4,5,6,8,10,12].map(n => <option key={n} value={n}>{n} cuotas</option>)}
+                  {[2,3,4,5,6,8,10,12].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
               <div>
@@ -201,6 +222,16 @@ function NuevoHonorarioInner() {
                   <option value="semanal">Semanal</option>
                 </select>
               </div>
+              {intervalo === "mensual" && (
+                <div>
+                  <label className={labelClass}>Día del mes</label>
+                  <select value={diaMes} onChange={e => setDiaMes(Number(e.target.value))} className={inputClass}>
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>Día {d}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             {cuotas.length > 0 && (
               <div className="bg-white rounded-xl border border-emerald-200 divide-y divide-emerald-100">

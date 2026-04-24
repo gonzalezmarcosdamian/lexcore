@@ -139,7 +139,7 @@ function RegistrarPagoInner() {
         <div>
           <label className={labelClass}>Tipo de pago *</label>
           <div className="grid grid-cols-2 gap-3">
-            {([["capital", "Capital"], ["interes", "Intereses"]] as [TipoPago, string][]).map(([val, label]) => (
+            {([["capital", "Honorarios"], ["interes", "Intereses"]] as [TipoPago, string][]).map(([val, label]) => (
               <button key={val} type="button" onClick={() => setForm(f => ({ ...f, tipo: val }))}
                 className={`flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-semibold transition ${
                   form.tipo === val ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-white text-ink-600 border-ink-200 hover:bg-ink-50"

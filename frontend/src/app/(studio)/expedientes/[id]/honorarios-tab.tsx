@@ -295,9 +295,9 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                       <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex justify-between text-[10px] mt-0.5">
-                      <span className="text-ink-400">Capital cobrado: {fmt(h.total_capital, h.moneda)}</span>
+                      <span className="text-ink-400">Pagado: {fmt(h.total_capital, h.moneda)}</span>
                       <span className={saldo > 0 ? "text-amber-600 font-semibold" : "text-green-600 font-semibold"}>
-                        Saldo capital: {fmt(saldo, h.moneda)}
+                        Saldo: {fmt(saldo, h.moneda)}
                       </span>
                     </div>
                     {h.total_intereses > 0 && (
@@ -306,9 +306,21 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                       </div>
                     )}
                   </div>
-                  <svg className={`w-4 h-4 text-ink-300 flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {saldo > 0 && (
+                      <Link
+                        href={`/honorarios/pago?honorario_id=${h.id}&expediente_id=${expedienteId}`}
+                        onClick={e => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg transition"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        Pagar
+                      </Link>
+                    )}
+                    <svg className={`w-4 h-4 text-ink-300 flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
 
                 {/* Detalle expandido */}
@@ -325,7 +337,7 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                             <div>
                               <span className="text-sm font-semibold text-ink-900">{fmt(p.importe, p.moneda)}</span>
                               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ml-2 ${p.tipo === "interes" ? "bg-blue-50 text-blue-600" : "bg-brand-50 text-brand-600"}`}>
-                                {p.tipo === "interes" ? "Interés" : "Capital"}
+                                {p.tipo === "interes" ? "Intereses" : "Pago"}
                               </span>
                               <span className="text-xs text-ink-400 ml-2">{p.fecha ? new Date(p.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : ""}</span>
                               {p.comprobante && <span className="text-xs text-ink-400 ml-2">— {p.comprobante}</span>}
@@ -342,7 +354,7 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
 
                     {saldo <= 0 && (
                       <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-lg px-3 py-2">
-                        <span className="text-xs text-green-700 font-medium">✓ Capital saldado</span>
+                        <span className="text-xs text-green-700 font-medium">✓ Saldado</span>
                       </div>
                     )}
                     {saldo > 0 && <div className="space-y-2">
