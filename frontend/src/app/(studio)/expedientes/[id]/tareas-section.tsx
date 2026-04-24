@@ -13,7 +13,6 @@ const today = todayAR();
 
 const TAREA_ESTADOS = [
   { value: "pendiente" as TareaEstado, label: "PENDIENTE", cls: "bg-ink-100 text-ink-600" },
-  { value: "en_curso"  as TareaEstado, label: "EN CURSO",  cls: "bg-blue-100 text-blue-700" },
   { value: "hecha"     as TareaEstado, label: "HECHO",     cls: "bg-green-100 text-green-700" },
 ];
 
@@ -117,7 +116,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
   };
 
   const toggleEstado = async (tarea: Tarea, estado?: TareaEstado) => {
-    const next: TareaEstado = estado ?? (tarea.estado === "hecha" ? "pendiente" : tarea.estado === "pendiente" ? "en_curso" : "hecha");
+    const next: TareaEstado = estado ?? (tarea.estado === "hecha" ? "pendiente" : "hecha");
     const updated = await api.patch<Tarea>(`/tareas/${tarea.id}`, { estado: next }, token);
     setTareas(prev => prev.map(t => t.id === tarea.id ? updated : t));
   };
@@ -195,8 +194,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
               <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
               <select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value as TareaEstado })} className={inputCls}>
                 <option value="pendiente">Pendiente</option>
-                <option value="en_curso">En curso</option>
-                <option value="hecha">Hecha</option>
+                                <option value="hecha">Hecha</option>
               </select>
             </div>
           )}
@@ -210,7 +208,7 @@ export function TareasSection({ expedienteId, token, onCreated }: { expedienteId
         </form>
       )}
 
-      {/* Lista pendientes/en_curso */}
+      {/* Lista pendientes */}
       {pendientes.length === 0 && !showForm && (
         <p className="text-sm text-ink-400 text-center py-4">Sin tareas pendientes</p>
       )}

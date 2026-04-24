@@ -237,8 +237,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ── Google Calendar sync banner ── */}
-      <CalendarSyncButton variant="banner" />
+      {/* CalendarSync: ahora solo ícono, sin banner */}
 
           {/* ── Agenda semanal ── */}
           <AgendaWidget
@@ -526,8 +525,7 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
             <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
             <select value={estado} onChange={(e) => setEstado(e.target.value as Tarea["estado"])} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="pendiente">Pendiente</option>
-              <option value="en_curso">En curso</option>
-              <option value="hecha">Hecha</option>
+                            <option value="hecha">Hecha</option>
             </select>
           </div>
           <div>

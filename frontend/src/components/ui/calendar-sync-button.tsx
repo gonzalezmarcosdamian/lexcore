@@ -140,55 +140,27 @@ export function CalendarSyncButton({ variant = "compact" }: Props) {
     );
   }
 
-  // ── Usuario Google: sync directo (muy discreto) ───────────────────────────
-  if (variant === "banner") {
-    const statusText = justSynced
-      ? `✓ ${justSynced.synced} evento${justSynced.synced !== 1 ? "s" : ""} sincronizados`
-      : error
-      ? error
-      : lastSync
-      ? `✓ ${lastSync.synced} evento${lastSync.synced !== 1 ? "s" : ""} · ${formatLastSync(lastSync.ts)}`
-      : "Sin sincronizar";
+  // ── Usuario Google: solo ícono de sync, sin texto de disclaimer ────────────
+  const syncTitle = justSynced
+    ? `✓ ${justSynced.synced} sincronizados`
+    : error ? error
+    : lastSync ? `Última sync: ${formatLastSync(lastSync.ts)}`
+    : "Sincronizar con Google Calendar";
 
-    const statusColor = justSynced ? "text-green-600" : error ? "text-red-500" : "text-ink-400";
-
-    return (
-      <div className="flex items-center gap-2">
-        <CalIcon />
-        <span className={`text-xs ${statusColor}`}>{statusText}</span>
-        {error?.includes("calendar_id") || error?.includes("elegir") ? (
-          <Link href="/perfil" className="text-xs text-blue-500 underline underline-offset-2">Configurar</Link>
-        ) : (
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            title="Sincronizar con Google Calendar"
-            className="text-xs text-ink-400 hover:text-brand-600 transition disabled:opacity-40 flex items-center gap-1"
-          >
-            <SyncIcon spinning={syncing} />
-          </button>
-        )}
-      </div>
-    );
+  if (error?.includes("calendar_id") || error?.includes("elegir")) {
+    return <Link href="/perfil" className="text-xs text-blue-500 underline underline-offset-2">Configurar calendario</Link>;
   }
 
-  // compact
   return (
     <button
       onClick={handleSync}
       disabled={syncing}
-      title="Sincronizar vencimientos con Google Calendar"
-      className="flex items-center gap-1.5 text-xs font-medium text-ink-500 hover:text-brand-600 border border-ink-200 hover:border-brand-300 px-3 py-2 rounded-xl transition disabled:opacity-50"
+      title={syncTitle}
+      className={`p-2 rounded-lg transition ${
+        justSynced ? "text-green-500" : error ? "text-red-400" : "text-ink-400 hover:text-brand-600 hover:bg-ink-50"
+      } disabled:opacity-40`}
     >
       <SyncIcon spinning={syncing} />
-      {justSynced
-        ? <span className="text-green-600">{justSynced.synced} sync</span>
-        : error
-        ? <span className="text-red-500">Error</span>
-        : lastSync
-        ? <span className="text-ink-400">{formatLastSync(lastSync.ts)}</span>
-        : syncing ? "Sync…" : "Sync Calendar"
-      }
     </button>
   );
 }

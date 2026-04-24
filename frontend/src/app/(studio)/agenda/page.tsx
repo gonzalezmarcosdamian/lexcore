@@ -863,7 +863,7 @@ export default function AgendaPage() {
       expediente_id: t.expediente_id,
       fecha: t.fecha_limite!,
       fecha_limite: t.fecha_limite!,
-      color: (t.estado === "en_curso" ? "blue" : esVencida(t.fecha_limite!) ? "red" : "orange") as CalEvent["color"],
+      color: (esVencida(t.fecha_limite!) ? "red" : "blue") as CalEvent["color"],
     })),
   ], [vencimientos, tareas]);
 
@@ -1188,22 +1188,31 @@ export default function AgendaPage() {
       ════════════════════════════════════════════ */}
       <div className="hidden lg:block space-y-5">
 
-        {/* Header desktop — original */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
-            <p className="text-sm text-ink-500 mt-0.5">
-              {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
-              {urgentes > 0 && <span className="ml-2 text-red-600 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
-            </p>
-          </div>
-          <div className="flex gap-2 flex-wrap justify-end items-center">
+        {/* Header desktop — simplificado */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-xl font-bold text-ink-900">Agenda</h1>
+              <p className="text-xs text-ink-400 mt-0.5">
+                {totalPendientes} pendiente{totalPendientes !== 1 ? "s" : ""}
+                {urgentes > 0 && <span className="ml-1.5 text-red-500 font-semibold">· {urgentes} urgente{urgentes !== 1 ? "s" : ""}</span>}
+              </p>
+            </div>
+            {/* Vista toggle — compacto */}
             <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
               <button onClick={() => setVista("tablero")} className={`px-3 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>⊞ Tablero</button>
-              <button onClick={() => setVista("calendario")} className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>📅 Calendario</button>
+              <button onClick={() => setVista("calendario")} className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>📅 Cal.</button>
             </div>
-            <Link href="/tareas/nueva" className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Tarea</Link>
-            <Link href="/movimientos/nuevo" className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Movimiento</Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/tareas/nueva" className="flex items-center gap-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Tarea
+            </Link>
+            <Link href="/movimientos/nuevo" className="flex items-center gap-1.5 text-xs font-semibold bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg transition">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Movimiento
+            </Link>
             <CalendarSyncButton variant="compact" />
           </div>
         </div>

@@ -1233,7 +1233,7 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                     {meta.estado != null && (() => {
                       const e = String(meta.estado);
                       const cls = e === "hecha" ? "bg-green-100 text-green-700" : e === "en_curso" ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
-                      const label = e === "hecha" ? "✓ Hecha" : e === "en_curso" ? "En curso" : "Pendiente";
+                      const label = e === "hecha" ? "✓ Hecha" : "Pendiente";
                       return <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${cls}`}>{label}</span>;
                     })()}
                     {meta.fecha_limite && <span className="text-xs text-ink-400">· vence {new Date(String(meta.fecha_limite) + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>}

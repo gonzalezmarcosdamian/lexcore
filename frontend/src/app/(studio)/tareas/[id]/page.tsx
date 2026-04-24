@@ -14,7 +14,6 @@ import { DocumentosSection } from "@/components/ui/documentos-section";
 
 const ESTADO_CFG: Record<TareaEstado, { label: string; cls: string }> = {
   pendiente: { label: "Pendiente",  cls: "bg-yellow-100 text-yellow-700" },
-  en_curso:  { label: "En curso",   cls: "bg-blue-100 text-blue-700" },
   hecha:     { label: "✓ Hecha",    cls: "bg-green-100 text-green-700" },
 };
 
@@ -97,7 +96,7 @@ export default function TareaDetailPage() {
 
   const handleToggleEstado = async () => {
     if (!token || !tarea) return;
-    const next: TareaEstado = tarea.estado === "pendiente" ? "en_curso" : tarea.estado === "en_curso" ? "hecha" : "pendiente";
+    const next: TareaEstado = tarea.estado === "hecha" ? "pendiente" : "hecha";
     const updated = await api.patch<Tarea>(`/tareas/${id}`, { estado: next }, token);
     setTarea(updated);
   };
@@ -181,7 +180,7 @@ export default function TareaDetailPage() {
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-        <div className={`px-4 py-4 border-b border-ink-50 ${tarea.estado === "hecha" ? "bg-green-50/40" : vencida ? "bg-red-50/40" : tarea.estado === "en_curso" ? "bg-blue-50/30" : ""}`}>
+        <div className={`px-4 py-4 border-b border-ink-50 ${tarea.estado === "hecha" ? "bg-green-50/40" : vencida ? "bg-red-50/40" : ""}`}>
           {/* Badges + acciones en una fila */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -191,15 +190,13 @@ export default function TareaDetailPage() {
                 className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition active:scale-95 ${
                   tarea.estado === "hecha"
                     ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
-                    : tarea.estado === "en_curso"
-                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+
                     : "bg-white text-ink-600 border-ink-300 hover:bg-ink-50"
                 }`}
               >
                 {tarea.estado === "hecha"
                   ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
-                  : tarea.estado === "en_curso"
-                  ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+
                   : <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9"/></svg>
                 }
                 {cfg.label.replace("✓ ", "")}

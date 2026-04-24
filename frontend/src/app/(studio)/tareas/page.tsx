@@ -23,7 +23,7 @@ function diasRestantes(fecha: string | null | undefined): { label: string; urgen
   return { label: `${diff} días`, urgente: false };
 }
 
-const ESTADO_ORDER: TareaEstado[] = ["pendiente", "en_curso", "hecha"];
+const ESTADO_ORDER: TareaEstado[] = ["pendiente", "hecha"];
 
 function nextEstado(e: TareaEstado): TareaEstado {
   const idx = ESTADO_ORDER.indexOf(e);
@@ -78,7 +78,7 @@ function TareaCard({ tarea, onToggle, onDetail }: { tarea: Tarea; onToggle: (t: 
             ${hecha ? "bg-green-100 text-green-700" : enCurso ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"}
           `}>
             <span className={`w-1.5 h-1.5 rounded-full ${hecha ? "bg-green-500" : enCurso ? "bg-blue-500" : "bg-yellow-500"}`} />
-            {hecha ? "Hecha" : enCurso ? "En curso" : "Pendiente"}
+            {hecha ? "Hecha" : "Pendiente"}
           </span>
         </div>
 
@@ -282,8 +282,7 @@ export default function TareasPage() {
         >
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
-          <option value="en_curso">En curso</option>
-          <option value="hecha">Hecha</option>
+                    <option value="hecha">Hecha</option>
         </select>
         <select
           value={filtroResponsable}

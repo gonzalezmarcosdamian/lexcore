@@ -1,6 +1,29 @@
 import { test, expect } from "@playwright/test";
 import { goTo } from "./helpers";
 
+test.describe("Nueva tarea", () => {
+  test.beforeEach(async ({ page }) => {
+    await goTo(page, "/tareas/nueva");
+  });
+
+  test("form carga correctamente", async ({ page }) => {
+    await expect(page.getByText("Nueva tarea")).toBeVisible({ timeout: 10000 });
+  });
+
+  test("form tiene campos requeridos", async ({ page }) => {
+    // Titulo, fecha, hora
+    await expect(page.getByPlaceholder(/redactar escrito/i)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/fecha limite/i)).toBeVisible({ timeout: 5000 });
+  });
+
+  test("opciones de vinculación presentes", async ({ page }) => {
+    // Buscar cualquier indicación de la sección de vinculación
+    await expect(
+      page.getByText(/vincular|expediente|cliente|estudio/i).first()
+    ).toBeVisible({ timeout: 10000 });
+  });
+});
+
 test.describe("Nuevo movimiento procesal", () => {
   test.beforeEach(async ({ page }) => {
     await goTo(page, "/movimientos/nuevo");
@@ -24,7 +47,6 @@ test.describe("Nuevo movimiento procesal", () => {
   });
 
   test("muestra error si intenta guardar sin titulo", async ({ page }) => {
-    // Dismiss any modal first
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
     await page.getByRole("button", { name: /crear movimiento/i }).click();

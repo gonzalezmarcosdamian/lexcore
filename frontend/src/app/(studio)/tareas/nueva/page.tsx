@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Expediente, TareaTipo } from "@/lib/api";
+import { api, Expediente, Cliente, TareaTipo } from "@/lib/api";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -28,10 +28,15 @@ function NuevaTareaInner() {
   const token = session?.user?.backendToken;
 
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [vinculacion, setVinculacion] = useState<"expediente" | "cliente" | "ninguno">(
+    params.get("expediente_id") ? "expediente" : "ninguno"
+  );
   const [form, setForm] = useState({
     titulo: "",
     tipo: "judicial" as TareaTipo,
     expediente_id: params.get("expediente_id") ?? "",
+    cliente_id: params.get("cliente_id") ?? "",
     fecha_limite: params.get("fecha") ?? "",
     hora: "",
     descripcion: "",
@@ -54,6 +59,7 @@ function NuevaTareaInner() {
   useEffect(() => {
     if (!token) return;
     api.get<Expediente[]>("/expedientes", token).then(setExpedientes).catch(() => {});
+    api.get<Cliente[]>("/clientes", token).then(cls => setClientes(cls.filter(c => !c.archivado))).catch(() => {});
   }, [token]);
 
   const handleSubmit = async (ev: React.FormEvent) => {
@@ -69,7 +75,8 @@ function NuevaTareaInner() {
       const created = await api.post<{ id: string }>("/tareas", {
         titulo: form.titulo.trim(),
         tipo: form.tipo,
-        expediente_id: form.expediente_id || undefined,
+        expediente_id: vinculacion === "expediente" ? (form.expediente_id || undefined) : undefined,
+        cliente_id: vinculacion === "cliente" ? (form.cliente_id || undefined) : undefined,
         fecha_limite: form.fecha_limite,
         hora: form.hora,
         descripcion: form.descripcion || undefined,
@@ -140,15 +147,51 @@ function NuevaTareaInner() {
           {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo}</p>}
         </div>
 
-        {/* Expediente */}
+        {/* Vinculación — 3 opciones */}
         <div>
-          <label className={labelClass}>Expediente <span className="text-ink-400 font-normal">(opcional)</span></label>
-          <ExpedienteSelect
-            expedientes={expedientes}
-            value={form.expediente_id}
-            onChange={id => setForm(f => ({ ...f, expediente_id: id }))}
-            placeholder="Sin expediente"
-          />
+          <label className={labelClass}>Vincular a</label>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {([
+              { key: "expediente", label: "Expediente", icon: "📁" },
+              { key: "cliente",    label: "Cliente",     icon: "👤" },
+              { key: "ninguno",    label: "Estudio",     icon: "🏢" },
+            ] as { key: "expediente"|"cliente"|"ninguno"; label: string; icon: string }[]).map(opt => (
+              <button key={opt.key} type="button"
+                onClick={() => setVinculacion(opt.key)}
+                className={`flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition ${
+                  vinculacion === opt.key
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white text-ink-600 border-ink-200 hover:bg-ink-50"
+                }`}>
+                <span className="text-base">{opt.icon}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {vinculacion === "expediente" && (
+            <ExpedienteSelect
+              expedientes={expedientes}
+              value={form.expediente_id}
+              onChange={id => setForm(f => ({ ...f, expediente_id: id }))}
+              placeholder="Seleccionar expediente"
+              ringColor="focus-within:ring-blue-400"
+            />
+          )}
+          {vinculacion === "cliente" && (
+            <select
+              value={form.cliente_id}
+              onChange={e => setForm(f => ({ ...f, cliente_id: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="">Seleccionar cliente</option>
+              {clientes.map(c => (
+                <option key={c.id} value={c.id}>{c.nombre}</option>
+              ))}
+            </select>
+          )}
+          {vinculacion === "ninguno" && (
+            <p className="text-xs text-ink-400 bg-ink-50 rounded-xl px-3 py-2">Tarea interna del estudio — sin expediente ni cliente asociado</p>
+          )}
         </div>
 
         {/* Fecha + Hora */}
