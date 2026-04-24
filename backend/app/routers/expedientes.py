@@ -466,11 +466,16 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             hora = m.get("hora_acto") or "00:00"
             return str(m["fecha_manual"]) + "T" + hora + ":00"
         if item.tipo == "vencimiento" and m.get("fecha"):
-            return str(m["fecha"]) + "T23:59:59"
+            hora = str(m.get("hora") or "23:59")
+            return str(m["fecha"]) + "T" + hora + ":00"
         if item.tipo == "tarea" and m.get("fecha_limite"):
-            return str(m["fecha_limite"]) + "T23:59:59"
+            hora = str(m.get("hora") or "23:59")
+            return str(m["fecha_limite"]) + "T" + hora + ":00"
+        # Para honorarios, pagos, documentos sin fecha del acto → usar created_at como tiebreaker
+        # pero prefijado con "0000" para que queden siempre al final
         ca = item.created_at
-        return ca.isoformat() if hasattr(ca, "isoformat") else str(ca)
+        iso = ca.isoformat() if hasattr(ca, "isoformat") else str(ca)
+        return "0001-01-01T00:00:00" if not iso else iso
 
     items.sort(key=_sort_key, reverse=True)
     return items

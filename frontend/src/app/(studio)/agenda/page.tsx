@@ -763,6 +763,8 @@ export default function AgendaPage() {
   const handleCrearTarea = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+    if (!tareaForm.fecha_limite) { setTareaError("La fecha es obligatoria"); return; }
+    if (!tareaForm.hora) { setTareaError("La hora es obligatoria"); return; }
     setSavingTarea(true);
     setTareaError("");
     try {
@@ -789,6 +791,8 @@ export default function AgendaPage() {
   const handleCrearVencimiento = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+    if (!vencimientoForm.fecha) { setVencimientoError("La fecha es obligatoria"); return; }
+    if (!vencimientoForm.hora) { setVencimientoError("La hora es obligatoria"); return; }
     setSavingVencimiento(true);
     setVencimientoError("");
     try {
@@ -948,8 +952,8 @@ export default function AgendaPage() {
                   <DateInput value={vencimientoForm.fecha} onChange={v => setVencimientoForm(f => ({ ...f, fecha: v }))} required ringColor="focus-within:ring-purple-400" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-ink-600 mb-1">Hora</label>
-                  <TimeInput value={vencimientoForm.hora} onChange={v => setVencimientoForm(f => ({ ...f, hora: v }))} ringColor="focus-within:ring-purple-400" />
+                  <label className="block text-xs font-medium text-ink-600 mb-1">Hora *</label>
+                  <TimeInput value={vencimientoForm.hora} onChange={v => setVencimientoForm(f => ({ ...f, hora: v }))} ringColor="focus-within:ring-purple-400" required />
                 </div>
               </div>
               <div>
@@ -1314,12 +1318,12 @@ export default function AgendaPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Fecha límite</label>
-                  <DateInput value={tareaForm.fecha_limite} onChange={v => setTareaForm(f => ({ ...f, fecha_limite: v }))} ringColor="focus-within:ring-blue-400" />
+                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Fecha límite *</label>
+                  <DateInput value={tareaForm.fecha_limite} onChange={v => setTareaForm(f => ({ ...f, fecha_limite: v }))} ringColor="focus-within:ring-blue-400" required />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Hora</label>
-                  <TimeInput value={tareaForm.hora} onChange={v => setTareaForm(f => ({ ...f, hora: v }))} ringColor="focus-within:ring-blue-400" />
+                  <label className="block text-sm font-medium text-ink-700 mb-1.5">Hora *</label>
+                  <TimeInput value={tareaForm.hora} onChange={v => setTareaForm(f => ({ ...f, hora: v }))} ringColor="focus-within:ring-blue-400" required />
                 </div>
               </div>
               <div>

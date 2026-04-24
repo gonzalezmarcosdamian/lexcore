@@ -191,17 +191,37 @@ export default function VencimientoDetailPage() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {/* Estado — botón interactivo con chevron */}
                 <button
                   onClick={handleToggleCumplido}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full transition hover:opacity-80 ${
-                    venc.cumplido ? "bg-green-100 text-green-700" : "bg-purple-100 text-purple-700"
+                  className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition active:scale-95 ${
+                    venc.cumplido
+                      ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
+                      : "bg-white text-ink-600 border-ink-300 hover:bg-ink-50"
                   }`}
                 >
-                  {venc.cumplido ? "✓ Cumplido" : "Pendiente"}
+                  {venc.cumplido
+                    ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    : <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9"/></svg>
+                  }
+                  {venc.cumplido ? "Cumplido" : "Pendiente"}
+                  <svg className="w-3 h-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <span className="text-xs text-ink-400">{TIPO_LABEL[venc.tipo] ?? venc.tipo}</span>
-                {vencida && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Vencido</span>}
-                {urgente && <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">⚡ Urgente</span>}
+                {/* Tipo */}
+                <span className="text-xs text-ink-400 bg-ink-50 px-2 py-1 rounded-md">{TIPO_LABEL[venc.tipo] ?? venc.tipo}</span>
+                {/* Alertas — solo visuales, no clickeables */}
+                {vencida && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-md">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/></svg>
+                    VENCIDO
+                  </span>
+                )}
+                {urgente && !vencida && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/></svg>
+                    URGENTE
+                  </span>
+                )}
               </div>
               <h1 className={`text-lg font-bold leading-snug ${venc.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>
                 {venc.descripcion}

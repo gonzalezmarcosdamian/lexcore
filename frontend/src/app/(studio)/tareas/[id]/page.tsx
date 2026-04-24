@@ -191,11 +191,35 @@ export default function TareaDetailPage() {
           {/* Badges + acciones en una fila */}
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <button onClick={handleToggleEstado} className={`text-xs font-semibold px-2.5 py-1 rounded-full transition active:scale-95 ${cfg.cls}`}>
-                {cfg.label}
+              {/* Estado — botón interactivo con chevron */}
+              <button
+                onClick={handleToggleEstado}
+                className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border transition active:scale-95 ${
+                  tarea.estado === "hecha"
+                    ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
+                    : tarea.estado === "en_curso"
+                    ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                    : "bg-white text-ink-600 border-ink-300 hover:bg-ink-50"
+                }`}
+              >
+                {tarea.estado === "hecha"
+                  ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                  : tarea.estado === "en_curso"
+                  ? <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  : <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9"/></svg>
+                }
+                {cfg.label.replace("✓ ", "")}
+                <svg className="w-3 h-3 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
               </button>
-              <span className="text-xs text-ink-400">{TIPO_LABEL[tarea.tipo] ?? tarea.tipo}</span>
-              {vencida && <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Vencida</span>}
+              {/* Tipo */}
+              <span className="text-xs text-ink-400 bg-ink-50 px-2 py-1 rounded-md">{TIPO_LABEL[tarea.tipo] ?? tarea.tipo}</span>
+              {/* Alerta — solo visual */}
+              {vencida && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1 rounded-md">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd"/></svg>
+                  VENCIDA
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button onClick={openEdit} className="p-2 rounded-lg border border-ink-200 text-ink-500 hover:bg-ink-50 active:bg-ink-100 transition">

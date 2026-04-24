@@ -432,6 +432,8 @@ export default function ExpedienteDetailPage() {
   const handleAddMov = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !nuevoMov.trim()) return;
+    if (!nuevoMovFecha) { alert("La fecha del acto es obligatoria"); return; }
+    if (!nuevoMovHora) { alert("La hora del acto es obligatoria"); return; }
     setSavingMov(true);
     try {
       await api.post<Movimiento>(`/expedientes/${id}/movimientos`, {
@@ -950,12 +952,12 @@ export default function ExpedienteDetailPage() {
                 <div className="flex gap-2 items-end">
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Fecha del acto</p>
-                      <DateInput value={nuevoMovFecha} onChange={setNuevoMovFecha} placeholder="DD/MM/AAAA" />
+                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Fecha del acto *</p>
+                      <DateInput value={nuevoMovFecha} onChange={setNuevoMovFecha} placeholder="DD/MM/AAAA" required />
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Hora</p>
-                      <TimeInput value={nuevoMovHora} onChange={setNuevoMovHora} placeholder="HH:MM" />
+                      <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide mb-1">Hora *</p>
+                      <TimeInput value={nuevoMovHora} onChange={setNuevoMovHora} placeholder="HH:MM" required />
                     </div>
                   </div>
                   <button type="submit" disabled={savingMov || !nuevoMov.trim()} className="bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm disabled:opacity-50 flex-shrink-0">
