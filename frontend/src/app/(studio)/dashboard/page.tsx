@@ -910,10 +910,10 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, markin
       <div className="flex-1 min-w-0">
         <button onClick={() => onDetail(v)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{v.descripcion}</button>
         {exp ? (
-          <Link href={`/expedientes/${exp.id}`} className="text-xs text-ink-400 truncate block hover:text-brand-600 transition">
+          <p className="text-xs text-ink-400 truncate">
             {exp.caratula || exp.cliente_nombre || exp.numero}
             {(exp.juzgado || exp.localidad) && <span className="text-ink-300"> · {[exp.juzgado, exp.localidad].filter(Boolean).join(", ")}</span>}
-          </Link>
+          </p>
         ) : (
           <p className="text-xs text-ink-400 truncate">{v.tipo}</p>
         )}
