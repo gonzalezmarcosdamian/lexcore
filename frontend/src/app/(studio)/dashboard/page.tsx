@@ -228,12 +228,12 @@ export default function DashboardPage() {
           description="Vista general del estado del estudio en tiempo real. Todo lo que necesitás ver al arrancar el día está acá."
           items={[
             { icon: "✅", title: "Tareas pendientes", description: "Tus tareas sin completar, ordenadas por fecha límite. Las vencidas aparecen primero en rojo. Podés cambiar el estado directamente desde acá." },
-            { icon: "📅", title: "Vencimientos", description: "Plazos procesales de los próximos 365 días. Los urgentes (< 48hs) se destacan en rojo y generan el badge de alerta en el header." },
+            { icon: "📅", title: "Movimientos procesales", description: "Plazos procesales de los próximos 365 días. Los urgentes (< 48hs) se destacan en rojo y generan el badge de alerta en el header." },
             { icon: "💰", title: "Honorarios pendientes", description: "Total a cobrar en ARS y USD, sumando todos los expedientes activos con saldo pendiente." },
             { icon: "📊", title: "Selector de período", description: "Filtrá los KPIs financieros (ingresos, egresos, honorarios cobrados) por mes, trimestre, semestre o año." },
             { icon: "📈", title: "Gráfico de egresos", description: "Evolución mensual de los gastos del estudio dentro del período seleccionado." },
           ]}
-          tip="El dashboard no reemplaza la Agenda: los KPIs son financieros, mientras que Vencimientos y Tareas son operativos."
+          tip="El dashboard no reemplaza la Agenda: los KPIs son financieros, mientras que Movimientos y Tareas son operativos."
         />
       </div>
 
@@ -450,7 +450,7 @@ function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
             <select value={tipo} onChange={e => setTipo(e.target.value)} className={inputCls}>
-              <option value="vencimiento">Vencimiento</option>
+              <option value="vencimiento">Vencimiento procesal</option>
               <option value="audiencia">Audiencia</option>
               <option value="presentacion">Presentación</option>
               <option value="pericia">Pericia</option>
@@ -475,7 +475,7 @@ function NewVencimientoModal({ token, expedientes, onCreated, onClose }: { token
         </div>
         <div className="flex gap-3 mt-6">
           <button onClick={onClose} className="flex-1 border border-ink-200 text-ink-600 rounded-xl py-2.5 text-sm font-medium hover:bg-ink-50 transition">Cancelar</button>
-          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Crear vencimiento"}</button>
+          <button onClick={save} disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50">{saving ? "Guardando…" : "Crear movimiento"}</button>
         </div>
       </div>
     </div>
@@ -585,7 +585,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
             <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-              <option value="vencimiento">Vencimiento</option>
+              <option value="vencimiento">Vencimiento procesal</option>
               <option value="audiencia">Audiencia</option>
               <option value="presentacion">Presentación</option>
               <option value="pericia">Pericia</option>

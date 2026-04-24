@@ -170,7 +170,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
             <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-              <option value="vencimiento">Vencimiento</option>
+              <option value="vencimiento">Vencimiento procesal</option>
               <option value="audiencia">Audiencia</option>
               <option value="presentacion">Presentación</option>
               <option value="pericia">Pericia</option>
@@ -315,7 +315,7 @@ function VencimientoCard({
             <VencimientoStatusPill cumplido={v.estado === "cumplido"} onChange={() => onToggle()} />
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
               <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              {v.tipo ?? "Vencimiento"}
+              {v.tipo ?? "Movimiento"}
             </span>
             {urgente && <span className="text-[10px] font-bold text-orange-600">⚡ Urgente</span>}
             {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
@@ -968,7 +968,7 @@ export default function AgendaPage() {
               <div>
                 <label className="block text-xs font-medium text-ink-600 mb-1">Tipo</label>
                 <select value={vencimientoForm.tipo} onChange={(e) => setVencimientoForm(f => ({ ...f, tipo: e.target.value }))} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400">
-                  <option value="vencimiento">Vencimiento</option>
+                  <option value="vencimiento">Vencimiento procesal</option>
                   <option value="audiencia">Audiencia</option>
                   <option value="otro">Otro</option>
                 </select>
@@ -1034,7 +1034,7 @@ export default function AgendaPage() {
           <div className="space-y-1.5">
             {/* Una sola línea con separador + Paralizadas al final */}
             <div className="bg-ink-50 border border-ink-100 rounded-xl px-2 py-1.5 flex items-center gap-2 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-              <FilterPillsRow label="VENC" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
+              <FilterPillsRow label="MOV" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Venc. procesal"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
               <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
               <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
               <div className="w-px h-4 bg-ink-200 flex-shrink-0" />
@@ -1226,7 +1226,7 @@ export default function AgendaPage() {
             </div>
             {/* Filtros en una sola línea con separador */}
             <div className="bg-ink-50 border border-ink-100 rounded-xl px-3 py-2 flex items-center gap-3 overflow-x-auto" style={{scrollbarWidth:"none"}}>
-              <FilterPillsRow label="VENCIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Vencimiento"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
+              <FilterPillsRow label="MOVIMIENTOS" options={[{value:"",label:"Todos"},{value:"vencimiento",label:"Venc. procesal"},{value:"audiencia",label:"Audiencia"},{value:"presentacion",label:"Presentación"},{value:"pericia",label:"Pericia"},{value:"otro",label:"Otro"}]} value={filtroTipoVenc} onChange={setFiltroTipoVenc} activeColor="orange" />
               <div className="w-px h-5 bg-ink-200 flex-shrink-0" />
               <FilterPillsRow label="TAREAS" options={[{value:"",label:"Todos"},{value:"judicial",label:"Judicial"},{value:"extrajudicial",label:"Extrajudicial"},{value:"administrativa",label:"Administrativa"},{value:"operativa",label:"Operativa"}]} value={filtroTipoTarea} onChange={setFiltroTipoTarea} activeColor="blue" />
             </div>

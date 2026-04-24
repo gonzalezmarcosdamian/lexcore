@@ -57,7 +57,7 @@ function VencimientoCardExpediente({ v, token, onToggle, onUpdated, onDeleted }:
         <div className="grid grid-cols-2 gap-2">
           <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} className="border border-ink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           <select value={tipo} onChange={e => setTipo(e.target.value)} className="border border-ink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
-            <option value="vencimiento">Vencimiento</option>
+            <option value="vencimiento">Vencimiento procesal</option>
             <option value="audiencia">Audiencia</option>
             <option value="presentacion">Presentación</option>
             <option value="pericia">Pericia</option>
@@ -1214,7 +1214,7 @@ function ActividadRow({ item, adjuntos, editingMovId, editingMovTexto, editingMo
                   }`}>
                     {item.tipo === "tarea" ? "Tarea" :
                      item.tipo === "movimiento_procesal" ? "Movimiento procesal" :
-                     item.tipo === "vencimiento" ? "Vencimiento" :
+                     item.tipo === "vencimiento" ? "Movimiento" :
                      item.tipo === "documento" ? "Documento adjunto" :
                      item.tipo === "honorario" ? "Honorario" :
                      item.tipo === "pago" ? "Pago" : item.tipo}

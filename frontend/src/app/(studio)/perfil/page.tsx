@@ -428,7 +428,7 @@ function PerfilPageInner() {
     try {
       const res = await api.post<{ synced: number; errors: number }>("/vencimientos/sync-calendar", {}, token);
       setCalendarMsg({
-        text: `${res.synced} vencimiento${res.synced !== 1 ? "s" : ""} sincronizado${res.synced !== 1 ? "s" : ""}${res.errors > 0 ? ` (${res.errors} con error)` : ""}`,
+        text: `${res.synced} movimiento${res.synced !== 1 ? "s" : ""} sincronizado${res.synced !== 1 ? "s" : ""}${res.errors > 0 ? ` (${res.errors} con error)` : ""}`,
         type: "ok",
       });
     } catch (err: unknown) {

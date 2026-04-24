@@ -237,7 +237,7 @@ export default function TareasPage() {
             { icon: "🔵", title: "En curso", description: "El responsable ya la empezó. Clic en el círculo para avanzar el estado." },
             { icon: "✅", title: "Hecha", description: "Completada. Desaparece del dashboard pero queda en el historial." },
             { icon: "👤", title: "Responsable", description: "Miembro del equipo asignado a la tarea. Solo el responsable y el admin pueden marcarla como hecha." },
-            { icon: "⚠️", title: "Diferencia con vencimientos", description: "Vencimiento = plazo procesal externo (audiencia, presentación). Tarea = trabajo interno del estudio. Ambos conviven en el expediente." },
+            { icon: "⚠️", title: "Diferencia con vencimientos", description: "Movimiento = plazo procesal externo (audiencia, presentación). Tarea = trabajo interno del estudio. Ambos conviven en el expediente." },
           ]}
           tip="Las tareas con fecha límite vencida aparecen marcadas en rojo. Podés filtrar por responsable para ver solo las tuyas."
         />

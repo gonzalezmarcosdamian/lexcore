@@ -10,7 +10,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { todayAR } from "@/lib/date";
 
 const TIPO_LABEL: Record<string, string> = {
-  vencimiento: "Vencimiento", audiencia: "Audiencia",
+  vencimiento: "Venc. procesal", audiencia: "Audiencia",
   presentacion: "Presentacion", pericia: "Pericia",
   acto_procesal: "Acto Procesal", notificacion: "Notificacion", otro: "Otro",
 };

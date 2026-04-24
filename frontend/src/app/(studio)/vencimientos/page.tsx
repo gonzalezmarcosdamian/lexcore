@@ -438,7 +438,7 @@ export default function VencimientosPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-ink-900">Vencimientos</h1>
+          <h1 className="text-xl font-bold text-ink-900">Movimientos procesales</h1>
           <p className="text-sm text-ink-400 mt-0.5">Fechas y plazos críticos del estudio</p>
         </div>
         <div className="flex items-center gap-2">

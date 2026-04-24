@@ -22,7 +22,7 @@ function esUrgente(fecha: string) {
 const TIPO_LABEL: Record<string, string> = {
   judicial: "⚖️ Judicial", extrajudicial: "🤝 Extrajudicial",
   administrativa: "🏢 Administrativa", operativa: "🔧 Operativa",
-  vencimiento: "Vencimiento", audiencia: "Audiencia",
+  vencimiento: "Venc. procesal", audiencia: "Audiencia",
   presentacion: "Presentación", pericia: "Pericia", otro: "Otro",
 };
 
@@ -89,7 +89,7 @@ export function VencimientoDetailModal({
 
   return (
     <ModalShell
-      title="Vencimiento"
+      title="Movimiento"
       accentColor={v.estado === "cumplido" ? "bg-green-600" : vencida ? "bg-red-600" : urgente ? "bg-amber-500" : "bg-purple-600"}
       onClose={onClose}
       onEdit={() => { onClose(); onEdit(); }}
