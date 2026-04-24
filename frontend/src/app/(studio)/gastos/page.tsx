@@ -455,71 +455,64 @@ export default function ContablePage() {
         />
       </div>
 
-      {/* Tabs — mejorado visualmente */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setTab("periodo")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition ${
-            tab === "periodo"
-              ? "bg-red-600 text-white border-red-600 shadow-sm"
-              : "bg-white text-ink-600 border-ink-200 hover:bg-ink-50"
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
-          Egresos
-          {pendientesCount > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-white text-red-600 rounded-full">
-              {pendientesCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setTab("ingresos")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition ${
-            tab === "ingresos"
-              ? "bg-green-600 text-white border-green-600 shadow-sm"
-              : "bg-white text-ink-600 border-ink-200 hover:bg-ink-50"
-          }`}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
-          Ingresos
-        </button>
+      {/* ── Barra de control unificada ── */}
+      <div className="bg-white border border-ink-100 rounded-2xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 flex-wrap gap-3">
+          {/* Tabs izquierda */}
+          <div className="flex gap-1 bg-ink-100 rounded-xl p-1">
+            <button
+              onClick={() => setTab("periodo")}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition ${tab === "periodo" ? "bg-white text-red-600 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+            >
+              <span className="text-base">↓</span>
+              Egresos
+              {pendientesCount > 0 && (
+                <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-red-500 text-white rounded-full">{pendientesCount}</span>
+              )}
+            </button>
+            <button
+              onClick={() => setTab("ingresos")}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition ${tab === "ingresos" ? "bg-white text-green-600 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+            >
+              <span className="text-base">↑</span>
+              Ingresos
+            </button>
+          </div>
+
+          {/* Período derecha */}
+          <div className="flex items-center gap-2">
+            {/* Toggle Mes/Año */}
+            <div className="flex gap-1 bg-ink-100 rounded-lg p-0.5">
+              <button onClick={() => setVistaAnual(false)} className={`px-2.5 py-1 rounded-md text-xs font-bold transition ${!vistaAnual ? "bg-white text-ink-800 shadow-sm" : "text-ink-400 hover:text-ink-600"}`}>Mes</button>
+              <button onClick={() => setVistaAnual(true)} className={`px-2.5 py-1 rounded-md text-xs font-bold transition ${vistaAnual ? "bg-white text-ink-800 shadow-sm" : "text-ink-400 hover:text-ink-600"}`}>Año</button>
+            </div>
+            {/* Navegación */}
+            <div className="flex items-center gap-1">
+              <button onClick={goPrev} className="p-1.5 rounded-lg hover:bg-ink-50 text-ink-500 transition">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <span className="text-sm font-semibold text-ink-900 min-w-[110px] text-center capitalize">
+                {vistaAnual ? String(anio) : periodoLabel(mes, anio)}
+              </span>
+              <button onClick={goNext} disabled={!vistaAnual && isCurrentMonth} className="p-1.5 rounded-lg hover:bg-ink-50 text-ink-500 transition disabled:opacity-30">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </button>
+              {!isCurrentMonth && !vistaAnual && (
+                <button onClick={() => { setMes(hoy.getMonth() + 1); setAnio(hoy.getFullYear()); }} className="text-xs text-brand-600 hover:text-brand-700 font-medium px-2">
+                  Hoy
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ══ TAB: PERÍODO ══ */}
       {tab === "periodo" && (
         <div className="space-y-5">
 
-          {/* Navegación de mes/año */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              {/* Toggle Mes / Año */}
-              <div className="flex gap-1.5">
-                <button onClick={() => setVistaAnual(false)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${!vistaAnual ? "bg-ink-800 text-white border-ink-800" : "bg-white text-ink-500 border-ink-200 hover:bg-ink-50"}`}>Mes</button>
-                <button onClick={() => setVistaAnual(true)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${vistaAnual ? "bg-ink-800 text-white border-ink-800" : "bg-white text-ink-500 border-ink-200 hover:bg-ink-50"}`}>Año</button>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button onClick={goPrev} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <span className="text-base font-semibold text-ink-900 capitalize min-w-[160px] text-center">
-                {vistaAnual ? String(anio) : periodoLabel(mes, anio)}
-              </span>
-              <button onClick={goNext} disabled={!vistaAnual && isCurrentMonth} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition disabled:opacity-30">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              {!isCurrentMonth && (
-                <button onClick={() => { setMes(hoy.getMonth() + 1); setAnio(hoy.getFullYear()); }} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-                  Hoy
-                </button>
-              )}
-            </div>
-
+          {/* Acciones */}
+          <div className="flex items-center justify-end gap-2">
             <div className="flex items-center gap-2">
               <div className="relative">
                 <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
