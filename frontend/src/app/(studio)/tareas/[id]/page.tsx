@@ -14,6 +14,7 @@ import { DocumentosSection } from "@/components/ui/documentos-section";
 
 const ESTADO_CFG: Record<TareaEstado, { label: string; cls: string }> = {
   pendiente: { label: "Pendiente",  cls: "bg-yellow-100 text-yellow-700" },
+  en_curso:  { label: "Pendiente",  cls: "bg-yellow-100 text-yellow-700" },
   hecha:     { label: "✓ Hecha",    cls: "bg-green-100 text-green-700" },
 };
 
