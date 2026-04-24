@@ -5,6 +5,7 @@ import { todayAR } from "@/lib/date";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { api, Honorario, Moneda } from "@/lib/api";
 import { DateInput } from "@/components/ui/date-input";
+import Link from "next/link";
 
 const today = todayAR();
 
@@ -236,104 +237,16 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
         <h3 className="text-sm font-semibold text-ink-700">
           {honorarios.length === 0 ? "Sin honorarios registrados" : `${honorarios.length} honorario${honorarios.length !== 1 ? "s" : ""}`}
         </h3>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-semibold transition"
+        <Link
+          href={`/honorarios/nuevo?expediente_id=${expedienteId}`}
+          className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-semibold transition"
         >
-          {showForm ? "Cancelar" : "+ Nuevo honorario"}
-        </button>
+          + Nuevo honorario
+        </Link>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
-
-      {/* Form nuevo honorario */}
-      {showForm && (
-        <form onSubmit={crearHonorario} className="bg-ink-50 border border-ink-200 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-ink-700 mb-2">Nuevo honorario acordado</p>
-          <div>
-            <label className={labelCls}>Concepto *</label>
-            <input required value={form.concepto} onChange={e => setForm({ ...form, concepto: e.target.value })} className={inputCls} placeholder="Ej: Honorarios por patrocinio letrado" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Monto acordado *</label>
-              <input required type="number" min="0.01" step="0.01" value={form.monto_acordado} onChange={e => setForm({ ...form, monto_acordado: e.target.value })} className={inputCls} placeholder="0.00" />
-            </div>
-            <div>
-              <label className={labelCls}>Moneda</label>
-              <select value={form.moneda} onChange={e => setForm({ ...form, moneda: e.target.value as Moneda })} className={inputCls}>
-                <option value="ARS">$ ARS</option>
-                <option value="USD">U$D USD</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Fecha de acuerdo *</label>
-              <DateInput value={form.fecha_acuerdo} onChange={v => setForm({ ...form, fecha_acuerdo: v })} required />
-            </div>
-            <div>
-              <label className={labelCls}>{usarCuotas ? "Fecha primera cuota *" : "Fecha de vencimiento"}</label>
-              <DateInput value={form.fecha_vencimiento} onChange={v => setForm({ ...form, fecha_vencimiento: v })} placeholder="DD/MM/AAAA" />
-            </div>
-          </div>
-
-          {/* Toggle cuotas */}
-          <div className="flex items-center gap-3 py-2 border-t border-ink-50">
-            <button
-              type="button"
-              onClick={() => setUsarCuotas(p => !p)}
-              className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 border-transparent transition-colors ${usarCuotas ? "bg-emerald-500" : "bg-ink-200"}`}
-            >
-              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${usarCuotas ? "translate-x-4" : "translate-x-0"}`} />
-            </button>
-            <span className="text-sm text-ink-600 font-medium">Dividir en cuotas</span>
-          </div>
-
-          {/* Configuración de cuotas */}
-          {usarCuotas && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>Cantidad de cuotas</label>
-                  <select value={nCuotas} onChange={e => setNCuotas(Number(e.target.value))} className={inputCls}>
-                    {[2,3,4,5,6,8,10,12].map(n => <option key={n} value={n}>{n} cuotas</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Intervalo</label>
-                  <select value={intervaloCuotas} onChange={e => setIntervaloCuotas(e.target.value as any)} className={inputCls}>
-                    <option value="mensual">Mensual</option>
-                    <option value="quincenal">Quincenal</option>
-                    <option value="semanal">Semanal</option>
-                  </select>
-                </div>
-              </div>
-              {form.monto_acordado && form.fecha_vencimiento && (
-                <div className="text-xs text-emerald-700 bg-emerald-100 rounded-lg px-3 py-2">
-                  {generarCuotas().map((c, i) => (
-                    <div key={i} className="flex justify-between">
-                      <span>Cuota {i+1}</span>
-                      <span className="font-semibold">{fmt(c.monto_acordado, c.moneda)} · {new Date(c.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div>
-            <label className={labelCls}>Notas (opcional)</label>
-            <textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} className={`${inputCls} resize-none`} rows={2} placeholder="Porcentaje sobre resultado, cuotas, etc." />
-          </div>
-          <button type="submit" disabled={saving} className="w-full bg-brand-600 hover:bg-brand-700 text-white rounded-xl py-2 text-sm font-semibold transition disabled:opacity-50">
-            {saving ? "Guardando…" : usarCuotas ? `Crear ${nCuotas} cuotas` : "Guardar honorario"}
-          </button>
-        </form>
-      )}
-
       {/* Lista de honorarios */}
-      {honorarios.length === 0 && !showForm ? (
+      {honorarios.length === 0 ? (
         <div className="text-center py-10 text-ink-400 text-sm">
           <svg className="w-10 h-10 mx-auto mb-3 text-ink-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

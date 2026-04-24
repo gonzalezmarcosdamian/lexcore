@@ -33,6 +33,7 @@ export const config = {
     "/vencimientos/:path*",
     "/movimientos/:path*",
     "/tareas/:path*",
+    "/honorarios/:path*",
     "/setup-studio",
     // /dev/autologin queda fuera — no requiere auth
   ],
