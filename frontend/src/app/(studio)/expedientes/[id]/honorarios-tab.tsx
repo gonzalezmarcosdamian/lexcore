@@ -181,61 +181,48 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
           onCancel={() => setConfirmEliminarId(null)}
         />
       )}
-      {/* Resumen liviano */}
+      {/* Resumen súper compacto — una línea por moneda */}
       {honorarios.length > 0 && (
-        <div className="bg-white border border-ink-100 rounded-2xl p-4">
-          <p className="text-[10px] font-bold text-ink-400 uppercase tracking-wider mb-3">
-            Resumen · {honorarios.length} acuerdo{honorarios.length !== 1 ? "s" : ""}
-          </p>
-          <div className="grid grid-cols-1 gap-3">
-            {acordadoARS > 0 && (() => {
-              const pct = acordadoARS > 0 ? Math.min(100, (cobradoARS / acordadoARS) * 100) : 0;
-              return (
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-ink-500">ARS</span>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-ink-400">Acordado <span className="font-semibold text-ink-700">{fmt(acordadoARS, "ARS")}</span></span>
-                      <span className={saldoARS > 0 ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>
-                        {saldoARS > 0 ? `Saldo ${fmt(saldoARS, "ARS")}` : "Saldado ✓"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-[10px] text-ink-400 mt-0.5">{fmt(cobradoARS, "ARS")} cobrado{interesesARS > 0 ? ` · ${fmt(interesesARS, "ARS")} intereses` : ""} · {Math.round(pct)}%</p>
+        <div className="flex items-center gap-4 px-1">
+          {acordadoARS > 0 && (() => {
+            const pct = Math.min(100, (cobradoARS / acordadoARS) * 100);
+            return (
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-ink-500 font-medium">ARS · {Math.round(pct)}% cobrado</span>
+                  <span className={saldoARS > 0 ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>
+                    {saldoARS > 0 ? `Saldo ${fmt(saldoARS, "ARS")}` : "✓ Saldado"}
+                  </span>
                 </div>
-              );
-            })()}
-            {acordadoUSD > 0 && (() => {
-              const pct = acordadoUSD > 0 ? Math.min(100, (cobradoUSD / acordadoUSD) * 100) : 0;
-              return (
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-ink-500">USD</span>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-ink-400">Acordado <span className="font-semibold text-ink-700">{fmt(acordadoUSD, "USD")}</span></span>
-                      <span className={saldoUSD > 0 ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>
-                        {saldoUSD > 0 ? `Saldo ${fmt(saldoUSD, "USD")}` : "Saldado ✓"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
-                  <p className="text-[10px] text-ink-400 mt-0.5">{fmt(cobradoUSD, "USD")} cobrado · {Math.round(pct)}%</p>
+                <div className="h-1.5 bg-ink-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
-              );
-            })()}
-          </div>
+              </div>
+            );
+          })()}
+          {acordadoUSD > 0 && (() => {
+            const pct = Math.min(100, (cobradoUSD / acordadoUSD) * 100);
+            return (
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-ink-500 font-medium">USD · {Math.round(pct)}% cobrado</span>
+                  <span className={saldoUSD > 0 ? "text-orange-600 font-bold" : "text-green-600 font-bold"}>
+                    {saldoUSD > 0 ? `Saldo ${fmt(saldoUSD, "USD")}` : "✓ Saldado"}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-ink-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink-700">
-          {honorarios.length === 0 ? "Sin honorarios registrados" : `${honorarios.length} honorario${honorarios.length !== 1 ? "s" : ""}`}
+          {honorarios.length === 0 ? "Sin honorarios" : `${honorarios.length} acuerdo${honorarios.length !== 1 ? "s" : ""}`}
         </h3>
         <Link
           href={`/honorarios/nuevo?expediente_id=${expedienteId}`}
@@ -269,57 +256,62 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
               return { label: `Vence ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}`, cls: "bg-emerald-100 text-emerald-700" };
             })();
 
+            // Estado pill
+            const estadoPill = saldo <= 0
+              ? { label: "SALDADO", cls: "bg-green-100 text-green-700" }
+              : pct > 0
+              ? { label: "PARCIAL", cls: "bg-amber-100 text-amber-700" }
+              : { label: "PENDIENTE", cls: "bg-orange-100 text-orange-700" };
+
             return (
-              <div key={h.id} className={`bg-white border rounded-xl overflow-hidden ${vencBadge?.label === "VENCIDO" ? "border-red-200" : vencBadge?.label === "PRÓXIMO" ? "border-orange-200" : "border-ink-100"}`}>
-                {/* Header honorario */}
+              <div key={h.id} className={`bg-white border rounded-2xl overflow-hidden transition ${
+                vencBadge?.label === "VENCIDO" ? "border-red-200" : vencBadge?.label === "PRÓXIMO" ? "border-orange-200" : "border-ink-100"
+              }`}>
+                {/* Header — concepto como título principal */}
                 <div
-                  className="px-4 py-3 flex items-start gap-3 cursor-pointer hover:bg-ink-50 transition"
+                  className="px-4 pt-4 pb-3 cursor-pointer hover:bg-ink-50/50 transition"
                   onClick={() => setExpandedId(isExpanded ? null : h.id)}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-ink-900">{h.concepto}</span>
-                      <Badge color={h.moneda === "ARS" ? "bg-blue-50 text-blue-700" : "bg-green-50 text-green-700"}>
-                        {h.moneda}
-                      </Badge>
-                      {saldo <= 0 && <Badge color="bg-green-50 text-green-700">✓ Saldado</Badge>}
-                      {saldo > 0 && pct > 0 && <Badge color="bg-amber-50 text-amber-700">Parcial</Badge>}
-                      {vencBadge && <Badge color={vencBadge.cls}>{vencBadge.label}</Badge>}
-                    </div>
-                    <p className="text-xs text-ink-400 mt-0.5">
-                      Acordado: {fmt(h.monto_acordado, h.moneda)} — {h.fecha_acuerdo ? new Date(h.fecha_acuerdo + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : h.fecha_acuerdo}
-                      {h.fecha_vencimiento ? ` · Vence: ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" })}` : ""}
-                    </p>
-                    {/* Barra de progreso capital */}
-                    <div className="mt-2 h-1.5 bg-ink-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-brand-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                    </div>
-                    <div className="flex justify-between text-[10px] mt-0.5">
-                      <span className="text-ink-400">Pagado: {fmt(h.total_capital, h.moneda)}</span>
-                      <span className={saldo > 0 ? "text-amber-600 font-semibold" : "text-green-600 font-semibold"}>
-                        Saldo: {fmt(saldo, h.moneda)}
-                      </span>
-                    </div>
-                    {h.total_intereses > 0 && (
-                      <div className="text-[10px] text-blue-600 mt-0.5">
-                        Intereses cobrados: {fmt(h.total_intereses, h.moneda)}
+                  {/* Fila 1: concepto + moneda + estado + pagar + chevron */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-ink-900 leading-snug">{h.concepto}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${estadoPill.cls}`}>{estadoPill.label}</span>
+                        {vencBadge && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${vencBadge.cls}`}>{vencBadge.label}</span>}
                       </div>
-                    )}
+                      <p className="text-xs text-ink-400 mt-0.5">
+                        {h.moneda} · {h.fecha_acuerdo ? new Date(h.fecha_acuerdo + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" }) : ""}
+                        {h.fecha_vencimiento ? ` · vence ${new Date(h.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {saldo > 0 && (
+                        <Link
+                          href={`/honorarios/pago?honorario_id=${h.id}&expediente_id=${expedienteId}`}
+                          onClick={e => e.stopPropagation()}
+                          className="flex items-center gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg transition"
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
+                          Pagar
+                        </Link>
+                      )}
+                      <svg className={`w-4 h-4 text-ink-300 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {saldo > 0 && (
-                      <Link
-                        href={`/honorarios/pago?honorario_id=${h.id}&expediente_id=${expedienteId}`}
-                        onClick={e => e.stopPropagation()}
-                        className="flex items-center gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg transition"
-                      >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-                        Pagar
-                      </Link>
-                    )}
-                    <svg className={`w-4 h-4 text-ink-300 flex-shrink-0 mt-0.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
+                  {/* Fila 2: monto grande + barra + saldo */}
+                  <div className="flex items-end justify-between gap-3 mb-1.5">
+                    <span className="text-lg font-bold text-ink-900 leading-none">{fmt(h.monto_acordado, h.moneda)}</span>
+                    <span className={`text-sm font-bold leading-none ${saldo > 0 ? "text-orange-600" : "text-green-600"}`}>
+                      {saldo > 0 ? fmt(saldo, h.moneda) + " pendiente" : "✓ Saldado"}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${saldo <= 0 ? "bg-green-500" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-ink-400 mt-1">
+                    <span>{fmt(h.total_capital, h.moneda)} cobrado{h.total_intereses > 0 ? ` + ${fmt(h.total_intereses, h.moneda)} intereses` : ""}</span>
+                    <span>{Math.round(pct)}%</span>
                   </div>
                 </div>
 
