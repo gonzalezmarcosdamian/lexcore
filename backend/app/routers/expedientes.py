@@ -396,6 +396,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         items.append(ActividadItem(
             id=m.id, tipo="movimiento", subtipo="manual",
             descripcion=m.texto, created_at=m.created_at,
+            meta={"fecha_manual": m.fecha_manual, "hora_acto": m.hora_acto},
         ))
 
     # Honorarios
@@ -461,6 +462,9 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
 
     def _sort_key(item: ActividadItem) -> str:
         m = item.meta or {}
+        if item.tipo == "movimiento" and m.get("fecha_manual"):
+            hora = m.get("hora_acto") or "00:00"
+            return str(m["fecha_manual"]) + "T" + hora + ":00"
         if item.tipo == "vencimiento" and m.get("fecha"):
             return str(m["fecha"]) + "T23:59:59"
         if item.tipo == "tarea" and m.get("fecha_limite"):
