@@ -35,7 +35,7 @@ function NuevoMovimientoInner() {
     titulo: "",
     tipo: "vencimiento",
     expediente_id: params.get("expediente_id") ?? "",
-    fecha: "",
+    fecha: params.get("fecha") ?? "",
     hora: "",
     descripcion: "",
   });

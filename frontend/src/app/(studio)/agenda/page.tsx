@@ -906,10 +906,9 @@ export default function AgendaPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  setTareaForm(f => ({ ...f, fecha_limite: diaPickerFecha }));
-                  setShowTareaModal(true);
-                  setTareaError("");
+                  const fecha = diaPickerFecha ?? "";
                   setDiaPickerFecha(null);
+                  router.push(`/tareas/nueva${fecha ? `?fecha=${fecha}` : ""}`);
                 }}
                 className="flex-1 flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl py-4 transition"
               >
@@ -918,10 +917,9 @@ export default function AgendaPage() {
               </button>
               <button
                 onClick={() => {
-                  setVencimientoForm(f => ({ ...f, fecha: diaPickerFecha }));
-                  setShowVencimientoModal(true);
-                  setVencimientoError("");
+                  const fecha = diaPickerFecha ?? "";
                   setDiaPickerFecha(null);
+                  router.push(`/movimientos/nuevo${fecha ? `?fecha=${fecha}` : ""}`);
                 }}
                 className="flex-1 flex flex-col items-center gap-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl py-4 transition"
               >
@@ -1005,14 +1003,14 @@ export default function AgendaPage() {
         {/* Botones de acción */}
         <div className="flex gap-2">
           <button
-            onClick={() => { setTareaForm(f => ({ ...f, fecha_limite: "" })); setShowTareaModal(true); setTareaError(""); }}
+            onClick={() => router.push("/tareas/nueva")}
             className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
             Tarea
           </button>
           <button
-            onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }}
+            onClick={() => router.push("/movimientos/nuevo")}
             className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl transition"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
@@ -1192,8 +1190,8 @@ export default function AgendaPage() {
               <button onClick={() => setVista("tablero")} className={`px-3 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>⊞ Tablero</button>
               <button onClick={() => setVista("calendario")} className={`px-3 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>📅 Calendario</button>
             </div>
-            <button onClick={() => { setTareaForm(f => ({ ...f, fecha_limite: "" })); setShowTareaModal(true); setTareaError(""); }} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Tarea</button>
-            <button onClick={() => { setShowVencimientoModal(true); setVencimientoError(""); }} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Movimiento</button>
+            <Link href="/tareas/nueva" className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Tarea</Link>
+            <Link href="/movimientos/nuevo" className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg font-semibold transition">+ Movimiento</Link>
             <CalendarSyncButton variant="compact" />
           </div>
         </div>

@@ -752,8 +752,8 @@ function AgendaWidget({
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-ink-700">Agenda</h2>
         <div className="flex items-center gap-2">
-          <button onClick={onShowNewTarea} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Tarea</button>
-          <button onClick={onShowNewVenc} className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Movimiento</button>
+          <Link href="/tareas/nueva" className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Tarea</Link>
+          <Link href="/movimientos/nuevo" className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded-lg font-semibold transition">+ Movimiento</Link>
           <Link href="/agenda" className="text-xs text-brand-600 hover:text-brand-700 font-medium">Ver agenda →</Link>
         </div>
       </div>
