@@ -455,23 +455,33 @@ export default function ContablePage() {
         />
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-ink-100 p-1 rounded-xl w-full sm:w-fit">
+      {/* Tabs — mejorado visualmente */}
+      <div className="flex gap-2">
         <button
           onClick={() => setTab("periodo")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "periodo" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition ${
+            tab === "periodo"
+              ? "bg-red-600 text-white border-red-600 shadow-sm"
+              : "bg-white text-ink-600 border-ink-200 hover:bg-ink-50"
+          }`}
         >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
           Egresos
           {pendientesCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-red-500 text-white rounded-full">
+            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold bg-white text-red-600 rounded-full">
               {pendientesCount}
             </span>
           )}
         </button>
         <button
           onClick={() => setTab("ingresos")}
-          className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${tab === "ingresos" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold border transition ${
+            tab === "ingresos"
+              ? "bg-green-600 text-white border-green-600 shadow-sm"
+              : "bg-white text-ink-600 border-ink-200 hover:bg-ink-50"
+          }`}
         >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
           Ingresos
         </button>
       </div>
@@ -484,9 +494,9 @@ export default function ContablePage() {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               {/* Toggle Mes / Año */}
-              <div className="flex rounded-lg border border-ink-200 overflow-hidden text-xs font-semibold">
-                <button onClick={() => setVistaAnual(false)} className={`px-3 py-1.5 transition ${!vistaAnual ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>Mes</button>
-                <button onClick={() => setVistaAnual(true)} className={`px-3 py-1.5 transition ${vistaAnual ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-ink-50"}`}>Año</button>
+              <div className="flex gap-1.5">
+                <button onClick={() => setVistaAnual(false)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${!vistaAnual ? "bg-ink-800 text-white border-ink-800" : "bg-white text-ink-500 border-ink-200 hover:bg-ink-50"}`}>Mes</button>
+                <button onClick={() => setVistaAnual(true)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${vistaAnual ? "bg-ink-800 text-white border-ink-800" : "bg-white text-ink-500 border-ink-200 hover:bg-ink-50"}`}>Año</button>
               </div>
             </div>
             <div className="flex items-center gap-3">

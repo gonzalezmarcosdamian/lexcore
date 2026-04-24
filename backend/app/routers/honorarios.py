@@ -126,6 +126,12 @@ def honorarios_proximos(
     return [h for h in result if h.saldo_pendiente > 0]
 
 
+@router.get("/{honorario_id}", response_model=HonorarioOut)
+def obtener_honorario(honorario_id: str, db: DbSession, current_user: CurrentUser):
+    h = _get_honorario_or_404(db, honorario_id, current_user["studio_id"])
+    return HonorarioOut.from_orm_with_saldo(h)
+
+
 @router.post("", response_model=HonorarioOut, status_code=status.HTTP_201_CREATED)
 def crear_honorario(
     body: HonorarioCreate,

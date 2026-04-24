@@ -346,53 +346,17 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                       </div>
                     )}
                     {saldo > 0 && <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-semibold text-ink-600">Registrar pago</p>
-                        {saldo > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, importe: String(saldo) } }))}
-                            className="text-[10px] text-brand-600 hover:underline"
-                          >
-                            Completar saldo ({fmt(saldo, h.moneda)})
-                          </button>
-                        )}
-                      </div>
                       <div className="flex gap-2">
-                        <input
-                          type="number" min="0.01" step="0.01"
-                          placeholder="Importe *"
-                          value={pf.importe}
-                          onChange={e => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, importe: e.target.value } }))}
-                          className={`flex-1 bg-white border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 ${!pf.importe && saving ? "border-red-400 focus:ring-red-400" : "border-ink-200 focus:ring-brand-400"}`}
-                        />
-                        <select
-                          value={pf.moneda}
-                          onChange={e => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, moneda: e.target.value as Moneda } }))}
-                          className="bg-white border border-ink-200 rounded-lg px-2 py-2 text-sm focus:outline-none"
+                        <Link
+                          href={`/honorarios/pago?honorario_id=${h.id}&expediente_id=${expedienteId}`}
+                          className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2.5 text-sm font-semibold transition"
                         >
-                          <option value="ARS">ARS</option>
-                          <option value="USD">USD</option>
-                        </select>
-                        <DateInput value={pf.fecha} onChange={v => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, fecha: v } }))} className="min-w-[140px]" />
-                      </div>
-                      <input
-                        placeholder="Nro. comprobante / referencia (opcional)"
-                        value={pf.comprobante}
-                        onChange={e => setPagoForm(prev => ({ ...prev, [h.id]: { ...pf, comprobante: e.target.value } }))}
-                        className="w-full bg-white border border-ink-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => registrarPago(h.id)}
-                          disabled={saving || !pf.importe}
-                          className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-lg py-2 text-xs font-semibold transition disabled:opacity-40"
-                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
                           Registrar pago
-                        </button>
+                        </Link>
                         <button
                           onClick={() => setConfirmEliminarId(h.id)}
-                          className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-lg transition"
+                          className="text-xs text-ink-400 hover:text-red-500 border border-ink-200 hover:border-red-200 px-3 py-2 rounded-xl transition"
                         >
                           Eliminar
                         </button>
