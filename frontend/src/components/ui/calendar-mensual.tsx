@@ -235,7 +235,7 @@ export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, on
                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${DOT_CLS[ev.color]}`} />
                   <div className="flex-1 min-w-0">
                     <p className={`text-sm font-medium truncate ${ev.estado === "hecha" || ev.cumplido ? "line-through text-ink-400" : "text-ink-800"}`}>{ev.titulo}</p>
-                    <p className="text-xs text-ink-400">{ev.tipo === "tarea" ? "Tarea" : "Vencimiento"}{ev.hora ? ` · ${ev.hora}` : ""}</p>
+                    <p className="text-xs text-ink-400">{ev.tipo === "tarea" ? "Tarea" : "Movimiento"}{ev.hora ? ` · ${ev.hora}` : ""}</p>
                   </div>
                   <svg className="w-4 h-4 text-ink-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
                 </button>

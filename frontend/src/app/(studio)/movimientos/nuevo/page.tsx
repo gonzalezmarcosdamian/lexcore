@@ -2,12 +2,14 @@
 
 import { TimeInput } from "@/components/ui/time-input";
 import { DateInput } from "@/components/ui/date-input";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Expediente } from "@/lib/api";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const TIPOS = [
   { value: "vencimiento",  label: "Vencimiento procesal", icon: "⚖️" },
@@ -39,6 +41,8 @@ function NuevoMovimientoInner() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [adjunto, setAdjunto] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -55,7 +59,7 @@ function NuevoMovimientoInner() {
     setSaving(true);
     setError("");
     try {
-      await api.post("/movimientos", {
+      const created = await api.post<{ id: string }>("/movimientos", {
         titulo: form.titulo.trim(),
         tipo: form.tipo,
         expediente_id: form.expediente_id,
@@ -63,6 +67,20 @@ function NuevoMovimientoInner() {
         hora: form.hora,
         descripcion: form.descripcion || null,
       }, token);
+
+      // Subir adjunto si hay uno
+      if (adjunto && created?.id) {
+        const fd = new FormData();
+        fd.append("movimiento_id", created.id);
+        if (form.expediente_id) fd.append("expediente_id", form.expediente_id);
+        fd.append("file", adjunto);
+        await fetch(`${API_URL}/documentos/upload`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+      }
+
       router.push(form.expediente_id ? `/expedientes/${form.expediente_id}` : "/agenda");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al crear el movimiento");
@@ -147,6 +165,28 @@ function NuevoMovimientoInner() {
             rows={3}
             placeholder="Detalles del acto procesal..."
           />
+        </div>
+
+        {/* Adjunto */}
+        <div>
+          <label className={labelClass}>Adjunto <span className="text-ink-400 font-normal">(opcional)</span></label>
+          <input ref={fileRef} type="file" className="hidden" onChange={e => setAdjunto(e.target.files?.[0] ?? null)} />
+          {adjunto ? (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
+              <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+              <span className="text-sm text-amber-800 flex-1 truncate">{adjunto.name}</span>
+              <button type="button" onClick={() => { setAdjunto(null); if (fileRef.current) fileRef.current.value = ""; }} className="text-amber-500 hover:text-red-500 transition text-lg leading-none">×</button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full flex items-center gap-2 border border-dashed border-ink-300 text-ink-500 hover:border-amber-400 hover:text-amber-600 rounded-xl px-4 py-3 text-sm transition"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+              Adjuntar archivo
+            </button>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2.5">{error}</p>}
