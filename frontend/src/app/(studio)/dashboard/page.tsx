@@ -18,7 +18,7 @@ import { ExpedienteSelect } from "@/components/ui/expediente-select";
 import { todayAR, yearAR, monthAR, toDateStrAR } from "@/lib/date";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { TareaDetailSheet } from "@/components/features/tarea-detail-sheet";
-import { VencimientoDetailSheet } from "@/components/features/vencimiento-detail-sheet";
+import { MovimientoDetailSheet } from "@/components/features/movimiento-detail-sheet";
 
 const today = todayAR();
 
@@ -85,7 +85,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    api.get<Vencimiento[]>("/vencimientos", token, { cumplido: false, proximos: 365 })
+    api.get<Vencimiento[]>("/movimientos", token, { estado: "pendiente", proximos: 365 })
       .then(setProximos).catch(() => {}).finally(() => setLoading(false));
   }, [token]);
 
@@ -122,7 +122,7 @@ export default function DashboardPage() {
     if (!token) return;
     setMarking(id);
     try {
-      await api.patch(`/vencimientos/${id}`, { cumplido: true }, token);
+      await api.patch(`/movimientos/${id}`, { estado: "cumplido" }, token);
       setProximos((prev) => prev.filter((v) => v.id !== id));
     } catch {} finally { setMarking(null); }
   }
@@ -140,7 +140,7 @@ export default function DashboardPage() {
     if (!token) return;
     setDeletingV(id);
     try {
-      await api.delete(`/vencimientos/${id}`, token);
+      await api.delete(`/movimientos/${id}`, token);
       setProximos((prev) => prev.filter((v) => v.id !== id));
     } catch {} finally { setDeletingV(null); }
   }
@@ -165,13 +165,13 @@ export default function DashboardPage() {
   const eventosCalendario = useMemo<CalEvent[]>(() => [
     ...proximos.map(v => ({
       id: v.id,
-      tipo: "vencimiento" as const,
-      titulo: v.descripcion,
+      tipo: "movimiento" as const,
+      titulo: v.titulo,
       hora: v.hora,
-      cumplido: v.cumplido,
+      cumplido: v.estado === "cumplido",
       expediente_id: v.expediente_id,
       fecha: v.fecha,
-      color: (v.cumplido ? "blue" : isUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
+      color: (v.estado === "cumplido" ? "blue" : isUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
     })),
     ...tareas.filter(t => t.fecha_limite).map(t => ({
       id: t.id,
@@ -207,7 +207,7 @@ export default function DashboardPage() {
       {editingT && token && <EditTareaModal tarea={editingT} token={token} expedientes={Object.values(expLookup)} onSaved={(t) => { setTareas((prev) => prev.map((x) => x.id === t.id ? t : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />}
       {editingV && token && <EditVencimientoModal v={editingV} token={token} onSaved={(u) => { setProximos((prev) => prev.map((x) => x.id === u.id ? u : x)); setEditingV(null); }} onClose={() => setEditingV(null)} />}
       {mobileDetailT && token && <TareaDetailSheet tareaId={mobileDetailT} token={token} onClose={() => setMobileDetailT(null)} onDeleted={() => { setTareas(p => p.filter(t => t.id !== mobileDetailT)); setMobileDetailT(null); }} onUpdated={(t) => setTareas(p => p.map(x => x.id === t.id ? t : x))} />}
-      {mobileDetailV && token && <VencimientoDetailSheet vencimientoId={mobileDetailV} token={token} onClose={() => setMobileDetailV(null)} onDeleted={() => { setProximos(p => p.filter(v => v.id !== mobileDetailV)); setMobileDetailV(null); }} onUpdated={(v) => setProximos(p => p.map(x => x.id === v.id ? v : x))} />}
+      {mobileDetailV && token && <MovimientoDetailSheet movimientoId={mobileDetailV} token={token} onClose={() => setMobileDetailV(null)} onDeleted={() => { setProximos(p => p.filter(v => v.id !== mobileDetailV)); setMobileDetailV(null); }} onUpdated={(v) => setProximos(p => p.map(x => x.id === v.id ? v : x))} />}
       {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} clientes={clientes} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
       {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
@@ -255,7 +255,7 @@ export default function DashboardPage() {
             onShowNewTarea={() => setShowNewTarea(true)}
             onShowNewVenc={() => setShowNewVenc(true)}
             onCumplido={handleCumplido}
-            onDetailV={(v) => typeof window !== "undefined" && window.innerWidth < 1024 ? setMobileDetailV(v.id) : router.push(`/vencimientos/${v.id}`)}
+            onDetailV={(v) => typeof window !== "undefined" && window.innerWidth < 1024 ? setMobileDetailV(v.id) : router.push(`/movimientos/${v.id}`)}
             onEditV={setEditingV}
             onDeleteV={handleDeleteVencimiento}
             onHecha={handleTareaHecha}
@@ -546,17 +546,17 @@ function EditTareaModal({ tarea, token, expedientes, onSaved, onClose }: { tarea
 }
 
 function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; token: string; onSaved: (u: Vencimiento) => void; onClose: () => void }) {
-  const [descripcion, setDescripcion] = useState(v.descripcion);
+  const [descripcion, setDescripcion] = useState(v.titulo);
   const [fecha, setFecha] = useState(v.fecha);
-  const [hora, setHora] = useState((v as any).hora ?? "");
+  const [hora, setHora] = useState(v.hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
-  const [cumplido, setCumplido] = useState(v.cumplido);
+  const [estado, setEstado] = useState(v.estado);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo, cumplido }, token);
+      const updated = await api.patch<Vencimiento>(`/movimientos/${v.id}`, { titulo: descripcion, fecha, hora: hora || null, tipo, estado }, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
@@ -594,7 +594,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
           </div>
           <div>
             <label className="block text-xs font-medium text-ink-600 mb-1">Estado</label>
-            <select value={cumplido ? "cumplido" : "pendiente"} onChange={(e) => setCumplido(e.target.value === "cumplido")} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+            <select value={estado} onChange={(e) => setEstado(e.target.value as "pendiente" | "cumplido")} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
               <option value="pendiente">Pendiente</option>
               <option value="cumplido">Cumplido</option>
             </select>
@@ -818,8 +818,8 @@ function AgendaWidget({
                           key={j}
                           onClick={(ev) => {
                             ev.stopPropagation();
-                            if (e.tipo === "vencimiento") {
-                              onDetailV({ id: e.id, descripcion: e.titulo, fecha: (e as any).fecha, tipo: "", cumplido: e.cumplido ?? false, expediente_id: e.expediente_id ?? "", hora: e.hora } as Vencimiento);
+                            if (e.tipo === "vencimiento" || e.tipo === "movimiento") {
+                              onDetailV({ id: e.id, titulo: e.titulo, fecha: (e as any).fecha, tipo: "", estado: e.cumplido ? "cumplido" : "pendiente", expediente_id: e.expediente_id ?? "", hora: e.hora } as unknown as Vencimiento);
                             } else {
                               onDetailT({ id: e.id, titulo: e.titulo, estado: (e.estado ?? "pendiente") as Tarea["estado"], fecha_limite: (e as any).fecha_limite, expediente_id: e.expediente_id, hora: e.hora } as Tarea);
                             }
@@ -875,8 +875,8 @@ function AgendaWidget({
         ) : (
           <div className="divide-y divide-ink-50 max-h-64 overflow-y-auto">
             {eventosDelDia.map(ev => {
-              if (ev.tipo === "vencimiento") {
-                const v = { id: ev.id, descripcion: ev.titulo, fecha: (ev as any).fecha, tipo: "", cumplido: ev.cumplido ?? false, expediente_id: ev.expediente_id ?? "", hora: ev.hora } as Vencimiento;
+              if (ev.tipo === "vencimiento" || ev.tipo === "movimiento") {
+                const v = { id: ev.id, titulo: ev.titulo, fecha: (ev as any).fecha, tipo: "", estado: ev.cumplido ? "cumplido" : "pendiente", expediente_id: ev.expediente_id ?? "", hora: ev.hora } as unknown as Vencimiento;
                 return <VencimientoRow key={ev.id} v={v} exp={expLookup[ev.expediente_id ?? ""]} onCumplido={onCumplido} onEdit={onEditV} onDelete={onDeleteV} onDetail={onDetailV} marking={marking} deleting={deletingV} />;
               } else {
                 const t = { id: ev.id, titulo: ev.titulo, estado: (ev.estado ?? "pendiente") as Tarea["estado"], fecha_limite: (ev as any).fecha_limite, expediente_id: ev.expediente_id, hora: ev.hora } as Tarea;
@@ -906,9 +906,9 @@ function VencimientoRow({ v, exp, onCumplido, onEdit, onDelete, onDetail, markin
   const vencida = isVencida(v.fecha);
   return (
     <div className={`flex items-center gap-3 px-5 py-3.5 hover:bg-ink-50/50 transition group ${urg ? "bg-red-50/20" : ""}`}>
-      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.cumplido ? "bg-green-500" : urg || vencida ? "bg-red-500" : warning ? "bg-amber-400" : "bg-amber-300"}`} />
+      <div className={`flex-shrink-0 w-2 h-2 rounded-full ${v.estado === "cumplido" ? "bg-green-500" : urg || vencida ? "bg-red-500" : warning ? "bg-amber-400" : "bg-amber-300"}`} />
       <div className="flex-1 min-w-0">
-        <button onClick={() => onDetail(v)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{v.descripcion}</button>
+        <button onClick={() => onDetail(v)} className="text-sm text-ink-900 font-medium truncate block hover:text-brand-600 transition text-left w-full">{v.titulo}</button>
         {exp ? (
           <p className="text-xs text-ink-400 truncate">
             {exp.caratula || exp.cliente_nombre || exp.numero}

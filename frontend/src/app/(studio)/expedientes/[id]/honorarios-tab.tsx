@@ -24,7 +24,7 @@ function Badge({ children, color }: { children: React.ReactNode; color: string }
   );
 }
 
-export function HonorariosTab({ expedienteId, token, onCreated }: { expedienteId: string; token: string; onCreated?: () => void }) {
+export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: { expedienteId: string; token: string; onCreated?: () => void; sidebarMode?: boolean }) {
   const [honorarios, setHonorarios] = useState<Honorario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

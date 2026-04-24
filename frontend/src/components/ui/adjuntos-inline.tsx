@@ -7,11 +7,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 interface Props {
   tareaId?: string;
-  vencimientoId?: string;
+  vencimientoId?: string;  // backward compat
+  movimientoId?: string;
   token: string;
 }
 
-export function AdjuntosInline({ tareaId, vencimientoId, token }: Props) {
+export function AdjuntosInline({ tareaId, vencimientoId, movimientoId, token }: Props) {
+  const effectiveMovimientoId = movimientoId || vencimientoId;
   const [docs, setDocs] = useState<Documento[]>([]);
   const [uploading, setUploading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -19,6 +21,8 @@ export function AdjuntosInline({ tareaId, vencimientoId, token }: Props) {
 
   const queryParam: Record<string, string> = tareaId
     ? { tarea_id: tareaId }
+    : movimientoId
+    ? { movimiento_id: movimientoId }
     : { vencimiento_id: vencimientoId! };
 
   useEffect(() => {
@@ -37,7 +41,8 @@ export function AdjuntosInline({ tareaId, vencimientoId, token }: Props) {
     for (const file of Array.from(files)) {
       const fd = new FormData();
       if (tareaId) fd.append("tarea_id", tareaId);
-      if (vencimientoId) fd.append("vencimiento_id", vencimientoId);
+      else if (movimientoId) fd.append("movimiento_id", movimientoId);
+      else if (vencimientoId) fd.append("vencimiento_id", vencimientoId);
       fd.append("file", file);
       try {
         const res = await fetch(`${API_URL}/documentos/upload`, {

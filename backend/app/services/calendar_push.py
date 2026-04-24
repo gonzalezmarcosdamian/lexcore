@@ -99,7 +99,7 @@ def push_vencimiento(db, vencimiento, user_id: str) -> bool:
 
     event: dict = {
         "id": event_id,
-        "summary": f"📅 {vencimiento.descripcion}",
+        "summary": f"📅 {vencimiento.titulo if hasattr(vencimiento, "titulo") else vencimiento.descripcion}",
         "description": "\n".join(desc_parts),
         "start": {"date": fecha},
         "end": {"date": fecha},

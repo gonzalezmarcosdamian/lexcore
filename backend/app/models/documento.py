@@ -14,12 +14,12 @@ class Documento(TenantModel):
     expediente_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("expedientes.id", ondelete="CASCADE"), nullable=True, index=True
     )
-    # Adjunto opcional a tarea o vencimiento (además del expediente)
+    # Adjunto opcional a tarea o movimiento (además del expediente)
     tarea_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("tareas.id", ondelete="CASCADE"), nullable=True, index=True
     )
-    vencimiento_id: Mapped[str | None] = mapped_column(
-        String, ForeignKey("vencimientos.id", ondelete="CASCADE"), nullable=True, index=True
+    movimiento_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("movimientos.id", ondelete="CASCADE"), nullable=True, index=True
     )
     nombre: Mapped[str] = mapped_column(String, nullable=False)          # nombre display
     label: Mapped[str | None] = mapped_column(String(200), nullable=True)

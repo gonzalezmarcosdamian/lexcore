@@ -130,7 +130,8 @@ export interface ClienteMin {
   tipo: string;
 }
 
-export interface Movimiento {
+// ActoBitacora — legacy bitácora entry (era Movimiento)
+export interface ActoBitacora {
   id: string;
   expediente_id: string;
   user_id: string;
@@ -141,19 +142,24 @@ export interface Movimiento {
   created_at: string;
 }
 
-export interface Vencimiento {
+// Movimiento — movimiento procesal (era Vencimiento)
+export interface Movimiento {
   id: string;
   tenant_id: string;
   expediente_id: string;
-  descripcion: string;
+  titulo: string;
+  descripcion?: string | null;
   fecha: string;
-  hora?: string;
+  hora?: string | null;
   tipo: string;
-  cumplido: boolean;
+  estado: "pendiente" | "cumplido";
   google_event_ids?: string;
   created_at: string;
   updated_at: string;
 }
+
+// Alias backward compat — Vencimiento = Movimiento
+export type Vencimiento = Movimiento;
 
 export type Moneda = "ARS" | "USD";
 
@@ -323,7 +329,7 @@ export interface Nota {
 
 export interface ActividadItem {
   id: string;
-  tipo: "movimiento" | "honorario" | "pago" | "vencimiento" | "tarea" | "documento";
+  tipo: "movimiento" | "movimiento_procesal" | "honorario" | "pago" | "vencimiento" | "tarea" | "documento";
   subtipo: string;
   descripcion: string;
   meta: Record<string, unknown>;

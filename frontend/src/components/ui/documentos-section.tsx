@@ -33,7 +33,8 @@ interface Props {
   token: string;
   expedienteId?: string;
   tareaId?: string;
-  vencimientoId?: string;
+  vencimientoId?: string;   // backward compat
+  movimientoId?: string;
   onCreated?: () => void;
 }
 
@@ -105,7 +106,7 @@ function PreviewModal({ doc, token, onClose }: { doc: Documento; token: string; 
   );
 }
 
-export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId, onCreated }: Props) {
+export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId, movimientoId, onCreated }: Props) {
   const [docs, setDocs] = useState<Documento[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -117,10 +118,13 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
   const [labelDraft, setLabelDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const effectiveMovimientoId = movimientoId || vencimientoId; // backward compat
   const queryParam = expedienteId
     ? { expediente_id: expedienteId }
     : tareaId
     ? { tarea_id: tareaId }
+    : movimientoId
+    ? { movimiento_id: movimientoId }
     : { vencimiento_id: vencimientoId! };
 
   useEffect(() => {
@@ -129,7 +133,7 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
       .catch(() => {})
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expedienteId, tareaId, vencimientoId, token]);
+  }, [expedienteId, tareaId, vencimientoId, movimientoId, token]);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -144,7 +148,8 @@ export function DocumentosSection({ token, expedienteId, tareaId, vencimientoId,
         const formData = new FormData();
         if (expedienteId) formData.append("expediente_id", expedienteId);
         if (tareaId) formData.append("tarea_id", tareaId);
-        if (vencimientoId) formData.append("vencimiento_id", vencimientoId);
+        if (movimientoId) formData.append("movimiento_id", movimientoId);
+        else if (vencimientoId) formData.append("vencimiento_id", vencimientoId);
         formData.append("descripcion", "");
         formData.append("file", file);
         const res = await fetch(`${API_URL}/documentos/upload`, {

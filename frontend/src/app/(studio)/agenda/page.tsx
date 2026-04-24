@@ -18,7 +18,7 @@ import { todayAR, yearAR, monthAR } from "@/lib/date";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { FilterPillsRow } from "@/components/ui/filter-pills";
 import { TareaDetailSheet } from "@/components/features/tarea-detail-sheet";
-import { VencimientoDetailSheet } from "@/components/features/vencimiento-detail-sheet";
+import { MovimientoDetailSheet } from "@/components/features/movimiento-detail-sheet";
 
 function esVencida(fecha: string): boolean {
   return new Date(fecha + "T23:59:59") < new Date();
@@ -101,17 +101,17 @@ function TareaStatusPill({ estado, onChange }: { estado: TareaEstado; onChange: 
 // ── Edit Modals ───────────────────────────────────────────────────────────────
 
 function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; token: string; onSaved: (u: Vencimiento) => void; onClose: () => void }) {
-  const [descripcion, setDescripcion] = useState(v.descripcion);
+  const [descripcion, setDescripcion] = useState(v.titulo);
   const [fecha, setFecha] = useState(v.fecha);
   const [hora, setHora] = useState(v.hora ?? "");
   const [tipo, setTipo] = useState(v.tipo);
-  const [cumplido, setCumplido] = useState(v.cumplido);
+  const [estado, setEstado] = useState(v.estado);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const save = async () => {
     setSaving(true);
     try {
-      const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { descripcion, fecha, hora: hora || null, tipo, cumplido }, token);
+      const updated = await api.patch<Vencimiento>(`/movimientos/${v.id}`, { titulo: descripcion, fecha, hora: hora || null, tipo, estado }, token);
       onSaved(updated);
     } catch (e: unknown) { setErr(e instanceof Error ? e.message : "Error"); } finally { setSaving(false); }
   };
@@ -128,22 +128,22 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setCumplido(false)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${!cumplido ? "bg-ink-600 text-white border-ink-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
+                onClick={() => setEstado("pendiente")}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${estado === "pendiente" ? "bg-ink-600 text-white border-ink-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
               >
                 Pendiente
               </button>
               <button
                 type="button"
-                onClick={() => setCumplido(true)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${cumplido ? "bg-green-600 text-white border-green-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
+                onClick={() => setEstado("cumplido")}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${estado === "cumplido" ? "bg-green-600 text-white border-green-600" : "border-ink-200 text-ink-500 hover:bg-ink-50"}`}
               >
                 ✓ Cumplido
               </button>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink-600 mb-1">Descripción</label>
+            <label className="block text-xs font-medium text-ink-600 mb-1">Titulo</label>
             <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400" />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -275,8 +275,8 @@ function VencimientoCard({
   onDragStart?: (e: React.DragEvent) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const vencida = esVencida(v.fecha) && !v.cumplido;
-  const urgente = esUrgente(v.fecha) && !v.cumplido;
+  const vencida = esVencida(v.fecha) && (v.estado !== "cumplido");
+  const urgente = esUrgente(v.fecha) && (v.estado !== "cumplido");
 
   return (
     <>
@@ -293,7 +293,7 @@ function VencimientoCard({
         draggable={isDraggable}
         onDragStart={onDragStart}
         className={`group rounded-xl border px-4 py-3 flex items-start gap-3 transition ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""} ${
-          v.cumplido      ? "bg-green-50 border-green-100 opacity-70" :
+          v.estado === "cumplido"      ? "bg-green-50 border-green-100 opacity-70" :
           vencida         ? "bg-red-50 border-red-200" :
           urgente         ? "bg-amber-50 border-amber-200" :
                             "bg-white border-ink-100 hover:border-ink-200"
@@ -301,7 +301,7 @@ function VencimientoCard({
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-            <VencimientoStatusPill cumplido={v.cumplido} onChange={onToggle} />
+            <VencimientoStatusPill cumplido={v.estado === "cumplido"} onChange={() => onToggle()} />
             <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 bg-purple-50 border border-purple-100 rounded-full px-2 py-0.5 uppercase tracking-wide">
               <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               {v.tipo ?? "Vencimiento"}
@@ -309,7 +309,7 @@ function VencimientoCard({
             {urgente && <span className="text-[10px] font-bold text-amber-600">⚡ Urgente</span>}
             {vencida && <span className="text-[10px] font-bold text-red-600 uppercase">Vencido</span>}
           </div>
-          <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>{v.descripcion}</button>
+          <button onClick={onDetail} className={`text-sm font-medium leading-snug text-left hover:text-brand-600 transition ${v.estado === "cumplido" ? "line-through text-ink-400" : "text-ink-900"}`}>{v.titulo}</button>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-xs text-ink-400">{formatFecha(v.fecha)}{v.hora ? ` · ${v.hora}` : ""}</span>
             {exp ? (
@@ -320,7 +320,7 @@ function VencimientoCard({
               <Link href={`/expedientes/${v.expediente_id}`} className="text-xs text-brand-600 hover:underline">Ver expediente →</Link>
             )}
           </div>
-          <AdjuntosInline vencimientoId={v.id} token={token} />
+          <AdjuntosInline movimientoId={v.id} token={token} />
         </div>
         <div className="flex flex-col items-center gap-0.5 flex-shrink-0 ml-1">
           <button onClick={onDetail} title="Ver detalle" className="p-1.5 rounded-lg text-ink-300 hover:text-brand-600 hover:bg-brand-50 transition">
@@ -443,7 +443,7 @@ function AgendaItemMobile({
   tipo, titulo, estado, fecha, hora, expediente, urgente: isUrgente, vencido: isVencido, paralizado: isParalizado,
   onCycleEstado, onNavigate,
 }: {
-  tipo: "vencimiento" | "tarea";
+  tipo: "movimiento" | "vencimiento" | "tarea";
   titulo: string;
   estado: string;
   fecha?: string;
@@ -469,7 +469,7 @@ function AgendaItemMobile({
     : isUrgente ? "URGENTE"
     : "PENDIENTE";
 
-  const dotCls = tipo === "vencimiento"
+  const dotCls = (tipo === "vencimiento" || tipo === "movimiento")
     ? (isUrgente || isVencido ? "bg-red-500" : "bg-amber-400")
     : "bg-blue-500";
 
@@ -559,7 +559,7 @@ function AgendaTablero({
   const dragRef = useRef<{ type: "v" | "t"; id: string } | null>(null);
 
   const colVenc = (col: KanbanCol): Vencimiento[] => {
-    const base = col === "pendiente" ? vencimientos.filter(v => !v.cumplido) : vencimientos.filter(v => v.cumplido);
+    const base = col === "pendiente" ? vencimientos.filter(v => (v.estado !== "cumplido")) : vencimientos.filter(v => v.estado === "cumplido");
     return [...base].sort((a, b) => ((a.fecha ?? "") + (a.hora ?? "")).localeCompare((b.fecha ?? "") + (b.hora ?? "")));
   };
 
@@ -581,7 +581,7 @@ function AgendaTablero({
       const venc = vencimientos.find(v => v.id === drag.id);
       if (!venc) return;
       const shouldBeCumplido = col === "hecho";
-      if (venc.cumplido !== shouldBeCumplido) onToggleVenc(venc);
+      if ((venc.estado === "cumplido") !== shouldBeCumplido) onToggleVenc(venc);
     } else {
       const tarea = tareas.find(t => t.id === drag.id);
       if (!tarea) return;
@@ -706,7 +706,7 @@ export default function AgendaPage() {
     setLoading(true);
     api.get<Honorario[]>("/honorarios/proximos", token, { dias: 365 }).then(setHonorariosProximos).catch(() => {});
     Promise.all([
-      api.get<Vencimiento[]>("/vencimientos", token, { proximos: 365 }),
+      api.get<Vencimiento[]>("/movimientos", token, { proximos: 365 }),
       api.get<Tarea[]>("/tareas", token),
     ]).then(([v, t]) => {
       setVencimientos(v);
@@ -744,13 +744,13 @@ export default function AgendaPage() {
 
   const toggleVencimiento = async (v: Vencimiento) => {
     if (!token) return;
-    const updated = await api.patch<Vencimiento>(`/vencimientos/${v.id}`, { cumplido: !v.cumplido }, token);
+    const updated = await api.patch<Vencimiento>(`/movimientos/${v.id}`, { estado: v.estado === "cumplido" ? "pendiente" : "cumplido" }, token);
     setVencimientos(prev => prev.map(x => x.id === v.id ? updated : x));
   };
 
   const deleteVencimiento = async (id: string) => {
     if (!token) return;
-    await api.delete(`/vencimientos/${id}`, token);
+    await api.delete(`/movimientos/${id}`, token);
     setVencimientos(prev => prev.filter(x => x.id !== id));
   };
 
@@ -796,12 +796,12 @@ export default function AgendaPage() {
     setSavingVencimiento(true);
     setVencimientoError("");
     try {
-      const created = await api.post<Vencimiento>("/vencimientos", {
-        descripcion: vencimientoForm.descripcion,
+      const created = await api.post<Vencimiento>("/movimientos", {
+        titulo: vencimientoForm.descripcion,
         fecha: vencimientoForm.fecha,
         hora: vencimientoForm.hora || undefined,
         tipo: vencimientoForm.tipo,
-        expediente_id: vencimientoForm.expediente_id || undefined,
+        expediente_id: vencimientoForm.expediente_id || "",
       }, token);
       setVencimientos(prev => [...prev, created]);
       setShowVencimientoModal(false);
@@ -829,19 +829,19 @@ export default function AgendaPage() {
     (!filtroParalizado || t.flag_paralizado)
   );
 
-  const totalPendientes = vencimientos.filter(v => !v.cumplido).length + tareas.filter(t => t.estado !== "hecha").length;
-  const urgentes = vencimientos.filter(v => !v.cumplido && esUrgente(v.fecha)).length;
+  const totalPendientes = vencimientos.filter(v => (v.estado !== "cumplido")).length + tareas.filter(t => t.estado !== "hecha").length;
+  const urgentes = vencimientos.filter(v => (v.estado !== "cumplido") && esUrgente(v.fecha)).length;
 
   const eventosCalendario = useMemo(() => [
     ...vencimientos.map(v => ({
       id: v.id,
-      tipo: "vencimiento" as const,
-      titulo: v.descripcion,
+      tipo: "movimiento" as const,
+      titulo: v.titulo,
       hora: v.hora,
-      cumplido: v.cumplido,
+      cumplido: v.estado === "cumplido",
       expediente_id: v.expediente_id,
       fecha: v.fecha,
-      color: (v.cumplido ? "blue" : esUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
+      color: (v.estado === "cumplido" ? "blue" : esUrgente(v.fecha) ? "red" : "amber") as CalEvent["color"],
     })),
     ...tareas.filter(t => t.fecha_limite).map(t => ({
       id: t.id,
@@ -1077,14 +1077,14 @@ export default function AgendaPage() {
                           return (
                             <AgendaItemMobile
                               key={item.id}
-                              tipo="vencimiento"
-                              titulo={v.descripcion}
-                              estado={v.cumplido ? "cumplido" : "pendiente"}
+                              tipo="movimiento"
+                              titulo={v.titulo}
+                              estado={v.estado === "cumplido" ? "cumplido" : "pendiente"}
                               fecha={v.fecha}
                               hora={v.hora}
                               expediente={exp ? { id: exp.id, numero: exp.numero } : null}
-                              urgente={esUrgente(v.fecha) && !v.cumplido}
-                              vencido={esVencida(v.fecha) && !v.cumplido}
+                              urgente={esUrgente(v.fecha) && (v.estado !== "cumplido")}
+                              vencido={esVencida(v.fecha) && (v.estado !== "cumplido")}
                               onCycleEstado={(e) => { e.stopPropagation(); toggleVencimiento(v); }}
                               onNavigate={() => setMobileDetailVenc(v.id)}
                             />
@@ -1162,8 +1162,8 @@ export default function AgendaPage() {
           />
         )}
         {mobileDetailVenc && token && (
-          <VencimientoDetailSheet
-            vencimientoId={mobileDetailVenc}
+          <MovimientoDetailSheet
+            movimientoId={mobileDetailVenc}
             token={token}
             onClose={() => setMobileDetailVenc(null)}
             onDeleted={(id) => { setVencimientos(prev => prev.filter(v => v.id !== id)); setMobileDetailVenc(null); }}
@@ -1241,7 +1241,7 @@ export default function AgendaPage() {
                 onToggleVenc={toggleVencimiento} onToggleTarea={handleToggleTarea}
                 onEditVenc={setEditingV} onEditTarea={setEditingT}
                 onDeleteVenc={deleteVencimiento} onDeleteTarea={deleteTarea}
-                onDetailVenc={(v) => router.push(`/vencimientos/${v.id}`)}
+                onDetailVenc={(v) => router.push(`/movimientos/${v.id}`)}
                 onDetailTarea={(t) => router.push(`/tareas/${t.id}`)}
               />
               {honorariosProximos.length > 0 && (

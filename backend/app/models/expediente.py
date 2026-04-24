@@ -41,11 +41,11 @@ class Expediente(TenantModel):
     abogados: Mapped[list["ExpedienteAbogado"]] = relationship(
         "ExpedienteAbogado", back_populates="expediente", cascade="all, delete-orphan"
     )
+    actos_bitacora: Mapped[list["ActoBitacora"]] = relationship(
+        "ActoBitacora", back_populates="expediente", cascade="all, delete-orphan"
+    )
     movimientos: Mapped[list["Movimiento"]] = relationship(
         "Movimiento", back_populates="expediente", cascade="all, delete-orphan"
-    )
-    vencimientos: Mapped[list["Vencimiento"]] = relationship(
-        "Vencimiento", back_populates="expediente", cascade="all, delete-orphan"
     )
     documentos: Mapped[list["Documento"]] = relationship(  # type: ignore[name-defined]
         "Documento", back_populates="expediente", cascade="all, delete-orphan"
@@ -79,32 +79,35 @@ class ExpedienteAbogado(TenantModel):
     expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="abogados")
 
 
-class Movimiento(TenantModel):
-    __tablename__ = "movimientos"
+class ActoBitacora(TenantModel):
+    """Entrada libre de bitácora (legacy — era 'Movimiento')."""
+    __tablename__ = "actos_bitacora"
 
     expediente_id: Mapped[str] = mapped_column(
         String, ForeignKey("expedientes.id"), nullable=False, index=True
     )
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     texto: Mapped[str] = mapped_column(Text, nullable=False)
-    fecha_manual: Mapped[str | None] = mapped_column(String(10), nullable=True)  # YYYY-MM-DD override
-    hora_acto: Mapped[str | None] = mapped_column(String(5), nullable=True)      # HH:MM
+    fecha_manual: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    hora_acto: Mapped[str | None] = mapped_column(String(5), nullable=True)
     documento_id: Mapped[str | None] = mapped_column(String, ForeignKey("documentos.id", ondelete="SET NULL"), nullable=True)
 
-    expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="movimientos")
+    expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="actos_bitacora")
 
 
-class Vencimiento(TenantModel):
-    __tablename__ = "vencimientos"
+class Movimiento(TenantModel):
+    """Movimiento procesal (era 'Vencimiento'). Entidad principal de la bitácora."""
+    __tablename__ = "movimientos"
 
     expediente_id: Mapped[str] = mapped_column(
         String, ForeignKey("expedientes.id"), nullable=False, index=True
     )
-    descripcion: Mapped[str] = mapped_column(String(500), nullable=False)
-    fecha: Mapped[str] = mapped_column(String(10), nullable=False)  # ISO date YYYY-MM-DD
-    hora: Mapped[str | None] = mapped_column(String(5), nullable=True)  # HH:MM optional
+    titulo: Mapped[str] = mapped_column(String(500), nullable=False)
+    descripcion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    fecha: Mapped[str] = mapped_column(String(10), nullable=False)
+    hora: Mapped[str | None] = mapped_column(String(5), nullable=True)
     tipo: Mapped[str] = mapped_column(String(100), nullable=False, default="vencimiento")
-    cumplido: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    google_event_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON {user_id: event_id}
+    estado: Mapped[str] = mapped_column(String(20), nullable=False, default="pendiente")
+    google_event_ids: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="vencimientos")
+    expediente: Mapped["Expediente"] = relationship("Expediente", back_populates="movimientos")

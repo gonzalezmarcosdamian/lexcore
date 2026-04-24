@@ -84,18 +84,18 @@ export function VencimientoDetailModal({
   onClose: () => void;
   onEdit: () => void;
 }) {
-  const vencida = esVencida(v.fecha) && !v.cumplido;
-  const urgente = esUrgente(v.fecha) && !v.cumplido;
+  const vencida = esVencida(v.fecha) && v.estado !== "cumplido";
+  const urgente = esUrgente(v.fecha) && v.estado !== "cumplido";
 
   return (
     <ModalShell
       title="Vencimiento"
-      accentColor={v.cumplido ? "bg-green-600" : vencida ? "bg-red-600" : urgente ? "bg-amber-500" : "bg-purple-600"}
+      accentColor={v.estado === "cumplido" ? "bg-green-600" : vencida ? "bg-red-600" : urgente ? "bg-amber-500" : "bg-purple-600"}
       onClose={onClose}
       onEdit={() => { onClose(); onEdit(); }}
     >
       <div>
-        <p className="text-base font-bold text-ink-900 leading-snug">{v.descripcion}</p>
+        <p className="text-base font-bold text-ink-900 leading-snug">{v.titulo}</p>
         {(vencida || urgente) && (
           <span className={`inline-block mt-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
             vencida ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
@@ -107,8 +107,8 @@ export function VencimientoDetailModal({
 
       <div className="space-y-2.5 pt-1 border-t border-ink-50">
         <Row label="Estado">
-          <span className={`font-semibold ${v.cumplido ? "text-green-600" : "text-amber-600"}`}>
-            {v.cumplido ? "✓ Cumplido" : "Pendiente"}
+          <span className={`font-semibold ${v.estado === "cumplido" ? "text-green-600" : "text-amber-600"}`}>
+            {v.estado === "cumplido" ? "✓ Cumplido" : "Pendiente"}
           </span>
         </Row>
         <Row label="Fecha">

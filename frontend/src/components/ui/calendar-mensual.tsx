@@ -5,13 +5,13 @@ import { todayAR } from "@/lib/date";
 
 export type CalEvent = {
   id: string;
-  tipo: "tarea" | "vencimiento";
+  tipo: "tarea" | "vencimiento" | "movimiento";
   titulo: string;
   hora?: string | null;
   estado?: string;
-  cumplido?: boolean;
+  cumplido?: boolean;  // backward compat
   expediente_id?: string | null;
-  color: "blue" | "purple" | "red" | "amber";
+  color: "blue" | "purple" | "red" | "amber" | "green";
 };
 
 export type DiaInhabil = {
@@ -38,17 +38,19 @@ const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "
 function pad(n: number) { return String(n).padStart(2, "0"); }
 
 const COLOR_CLS: Record<string, string> = {
-  blue: "bg-blue-100 text-blue-800",
+  blue:   "bg-blue-100 text-blue-800",
   purple: "bg-purple-100 text-purple-800",
-  red: "bg-red-100 text-red-800",
-  amber: "bg-amber-100 text-amber-700",
+  red:    "bg-red-100 text-red-800",
+  amber:  "bg-amber-100 text-amber-700",
+  green:  "bg-emerald-100 text-emerald-700",
 };
 
 const DOT_CLS: Record<string, string> = {
-  blue: "bg-blue-400",
+  blue:   "bg-blue-500",
   purple: "bg-purple-400",
-  red: "bg-red-400",
-  amber: "bg-amber-400",
+  red:    "bg-red-500",
+  amber:  "bg-amber-400",
+  green:  "bg-emerald-500",
 };
 
 export function CalendarioMensual({ anio, mes, eventos, inhabiles, onPrevMes, onNextMes, onClickDia, onClickEvento }: Props) {

@@ -11,8 +11,8 @@ class Nota(TenantModel):
     tarea_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("tareas.id", ondelete="CASCADE"), nullable=True, index=True
     )
-    vencimiento_id: Mapped[str | None] = mapped_column(
-        String, ForeignKey("vencimientos.id", ondelete="CASCADE"), nullable=True, index=True
+    movimiento_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("movimientos.id", ondelete="CASCADE"), nullable=True, index=True
     )
     autor_id: Mapped[str | None] = mapped_column(
         String, ForeignKey("users.id"), nullable=True

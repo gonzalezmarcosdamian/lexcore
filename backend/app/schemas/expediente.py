@@ -22,21 +22,23 @@ class AbogadoEnExpedienteOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class MovimientoCreate(BaseModel):
+# ── ActoBitacora (legacy — era Movimiento de bitácora libre) ─────────────────
+
+class ActoBitacoraCreate(BaseModel):
     texto: str
-    fecha_manual: Optional[str] = None  # YYYY-MM-DD override
-    hora_acto: Optional[str] = None     # HH:MM
+    fecha_manual: Optional[str] = None
+    hora_acto: Optional[str] = None
     documento_id: Optional[str] = None
 
 
-class MovimientoUpdate(BaseModel):
+class ActoBitacoraUpdate(BaseModel):
     texto: Optional[str] = None
     fecha_manual: Optional[str] = None
     hora_acto: Optional[str] = None
     documento_id: Optional[str] = None
 
 
-class MovimientoOut(BaseModel):
+class ActoBitacoraOut(BaseModel):
     id: str
     expediente_id: str
     user_id: str
@@ -47,6 +49,49 @@ class MovimientoOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ── Movimiento (era Vencimiento) ──────────────────────────────────────────────
+
+class MovimientoCreate(BaseModel):
+    titulo: str
+    descripcion: Optional[str] = None
+    tipo: str = "vencimiento"
+    fecha: str          # YYYY-MM-DD
+    hora: Optional[str] = None       # HH:MM
+    expediente_id: str
+    estado: str = "pendiente"
+
+
+class MovimientoUpdate(BaseModel):
+    titulo: Optional[str] = None
+    descripcion: Optional[str] = None
+    tipo: Optional[str] = None
+    fecha: Optional[str] = None
+    hora: Optional[str] = None
+    estado: Optional[str] = None
+
+
+class MovimientoOut(BaseModel):
+    id: str
+    tenant_id: str
+    expediente_id: str
+    titulo: str
+    descripcion: Optional[str] = None
+    tipo: str
+    fecha: str
+    hora: Optional[str] = None
+    estado: str
+    google_event_ids: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# Alias backward compat para routers que aún usen VencimientoCreate/Out
+VencimientoCreate = MovimientoCreate
+VencimientoOut = MovimientoOut
 
 
 class ExpedienteCreate(BaseModel):

@@ -67,9 +67,9 @@ function EditVencimientoModal({
   onSaved: (updated: Vencimiento) => void;
   onClose: () => void;
 }) {
-  const [descripcion, setDescripcion] = useState(v.descripcion);
+  const [descripcion, setDescripcion] = useState(v.titulo);
   const [fecha, setFecha] = useState(v.fecha);
-  const [hora, setHora] = useState(v.hora ?? "");
+  const [hora, setHora] = useState((v.hora ?? "") as string || "");
   const [tipo, setTipo] = useState(v.tipo);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -181,14 +181,14 @@ function VencimientoRow({
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const dias = diasHasta(v.fecha);
-  const esUrgente = urgente(v.fecha) && !v.cumplido;
-  const esCercano = !esUrgente && dias >= 0 && dias <= 7 && !v.cumplido;
+  const esUrgente = urgente(v.fecha) && v.estado !== "cumplido";
+  const esCercano = !esUrgente && dias >= 0 && dias <= 7 && v.estado !== "cumplido";
 
   const fecha = new Date(v.fecha + "T00:00:00");
   const dia = fecha.getDate();
   const mes = MESES[fecha.getMonth()].slice(0, 3);
 
-  const badgeColor = v.cumplido
+  const badgeColor = v.estado === "cumplido"
     ? "bg-ink-100 text-ink-400"
     : esUrgente
     ? "bg-red-100 text-red-700"
@@ -197,7 +197,7 @@ function VencimientoRow({
     : "bg-brand-50 text-brand-600";
 
   return (
-    <div className={`group flex items-center gap-4 px-4 py-3.5 ${v.cumplido ? "opacity-60" : ""}`}>
+    <div className={`group flex items-center gap-4 px-4 py-3.5 ${v.estado === "cumplido" ? "opacity-60" : ""}`}>
       {/* Date badge */}
       <div className={`flex-shrink-0 w-12 h-14 rounded-xl flex flex-col items-center justify-center ${badgeColor}`}>
         <span className="text-lg font-bold leading-none">{dia}</span>
@@ -206,8 +206,8 @@ function VencimientoRow({
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <button onClick={() => onDetail(v)} className={`text-sm font-semibold text-left hover:text-brand-600 transition truncate ${v.cumplido ? "line-through text-ink-400" : "text-ink-900"}`}>
-          {v.descripcion}
+        <button onClick={() => onDetail(v)} className={`text-sm font-semibold text-left hover:text-brand-600 transition truncate ${v.estado === "cumplido" ? "line-through text-ink-400" : "text-ink-900"}`}>
+          {v.titulo}
         </button>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TIPO_COLORS[v.tipo] ?? "bg-ink-100 text-ink-500"}`}>
@@ -237,7 +237,7 @@ function VencimientoRow({
         />
       )}
       {/* Actions */}
-      {v.cumplido ? (
+      {v.estado === "cumplido" ? (
         <span className="flex-shrink-0 flex items-center gap-1 text-xs text-green-600 font-semibold">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -363,7 +363,7 @@ export default function VencimientosPage() {
     let lista = vencimientos;
     if (busqueda.trim()) {
       const q = busqueda.toLowerCase();
-      lista = lista.filter((v) => v.descripcion.toLowerCase().includes(q));
+      lista = lista.filter((v) => v.titulo.toLowerCase().includes(q));
     }
     if (tipoFiltro) {
       lista = lista.filter((v) => v.tipo === tipoFiltro);
@@ -397,7 +397,7 @@ export default function VencimientosPage() {
     if (!token) return;
     setMarcando(id);
     try {
-      await api.patch(`/vencimientos/${id}`, { cumplido: true }, token);
+      await api.patch(`/vencimientos/${id}`, { estado: "cumplido" }, token);
       setVencimientos((prev) => prev.filter((v) => v.id !== id));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al marcar cumplido");

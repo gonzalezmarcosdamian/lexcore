@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession, RequireFullAccess
 from app.models.expediente import (
-    Expediente, ExpedienteAbogado, ExpedienteCliente, Movimiento, Vencimiento, RolEnExpediente
+    Expediente, ExpedienteAbogado, ExpedienteCliente, ActoBitacora, Movimiento, RolEnExpediente
 )
 from app.models.user import User
 from app.models.cliente import Cliente
@@ -17,7 +17,7 @@ from app.schemas.expediente import (
     AbogadoEnExpedienteOut, ClienteMin,
     AsignarAbogadoRequest,
     ExpedienteCreate, ExpedienteOut, ExpedienteUpdate,
-    MovimientoCreate, MovimientoOut, MovimientoUpdate,
+    ActoBitacoraCreate, ActoBitacoraOut, ActoBitacoraUpdate,
 )
 
 
@@ -175,43 +175,42 @@ def actualizar_expediente(
 
 # ── Movimientos ──────────────────────────────────────────────────────────────
 
-@router.get("/{expediente_id}/movimientos", response_model=List[MovimientoOut])
-def listar_movimientos(
+@router.get("/{expediente_id}/actos-bitacora", response_model=List[ActoBitacoraOut])
+def listar_actos_bitacora(
     expediente_id: str,
     db: DbSession,
     current_user: CurrentUser,
 ):
     from sqlalchemy import case, func
     _get_expediente(db, expediente_id, current_user["studio_id"])
-    # Ordenar por fecha_manual cuando existe, sino por created_at — cronológico descendente
     return (
-        db.query(Movimiento)
-        .filter(Movimiento.expediente_id == expediente_id)
+        db.query(ActoBitacora)
+        .filter(ActoBitacora.expediente_id == expediente_id)
         .order_by(
             case(
-                (Movimiento.fecha_manual.isnot(None), Movimiento.fecha_manual),
-                else_=func.date(Movimiento.created_at),
+                (ActoBitacora.fecha_manual.isnot(None), ActoBitacora.fecha_manual),
+                else_=func.date(ActoBitacora.created_at),
             ).desc(),
-            Movimiento.hora_acto.desc().nullslast(),
-            Movimiento.created_at.desc(),
+            ActoBitacora.hora_acto.desc().nullslast(),
+            ActoBitacora.created_at.desc(),
         )
         .all()
     )
 
 
 @router.post(
-    "/{expediente_id}/movimientos",
-    response_model=MovimientoOut,
+    "/{expediente_id}/actos-bitacora",
+    response_model=ActoBitacoraOut,
     status_code=status.HTTP_201_CREATED,
 )
-def crear_movimiento(
+def crear_acto_bitacora(
     expediente_id: str,
-    body: MovimientoCreate,
+    body: ActoBitacoraCreate,
     db: DbSession,
     current_user: CurrentUser,
 ):
     _get_expediente(db, expediente_id, current_user["studio_id"])
-    mov = Movimiento(
+    acto = ActoBitacora(
         tenant_id=current_user["studio_id"],
         expediente_id=expediente_id,
         user_id=current_user["sub"],
@@ -220,55 +219,55 @@ def crear_movimiento(
         hora_acto=body.hora_acto,
         documento_id=body.documento_id,
     )
-    db.add(mov)
+    db.add(acto)
     invalidar_resumen(db, expediente_id, current_user["studio_id"])
     db.commit()
-    db.refresh(mov)
-    return mov
+    db.refresh(acto)
+    return acto
 
 
-@router.patch("/{expediente_id}/movimientos/{movimiento_id}", response_model=MovimientoOut)
-def editar_movimiento(
+@router.patch("/{expediente_id}/actos-bitacora/{acto_id}", response_model=ActoBitacoraOut)
+def editar_acto_bitacora(
     expediente_id: str,
-    movimiento_id: str,
-    body: MovimientoUpdate,
+    acto_id: str,
+    body: ActoBitacoraUpdate,
     db: DbSession,
     current_user: CurrentUser,
 ):
     tenant_id = current_user["studio_id"]
     _get_expediente(db, expediente_id, tenant_id)
-    mov = db.query(Movimiento).filter(
-        Movimiento.id == movimiento_id,
-        Movimiento.expediente_id == expediente_id,
-        Movimiento.tenant_id == tenant_id,
+    acto = db.query(ActoBitacora).filter(
+        ActoBitacora.id == acto_id,
+        ActoBitacora.expediente_id == expediente_id,
+        ActoBitacora.tenant_id == tenant_id,
     ).first()
-    if not mov:
-        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    if not acto:
+        raise HTTPException(status_code=404, detail="Acto no encontrado")
     for field, value in body.model_dump(exclude_unset=True).items():
-        setattr(mov, field, value)
+        setattr(acto, field, value)
     from app.models.base import utcnow
-    mov.updated_at = utcnow()
+    acto.updated_at = utcnow()
     db.commit()
-    db.refresh(mov)
-    return mov
+    db.refresh(acto)
+    return acto
 
 
-@router.delete("/{expediente_id}/movimientos/{movimiento_id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_movimiento(
+@router.delete("/{expediente_id}/actos-bitacora/{acto_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_acto_bitacora(
     expediente_id: str,
-    movimiento_id: str,
+    acto_id: str,
     db: DbSession,
     current_user: CurrentUser,
 ):
     tenant_id = current_user["studio_id"]
     _get_expediente(db, expediente_id, tenant_id)
-    mov = db.query(Movimiento).filter(
-        Movimiento.id == movimiento_id,
-        Movimiento.expediente_id == expediente_id,
-        Movimiento.tenant_id == tenant_id,
+    acto = db.query(ActoBitacora).filter(
+        ActoBitacora.id == acto_id,
+        ActoBitacora.expediente_id == expediente_id,
+        ActoBitacora.tenant_id == tenant_id,
     ).first()
-    if not mov:
-        raise HTTPException(status_code=404, detail="Movimiento no encontrado")
+    if not acto:
+        raise HTTPException(status_code=404, detail="Acto no encontrado")
     db.delete(mov)
     db.commit()
 
@@ -391,12 +390,21 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
 
     items: List[ActividadItem] = []
 
-    # Movimientos manuales
-    for m in db.query(Movimiento).filter(Movimiento.expediente_id == expediente_id).all():
+    # Actos de bitácora (legacy entries — tabla actos_bitacora)
+    for m in db.query(ActoBitacora).filter(ActoBitacora.expediente_id == expediente_id).all():
         items.append(ActividadItem(
             id=m.id, tipo="movimiento", subtipo="manual",
             descripcion=m.texto, created_at=m.created_at,
             meta={"fecha_manual": m.fecha_manual, "hora_acto": m.hora_acto},
+        ))
+
+    # Movimientos procesales (nueva entidad — tabla movimientos)
+    for mov in db.query(Movimiento).filter(Movimiento.expediente_id == expediente_id, Movimiento.tenant_id == tenant_id).all():
+        items.append(ActividadItem(
+            id=mov.id, tipo="movimiento_procesal", subtipo=mov.tipo,
+            descripcion=mov.titulo,
+            created_at=mov.created_at,
+            meta={"fecha": mov.fecha, "hora": mov.hora, "tipo": mov.tipo, "estado": mov.estado, "descripcion": mov.descripcion},
         ))
 
     # Honorarios
@@ -415,14 +423,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
                 created_at=p.created_at,
             ))
 
-    # Vencimientos
-    for v in db.query(Vencimiento).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all():
-        items.append(ActividadItem(
-            id=v.id, tipo="vencimiento", subtipo="creado",
-            descripcion=f"Vencimiento: {v.descripcion}",
-            meta={"fecha": str(v.fecha), "hora": str(v.hora) if v.hora else None, "tipo": str(v.tipo), "cumplido": bool(v.cumplido)},
-            created_at=v.created_at,
-        ))
+    # (Movimientos procesales ya procesados arriba)
 
     # Tareas
     for t in db.query(Tarea).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all():
@@ -433,30 +434,29 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             created_at=t.created_at,
         ))
 
-    # Documentos (del expediente + los adjuntos a sus tareas/vencimientos)
+    # Documentos (del expediente + adjuntos a tareas/movimientos)
     tarea_ids = [t.id for t in db.query(Tarea.id).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()]
-    vcto_ids = [v.id for v in db.query(Vencimiento.id).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all()]
+    mov_ids = [m.id for m in db.query(Movimiento.id).filter(Movimiento.expediente_id == expediente_id, Movimiento.tenant_id == tenant_id).all()]
     from sqlalchemy import or_
     doc_filter = [Documento.expediente_id == expediente_id]
     if tarea_ids:
         doc_filter.append(Documento.tarea_id.in_(tarea_ids))
-    if vcto_ids:
-        doc_filter.append(Documento.vencimiento_id.in_(vcto_ids))
-    # Mapa tarea_id -> titulo para contexto de adjuntos
+    if mov_ids:
+        doc_filter.append(Documento.movimiento_id.in_(mov_ids))
     tarea_map = {t.id: t.titulo for t in db.query(Tarea).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()}
-    vcto_map = {v.id: v.descripcion for v in db.query(Vencimiento).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all()}
+    mov_map = {m.id: m.titulo for m in db.query(Movimiento).filter(Movimiento.expediente_id == expediente_id, Movimiento.tenant_id == tenant_id).all()}
 
     for d in db.query(Documento).filter(Documento.tenant_id == tenant_id, or_(*doc_filter)).all():
         nombre_display = d.label or d.nombre
         adjunto_en = None
         if d.tarea_id and d.tarea_id in tarea_map:
             adjunto_en = f"Tarea: {tarea_map[d.tarea_id]}"
-        elif d.vencimiento_id and d.vencimiento_id in vcto_map:
-            adjunto_en = f"Vencimiento: {vcto_map[d.vencimiento_id]}"
+        elif d.movimiento_id and d.movimiento_id in mov_map:
+            adjunto_en = f"Movimiento: {mov_map[d.movimiento_id]}"
         items.append(ActividadItem(
             id=d.id, tipo="documento", subtipo="subido",
             descripcion=nombre_display,
-            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type, "adjunto_en": adjunto_en, "tarea_id": d.tarea_id, "vencimiento_id": d.vencimiento_id},
+            meta={"nombre": d.nombre, "label": d.label, "size_bytes": d.size_bytes, "content_type": d.content_type, "adjunto_en": adjunto_en, "tarea_id": d.tarea_id, "movimiento_id": d.movimiento_id},
             created_at=d.created_at,
         ))
 
@@ -465,6 +465,9 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         if item.tipo == "movimiento" and m.get("fecha_manual"):
             hora = m.get("hora_acto") or "00:00"
             return str(m["fecha_manual"]) + "T" + hora + ":00"
+        if item.tipo == "movimiento_procesal" and m.get("fecha"):
+            hora = str(m.get("hora") or "23:59")
+            return str(m["fecha"]) + "T" + hora + ":00"
         if item.tipo == "vencimiento" and m.get("fecha"):
             hora = str(m.get("hora") or "23:59")
             return str(m["fecha"]) + "T" + hora + ":00"

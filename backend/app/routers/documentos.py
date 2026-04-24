@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 
 from app.core.deps import CurrentUser, DbSession
 from app.models.documento import Documento
-from app.models.expediente import Expediente, Vencimiento
+from app.models.expediente import Expediente, Movimiento
 from app.models.tarea import Tarea
 from app.schemas.documento import DocumentoOut, DocumentoUpdate, DownloadUrlResponse
 from app.services.storage import StorageNotConfigured, generate_download_url, delete_object, upload_file
@@ -34,14 +34,14 @@ async def upload_documento(
     current_user: CurrentUser,
     expediente_id: Optional[str] = Form(None),
     tarea_id: Optional[str] = Form(None),
-    vencimiento_id: Optional[str] = Form(None),
+    movimiento_id: Optional[str] = Form(None),
     descripcion: str = Form(""),
     file: UploadFile = File(...),
 ):
     tenant_id = current_user["studio_id"]
 
-    if not any([expediente_id, tarea_id, vencimiento_id]):
-        raise HTTPException(status_code=400, detail="Debe indicar expediente_id, tarea_id o vencimiento_id")
+    if not any([expediente_id, tarea_id, movimiento_id]):
+        raise HTTPException(status_code=400, detail="Debe indicar expediente_id, tarea_id o movimiento_id")
 
     if expediente_id:
         _get_expediente(expediente_id, tenant_id, db)
@@ -54,7 +54,7 @@ async def upload_documento(
         _, file_key = upload_file(
             file_bytes=file_bytes,
             tenant_id=tenant_id,
-            expediente_id=expediente_id or tarea_id or vencimiento_id or "misc",
+            expediente_id=expediente_id or tarea_id or movimiento_id or "misc",
             filename=file.filename or "archivo",
             content_type=file.content_type or "application/octet-stream",
         )
@@ -65,7 +65,7 @@ async def upload_documento(
         tenant_id=tenant_id,
         expediente_id=expediente_id,
         tarea_id=tarea_id,
-        vencimiento_id=vencimiento_id,
+        movimiento_id=movimiento_id,
         nombre=file.filename or "archivo",
         descripcion=descripcion,
         file_key=file_key,
@@ -85,11 +85,11 @@ def listar_documentos(
     current_user: CurrentUser,
     expediente_id: Optional[str] = None,
     tarea_id: Optional[str] = None,
-    vencimiento_id: Optional[str] = None,
+    movimiento_id: Optional[str] = None,
 ):
     tenant_id = current_user["studio_id"]
-    if not any([expediente_id, tarea_id, vencimiento_id]):
-        raise HTTPException(status_code=400, detail="Debe indicar expediente_id, tarea_id o vencimiento_id")
+    if not any([expediente_id, tarea_id, movimiento_id]):
+        raise HTTPException(status_code=400, detail="Debe indicar expediente_id, tarea_id o movimiento_id")
 
     q = db.query(Documento).filter(Documento.tenant_id == tenant_id)
     if expediente_id:
@@ -97,17 +97,17 @@ def listar_documentos(
             raise HTTPException(status_code=404, detail="Expediente no encontrado")
         # Include docs linked to tareas/vencimientos of this expediente
         tarea_ids = [t.id for t in db.query(Tarea.id).filter(Tarea.expediente_id == expediente_id, Tarea.tenant_id == tenant_id).all()]
-        vcto_ids = [v.id for v in db.query(Vencimiento.id).filter(Vencimiento.expediente_id == expediente_id, Vencimiento.tenant_id == tenant_id).all()]
+        vcto_ids = [v.id for v in db.query(Movimiento.id).filter(Movimiento.expediente_id == expediente_id, Movimiento.tenant_id == tenant_id).all()]
         from sqlalchemy import or_
         q = q.filter(or_(
             Documento.expediente_id == expediente_id,
             Documento.tarea_id.in_(tarea_ids) if tarea_ids else False,
-            Documento.vencimiento_id.in_(vcto_ids) if vcto_ids else False,
+            Documento.movimiento_id.in_(vcto_ids) if vcto_ids else False,
         ))
     elif tarea_id:
         q = q.filter(Documento.tarea_id == tarea_id)
-    elif vencimiento_id:
-        q = q.filter(Documento.vencimiento_id == vencimiento_id)
+    elif movimiento_id:
+        q = q.filter(Documento.movimiento_id == movimiento_id)
 
     return q.order_by(Documento.orden.asc(), Documento.created_at.asc()).all()
 

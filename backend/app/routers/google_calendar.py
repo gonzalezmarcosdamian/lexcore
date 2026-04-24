@@ -28,7 +28,7 @@ from googleapiclient.errors import HttpError
 
 from app.core.config import settings
 from app.core.deps import CurrentUser, DbSession
-from app.models.expediente import Expediente, Vencimiento
+from app.models.expediente import Expediente, Movimiento as Vencimiento
 from app.models.tarea import Tarea, TareaEstado
 from app.models.user import User
 
@@ -294,14 +294,14 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
     # Vencimientos pendientes
     vencimientos = (
         db.query(Vencimiento)
-        .filter(Vencimiento.tenant_id == tenant_id, Vencimiento.cumplido == False)  # noqa: E712
+        .filter(Vencimiento.tenant_id == tenant_id, Vencimiento.estado == "pendiente")  # noqa: E712
         .all()
     )
     for v in vencimientos:
         hora = getattr(v, "hora", None)
         exp_label = _exp_label(v.expediente_id)
         event = {
-            "summary": f"📅 {v.descripcion}",
+            "summary": f"📅 {v.titulo}",
             "description": f"Tipo: {v.tipo}\nExpediente: {exp_label}\nGenerado por LexCore",
             "start": {"date": v.fecha},
             "end": {"date": v.fecha},

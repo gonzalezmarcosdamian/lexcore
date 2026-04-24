@@ -11,7 +11,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.core.config import settings
 from app.core.database import SessionLocal
-from app.routers import auth, clientes, expedientes, vencimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte, admin, feriados, suscripcion, superadmin
+from app.routers import auth, clientes, expedientes, vencimientos, movimientos, invitaciones, honorarios, search, ical, documentos, users, gastos, ingresos, tareas, dev_seed, resumenes, studios, whatsapp, soporte, admin, feriados, suscripcion, superadmin
 from app.routers.google_calendar import router as google_calendar_router, sync_router as calendar_sync_router
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def _job_notificar_urgentes():
     """Runs daily at 9am — sends urgency emails for all tenants."""
-    from app.models.vencimiento import Vencimiento
+    from app.models.expediente import Movimiento as Vencimiento
     from app.models.user import User
     from app.models.expediente import Expediente
     from app.services.email import send_vencimiento_urgente_email
@@ -30,7 +30,7 @@ def _job_notificar_urgentes():
         limite = (date.today() + timedelta(hours=48)).strftime("%Y-%m-%d")
 
         urgentes = db.query(Vencimiento).filter(
-            Vencimiento.cumplido == False,  # noqa: E712
+            Vencimiento.estado == "pendiente",
             Vencimiento.fecha >= hoy,
             Vencimiento.fecha <= limite,
         ).all()
@@ -50,7 +50,7 @@ def _job_notificar_urgentes():
                 caratula = exp.caratula if exp else "Expediente"
                 send_vencimiento_urgente_email(
                     to_emails=emails,
-                    descripcion=v.descripcion,
+                    descripcion=v.titulo,
                     fecha=v.fecha,
                     tipo=v.tipo or "vencimiento",
                     caratula=caratula,
@@ -143,7 +143,8 @@ async def cors_middleware(request: Request, call_next):
 app.include_router(auth.router)
 app.include_router(clientes.router)
 app.include_router(expedientes.router)
-app.include_router(vencimientos.router)
+app.include_router(vencimientos.router)   # backward compat — mantener mientras haya clientes usando /vencimientos
+app.include_router(movimientos.router)
 app.include_router(invitaciones.router)
 app.include_router(honorarios.router)
 app.include_router(search.router)

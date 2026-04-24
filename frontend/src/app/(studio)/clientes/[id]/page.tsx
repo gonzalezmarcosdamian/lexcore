@@ -5,7 +5,7 @@ import { todayAR } from "@/lib/date";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Vencimiento, CuentaCorriente } from "@/lib/api";
+import { api, Cliente, Expediente, TipoCliente, EstadoExpediente, Tarea, Movimiento, CuentaCorriente } from "@/lib/api";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
 
@@ -63,7 +63,7 @@ export default function ClienteDetailPage() {
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   const [tareasPorExp, setTareasPorExp] = useState<Record<string, Tarea[]>>({});
-  const [vencPorExp, setVencPorExp] = useState<Record<string, Vencimiento[]>>({});
+  const [vencPorExp, setVencPorExp] = useState<Record<string, Movimiento[]>>({});
   const [tareasCliente, setTareasCliente] = useState<Tarea[]>([]);
   const [cuentaCorriente, setCuentaCorriente] = useState<CuentaCorriente | null>(null);
   const [editing, setEditing] = useState(false);
@@ -98,16 +98,16 @@ export default function ClienteDetailPage() {
           api.get<Tarea[]>("/tareas", token!, { cliente_id: id }),
           ...(exps.length > 0 ? [
             Promise.all(exps.map(e => api.get<Tarea[]>("/tareas", token!, { expediente_id: e.id }))),
-            Promise.all(exps.map(e => api.get<Vencimiento[]>("/vencimientos", token!, { expediente_id: e.id }))),
+            Promise.all(exps.map(e => api.get<Movimiento[]>("/vencimientos", token!, { expediente_id: e.id }))),
           ] : []),
         ];
         const results = await Promise.all(fetchPromises);
         setTareasCliente(results[0] as Tarea[]);
         if (exps.length > 0) {
           const tareasArr = results[1] as Tarea[][];
-          const vencArr = results[2] as Vencimiento[][];
+          const vencArr = results[2] as Movimiento[][];
           const tMap: Record<string, Tarea[]> = {};
-          const vMap: Record<string, Vencimiento[]> = {};
+          const vMap: Record<string, Movimiento[]> = {};
           exps.forEach((e, i) => { tMap[e.id] = tareasArr[i]; vMap[e.id] = vencArr[i]; });
           setTareasPorExp(tMap);
           setVencPorExp(vMap);
@@ -406,7 +406,7 @@ export default function ClienteDetailPage() {
             ) : (
               <div className="space-y-3">
                 {expedientes.map((exp) => {
-                  const vencsPend = (vencPorExp[exp.id] ?? []).filter(v => !v.cumplido);
+                  const vencsPend = (vencPorExp[exp.id] ?? []).filter(v => v.estado !== "cumplido");
                   const tareasPend = (tareasPorExp[exp.id] ?? []).filter(t => t.estado !== "hecha");
                   return (
                     <div key={exp.id} className="rounded-xl border border-ink-100 overflow-hidden">
@@ -422,9 +422,9 @@ export default function ClienteDetailPage() {
                       {(vencsPend.length > 0 || tareasPend.length > 0) && (
                         <div className="border-t border-ink-50 px-3 py-2 space-y-1 bg-ink-50/30">
                           {vencsPend.slice(0, 3).map(v => (
-                            <button key={v.id} onClick={() => router.push(`/vencimientos/${v.id}`)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
+                            <button key={v.id} onClick={() => router.push(`/movimientos/${v.id}`)} className="w-full flex items-center gap-2 text-left hover:text-brand-600 transition group/item">
                               <span className="w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                              <span className="text-xs text-ink-600 truncate group-hover/item:text-brand-600">{v.descripcion}</span>
+                              <span className="text-xs text-ink-600 truncate group-hover/item:text-brand-600">{v.titulo}</span>
                               <span className="text-[10px] text-ink-400 flex-shrink-0 ml-auto">{new Date(v.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "short" })}</span>
                             </button>
                           ))}

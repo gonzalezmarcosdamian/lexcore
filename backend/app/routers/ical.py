@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
 from app.core.deps import CurrentUser, DbSession
-from app.models.expediente import Expediente, Vencimiento
+from app.models.expediente import Expediente, Movimiento as Vencimiento
 
 router = APIRouter(prefix="/ical", tags=["ical"])
 
@@ -54,7 +54,7 @@ def _make_vcalendar(events: list[str]) -> str:
 def _make_vevent(v: Vencimiento, caratula: str) -> list[str]:
     tipo_label = TIPO_DISPLAY.get(v.tipo, "Evento legal")
     summary = f"[LEXCORE] {tipo_label}: {caratula[:60]}"
-    description = f"Expediente: {caratula}\\nTipo: {tipo_label}\\nDescripción: {v.descripcion}"
+    description = f"Expediente: {caratula}\\nTipo: {tipo_label}\\nDescripción: {v.titulo}"
     fecha_ical = _ical_date(v.fecha)
 
     return [
