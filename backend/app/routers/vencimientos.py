@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession, RequireFullAccess
-from app.models.expediente import Expediente, Vencimiento
+from app.models.expediente import Expediente, Movimiento as Vencimiento
 from app.models.nota import Nota
 from app.models.user import User
 from app.models.base import utcnow
@@ -37,7 +37,7 @@ def listar_vencimientos(
     if expediente_id:
         query = query.filter(Vencimiento.expediente_id == expediente_id)
     if cumplido is not None:
-        query = query.filter(Vencimiento.cumplido == cumplido)
+        query = query.filter(Vencimiento.estado == ("cumplido" if cumplido else "pendiente"))
     if proximos is not None:
         from datetime import date, timedelta
         hoy = date.today().isoformat()
@@ -58,7 +58,6 @@ def crear_vencimiento(
     venc = Vencimiento(
         tenant_id=tenant_id,
         **body.model_dump(),
-        cumplido=False,
     )
     db.add(venc)
     invalidar_resumen(db, body.expediente_id, tenant_id)
@@ -127,7 +126,7 @@ def notificar_vencimientos_urgentes(
 
     urgentes = db.query(Vencimiento).filter(
         Vencimiento.tenant_id == tenant_id,
-        Vencimiento.cumplido == False,  # noqa: E712
+        Vencimiento.estado == "pendiente",  # noqa: E712
         Vencimiento.fecha >= hoy,
         Vencimiento.fecha <= limite,
     ).all()
@@ -145,7 +144,7 @@ def notificar_vencimientos_urgentes(
         caratula = exp.caratula if exp else "Expediente"
         ok = send_vencimiento_urgente_email(
             to_emails=emails,
-            descripcion=v.descripcion,
+            descripcion=v.titulo,
             fecha=v.fecha,
             tipo=v.tipo or "vencimiento",
             caratula=caratula,
@@ -201,7 +200,7 @@ def listar_notas_vencimiento(vencimiento_id: str, db: DbSession, current_user: C
     venc = db.query(Vencimiento).filter(Vencimiento.id == vencimiento_id, Vencimiento.tenant_id == tenant_id).first()
     if not venc:
         raise HTTPException(status_code=404, detail="Vencimiento no encontrado")
-    notas = db.query(Nota).filter(Nota.vencimiento_id == vencimiento_id, Nota.tenant_id == tenant_id).order_by(Nota.created_at.asc()).all()
+    notas = db.query(Nota).filter(Nota.movimiento_id == vencimiento_id, Nota.tenant_id == tenant_id).order_by(Nota.created_at.asc()).all()
     return [NotaOut.from_nota(n) for n in notas]
 
 
@@ -214,7 +213,7 @@ def crear_nota_vencimiento(vencimiento_id: str, body: NotaCreate, db: DbSession,
     user = db.query(User).filter(User.id == current_user["sub"]).first()
     nota = Nota(
         tenant_id=tenant_id,
-        vencimiento_id=vencimiento_id,
+        movimiento_id=vencimiento_id,
         autor_id=current_user["sub"],
         autor_nombre=user.full_name if user else None,
         texto=body.texto.strip(),
@@ -228,7 +227,7 @@ def crear_nota_vencimiento(vencimiento_id: str, body: NotaCreate, db: DbSession,
 @router.delete("/{vencimiento_id}/notas/{nota_id}", status_code=204)
 def eliminar_nota_vencimiento(vencimiento_id: str, nota_id: str, db: DbSession, current_user: CurrentUser):
     tenant_id = current_user["studio_id"]
-    nota = db.query(Nota).filter(Nota.id == nota_id, Nota.vencimiento_id == vencimiento_id, Nota.tenant_id == tenant_id).first()
+    nota = db.query(Nota).filter(Nota.id == nota_id, Nota.movimiento_id == vencimiento_id, Nota.tenant_id == tenant_id).first()
     if not nota:
         raise HTTPException(status_code=404, detail="Nota no encontrada")
     db.delete(nota)

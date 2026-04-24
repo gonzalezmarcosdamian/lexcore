@@ -140,7 +140,7 @@ def exportar_expediente(
         .filter(
             Vencimiento.expediente_id == expediente_id,
             Vencimiento.tenant_id == tenant_id,
-            Vencimiento.cumplido == False,
+            Vencimiento.estado == "pendiente",
         )
         .all()
     )
@@ -171,7 +171,7 @@ def exportar_proximos(
         db.query(Vencimiento)
         .filter(
             Vencimiento.tenant_id == tenant_id,
-            Vencimiento.cumplido == False,
+            Vencimiento.estado == "pendiente",
             Vencimiento.fecha >= hoy,
             Vencimiento.fecha <= limite,
         )
