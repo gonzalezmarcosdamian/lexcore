@@ -268,7 +268,7 @@ def eliminar_acto_bitacora(
     ).first()
     if not acto:
         raise HTTPException(status_code=404, detail="Acto no encontrado")
-    db.delete(mov)
+    db.delete(acto)
     db.commit()
 
 

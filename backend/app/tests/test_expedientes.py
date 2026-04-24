@@ -58,39 +58,39 @@ class TestExpedientesCRUD:
 class TestMovimientos:
     def test_agregar_movimiento(self, client, auth_a):
         eid = create_expediente(client, auth_a).json()["id"]
-        r = client.post(f"/expedientes/{eid}/movimientos",
+        r = client.post(f"/expedientes/{eid}/actos-bitacora",
                         json={"texto": "Se presentó escrito"}, headers=auth_a)
         assert r.status_code == 201
         assert r.json()["texto"] == "Se presentó escrito"
 
     def test_listar_movimientos(self, client, auth_a):
         eid = create_expediente(client, auth_a).json()["id"]
-        client.post(f"/expedientes/{eid}/movimientos", json={"texto": "Mov 1"}, headers=auth_a)
-        client.post(f"/expedientes/{eid}/movimientos", json={"texto": "Mov 2"}, headers=auth_a)
-        r = client.get(f"/expedientes/{eid}/movimientos", headers=auth_a)
+        client.post(f"/expedientes/{eid}/actos-bitacora", json={"texto": "Mov 1"}, headers=auth_a)
+        client.post(f"/expedientes/{eid}/actos-bitacora", json={"texto": "Mov 2"}, headers=auth_a)
+        r = client.get(f"/expedientes/{eid}/actos-bitacora", headers=auth_a)
         assert len(r.json()) == 2
 
     def test_movimiento_con_fecha_manual(self, client, auth_a):
         eid = create_expediente(client, auth_a).json()["id"]
-        r = client.post(f"/expedientes/{eid}/movimientos",
+        r = client.post(f"/expedientes/{eid}/actos-bitacora",
                         json={"texto": "Audiencia", "fecha_manual": "2025-03-15"}, headers=auth_a)
         assert r.status_code == 201
         assert r.json()["fecha_manual"] == "2025-03-15"
 
     def test_editar_movimiento_texto(self, client, auth_a):
         eid = create_expediente(client, auth_a).json()["id"]
-        mid = client.post(f"/expedientes/{eid}/movimientos",
+        mid = client.post(f"/expedientes/{eid}/actos-bitacora",
                           json={"texto": "Original"}, headers=auth_a).json()["id"]
-        r = client.patch(f"/expedientes/{eid}/movimientos/{mid}",
+        r = client.patch(f"/expedientes/{eid}/actos-bitacora/{mid}",
                          json={"texto": "Editado"}, headers=auth_a)
         assert r.status_code == 200
         assert r.json()["texto"] == "Editado"
 
     def test_editar_movimiento_fecha_manual(self, client, auth_a):
         eid = create_expediente(client, auth_a).json()["id"]
-        mid = client.post(f"/expedientes/{eid}/movimientos",
+        mid = client.post(f"/expedientes/{eid}/actos-bitacora",
                           json={"texto": "Mov"}, headers=auth_a).json()["id"]
-        r = client.patch(f"/expedientes/{eid}/movimientos/{mid}",
+        r = client.patch(f"/expedientes/{eid}/actos-bitacora/{mid}",
                          json={"fecha_manual": "2025-06-01"}, headers=auth_a)
         assert r.status_code == 200
         assert r.json()["fecha_manual"] == "2025-06-01"
@@ -98,32 +98,32 @@ class TestMovimientos:
 
     def test_editar_movimiento_ajeno_404(self, client, auth_a, auth_b):
         eid = create_expediente(client, auth_a).json()["id"]
-        mid = client.post(f"/expedientes/{eid}/movimientos",
+        mid = client.post(f"/expedientes/{eid}/actos-bitacora",
                           json={"texto": "Mov"}, headers=auth_a).json()["id"]
-        r = client.patch(f"/expedientes/{eid}/movimientos/{mid}",
+        r = client.patch(f"/expedientes/{eid}/actos-bitacora/{mid}",
                          json={"texto": "hack"}, headers=auth_b)
         assert r.status_code == 404
 
     def test_eliminar_movimiento(self, client, auth_a):
         eid = create_expediente(client, auth_a).json()["id"]
-        mid = client.post(f"/expedientes/{eid}/movimientos",
+        mid = client.post(f"/expedientes/{eid}/actos-bitacora",
                           json={"texto": "Borrar esto"}, headers=auth_a).json()["id"]
-        r = client.delete(f"/expedientes/{eid}/movimientos/{mid}", headers=auth_a)
+        r = client.delete(f"/expedientes/{eid}/actos-bitacora/{mid}", headers=auth_a)
         assert r.status_code == 204
         # ya no aparece en la lista
-        movs = client.get(f"/expedientes/{eid}/movimientos", headers=auth_a).json()
+        movs = client.get(f"/expedientes/{eid}/actos-bitacora", headers=auth_a).json()
         assert all(m["id"] != mid for m in movs)
 
     def test_eliminar_movimiento_ajeno_404(self, client, auth_a, auth_b):
         eid = create_expediente(client, auth_a).json()["id"]
-        mid = client.post(f"/expedientes/{eid}/movimientos",
+        mid = client.post(f"/expedientes/{eid}/actos-bitacora",
                           json={"texto": "Mov"}, headers=auth_a).json()["id"]
-        r = client.delete(f"/expedientes/{eid}/movimientos/{mid}", headers=auth_b)
+        r = client.delete(f"/expedientes/{eid}/actos-bitacora/{mid}", headers=auth_b)
         assert r.status_code == 404
 
     def test_movimiento_sin_acceso_a_expediente_ajeno(self, client, auth_a, auth_b):
         eid = create_expediente(client, auth_a).json()["id"]
-        r = client.post(f"/expedientes/{eid}/movimientos",
+        r = client.post(f"/expedientes/{eid}/actos-bitacora",
                         json={"texto": "hack"}, headers=auth_b)
         assert r.status_code == 404
 
