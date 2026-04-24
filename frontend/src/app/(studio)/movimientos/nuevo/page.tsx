@@ -105,9 +105,9 @@ function NuevoMovimientoInner() {
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 space-y-6 pb-28">
       <div className="flex items-center gap-3">
-        <Link href="/agenda" className="text-ink-400 hover:text-ink-600 transition">
+        <button onClick={() => router.back()} className="text-ink-400 hover:text-ink-600 transition">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
-        </Link>
+        </button>
         <h1 className="text-xl font-bold text-ink-900">Nuevo movimiento procesal</h1>
       </div>
 
@@ -220,9 +220,7 @@ function NuevoMovimientoInner() {
         )}
 
         <div className="flex gap-3 pt-2">
-          <Link href="/agenda" className="flex-1 text-center text-sm font-semibold border border-ink-200 text-ink-600 px-4 py-3 rounded-xl hover:bg-ink-50 transition">
-            Cancelar
-          </Link>
+          <button type="button" onClick={() => router.back()} className="flex-1 text-center text-sm font-semibold border border-ink-200 text-ink-600 px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
           <button
             type="submit"
             disabled={saving}
