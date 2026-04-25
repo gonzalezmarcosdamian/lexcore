@@ -407,7 +407,7 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
             meta={"fecha": mov.fecha, "hora": mov.hora, "tipo": mov.tipo, "estado": mov.estado, "descripcion": mov.descripcion},
         ))
 
-    # Honorarios — ordenar por fecha_acuerdo, no created_at
+    # Honorarios — ordenar por fecha_vencimiento (o fecha_acuerdo si no tiene vencimiento)
     for h in db.query(Honorario).filter(Honorario.expediente_id == expediente_id, Honorario.tenant_id == tenant_id).all():
         items.append(ActividadItem(
             id=h.id, tipo="honorario", subtipo="creado",
@@ -501,8 +501,10 @@ def actividad_expediente(expediente_id: str, db: DbSession, current_user: Curren
         if item.tipo == "tarea" and m.get("fecha_limite"):
             hora = str(m.get("hora") or "23:59")
             return str(m["fecha_limite"]) + "T" + hora + ":00"
-        if item.tipo == "honorario" and m.get("fecha_acuerdo"):
-            return str(m["fecha_acuerdo"]) + "T12:00:00"
+        if item.tipo == "honorario":
+            fecha = m.get("fecha_vencimiento") or m.get("fecha_acuerdo")
+            if fecha:
+                return str(fecha) + "T12:00:00"
         if item.tipo == "pago" and m.get("fecha_pago"):
             return str(m["fecha_pago"]) + "T12:00:00"
         # Documentos sin padre: usar created_at
