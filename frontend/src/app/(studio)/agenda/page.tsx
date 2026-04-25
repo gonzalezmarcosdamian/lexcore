@@ -865,7 +865,16 @@ export default function AgendaPage() {
       fecha_limite: t.fecha_limite!,
       color: (esVencida(t.fecha_limite!) ? "red" : "blue") as CalEvent["color"],
     })),
-  ], [vencimientos, tareas]);
+    ...honorariosProximos
+      .filter(h => h.fecha_vencimiento && h.saldo_pendiente > 0)
+      .map(h => ({
+        id: h.id,
+        tipo: "tarea" as const,
+        titulo: `💰 ${h.concepto}`,
+        fecha: h.fecha_vencimiento!,
+        color: "green" as CalEvent["color"],
+      })),
+  ], [vencimientos, tareas, honorariosProximos]);
 
   const handlePrevMes = () => {
     if (calMes === 1) { setCalMes(12); setCalAnio(a => a - 1); }
