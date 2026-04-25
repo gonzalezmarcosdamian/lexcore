@@ -1285,12 +1285,57 @@ export default function AgendaPage() {
 
         {/* Calendario desktop */}
         {vista === "calendario" && (
-          <CalendarioMensual
-            anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
-            onPrevMes={handlePrevMes} onNextMes={handleNextMes}
-            onClickDia={handleClickDia}
-            onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
-          />
+          <>
+            <CalendarioMensual
+              anio={calAnio} mes={calMes} eventos={eventosCalendario} inhabiles={inhabiles}
+              onPrevMes={handlePrevMes} onNextMes={handleNextMes}
+              onClickDia={handleClickDia}
+              onClickEvento={(ev) => router.push(`/${ev.tipo === "tarea" ? "tareas" : "vencimientos"}/${ev.id}`)}
+            />
+            {honorariosProximos.filter(h => {
+              if (!h.fecha_vencimiento) return false;
+              const d = new Date(h.fecha_vencimiento + "T12:00:00");
+              return d.getFullYear() === calAnio && d.getMonth() + 1 === calMes && h.saldo_pendiente > 0;
+            }).length > 0 && (
+              <div className="bg-white border border-emerald-100 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-emerald-50 flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">Cobros pendientes</span>
+                  <span className="text-xs text-ink-400">
+                    {honorariosProximos.filter(h => {
+                      if (!h.fecha_vencimiento) return false;
+                      const d = new Date(h.fecha_vencimiento + "T12:00:00");
+                      return d.getFullYear() === calAnio && d.getMonth() + 1 === calMes && h.saldo_pendiente > 0;
+                    }).length}
+                  </span>
+                </div>
+                <div className="divide-y divide-ink-50">
+                  {honorariosProximos.filter(h => {
+                    if (!h.fecha_vencimiento) return false;
+                    const d = new Date(h.fecha_vencimiento + "T12:00:00");
+                    return d.getFullYear() === calAnio && d.getMonth() + 1 === calMes && h.saldo_pendiente > 0;
+                  }).map(h => {
+                    const diff = (new Date(h.fecha_vencimiento! + "T12:00:00").getTime() - Date.now()) / 86400000;
+                    const urgent = diff < 0;
+                    const soon = diff >= 0 && diff <= 7;
+                    return (
+                      <div key={h.id} className="px-4 py-3 flex items-center gap-3">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${urgent ? "bg-red-500" : soon ? "bg-orange-400" : "bg-emerald-500"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-ink-900 truncate">{h.concepto}</p>
+                          <p className="text-xs text-ink-400">
+                            Saldo: {h.moneda === "ARS" ? "$" : "U$D"} {Number(h.saldo_pendiente).toLocaleString("es-AR")}
+                            {` · Vence ${new Date(h.fecha_vencimiento! + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}`}
+                          </p>
+                        </div>
+                        {urgent && <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">VENCIDO</span>}
+                        {soon && !urgent && <span className="text-[10px] font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-full">PRÓXIMO</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Tablero desktop */}
@@ -1307,22 +1352,14 @@ export default function AgendaPage() {
                 onDetailVenc={(v) => router.push(`/movimientos/${v.id}`)}
                 onDetailTarea={(t) => router.push(`/tareas/${t.id}`)}
               />
-              {(() => {
-                const cobrosVisibles = vista === "calendario"
-                  ? honorariosProximos.filter(h => {
-                      if (!h.fecha_vencimiento) return false;
-                      const d = new Date(h.fecha_vencimiento + "T12:00:00");
-                      return d.getFullYear() === calAnio && d.getMonth() + 1 === calMes;
-                    })
-                  : honorariosProximos;
-                return cobrosVisibles.length > 0 && (
+              {honorariosProximos.length > 0 && (
                 <div className="bg-white border border-emerald-100 rounded-2xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-emerald-50 flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">Cobros pendientes</span>
-                    <span className="text-xs text-ink-400">{cobrosVisibles.length}</span>
+                    <span className="text-xs text-ink-400">{honorariosProximos.length}</span>
                   </div>
                   <div className="divide-y divide-ink-50">
-                    {cobrosVisibles.map(h => {
+                    {honorariosProximos.map(h => {
                       const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
                       const urgent = diff < 0;
                       const soon = diff >= 0 && diff <= 7;
@@ -1343,8 +1380,7 @@ export default function AgendaPage() {
                     })}
                   </div>
                 </div>
-                );
-              })()}
+              )}
             </>
           )
         )}
