@@ -1670,7 +1670,53 @@ Panel privado exclusivo para el operador de LexCore. Permite gestionar precios, 
 
 ---
 
-## Historial completadas
+## Dev Efficiency — Mantenimiento y escalabilidad con foco en token efficiency
+
+> **Contexto:** A medida que LexCore crece, el costo de cada sesión de desarrollo sube porque Claude Code carga más contexto. Estas historias reducen ese costo atacando la densidad del código, la observabilidad y el contrato entre frontend y backend.
+
+### DEVEFF-001 · Extraer `_sort_key` de actividad a servicio dedicado — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** S
+- **Problema:** `actividad_expediente` en `routers/expedientes.py` tiene >130 líneas de lógica de ordenamiento mezclada con la construcción de items. Cada fix (como el de `fecha_vencimiento`) requiere leer todo el router para entender el contexto.
+- **Fix:** Mover `_sort_key` + construcción de `ActividadItem` a `services/actividad.py`. El router queda como orquestador fino.
+- **Ganancia:** Archivos más chicos = menos tokens por sesión. Tests unitarios de la lógica de ordenamiento sin levantar el router completo.
+
+### DEVEFF-002 · Tipado estricto en `meta` de `ActividadItem` — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** M
+- **Problema:** `meta` es `dict` libre. Cada vez que se agrega un campo (ej: `fecha_vencimiento`) hay que rastrear todos los lugares que lo usan. Sin contrato explícito = errores silenciosos y contexto extra necesario para entender el impacto.
+- **Fix:** Crear `HonorarioMeta`, `PagoMeta`, `TareaMeta`, etc. como `TypedDict` o Pydantic `BaseModel`. `ActividadItem.meta` pasa a ser `Union[HonorarioMeta, PagoMeta, ...]`.
+- **Ganancia:** Claude puede entender el contrato leyendo solo el schema, sin rastrear todos los callers.
+
+### DEVEFF-003 · Generar tipos TypeScript desde schemas Pydantic — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** M
+- **Problema:** `frontend/src/lib/api.ts` tiene tipos duplicados a mano (ej: `ActividadItem`, `Honorario`, `Expediente`). Cada cambio de schema en backend requiere actualizar manualmente el frontend — fuente permanente de bugs y de contexto extra para verificar consistencia.
+- **Fix:** Integrar `pydantic2ts` o `datamodel-code-generator` en el pipeline. Script `npm run gen-types` genera `src/types/api.generated.ts` desde los schemas Pydantic.
+- **Ganancia:** Fuente única de verdad. Elimina una categoría entera de bugs. Claude no necesita comparar backend y frontend para verificar consistencia.
+
+### DEVEFF-004 · CLAUDE.md por carpeta en `/routers` y `/components/features` — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** S
+- **Problema:** El CLAUDE.md raíz describe todo el proyecto. Al trabajar en un router específico, Claude carga contexto de toda la arquitectura cuando solo necesita las convenciones del dominio puntual.
+- **Fix:** Agregar `backend/app/routers/CLAUDE.md` (convenciones de endpoints, validación de tenant, patrones de error) y `frontend/src/components/features/CLAUDE.md` (convenciones de componentes de dominio). Claude Code carga el CLAUDE.md más cercano al archivo en edición.
+- **Ganancia:** Menos tokens de contexto por sesión en tareas focalizadas.
+
+### DEVEFF-005 · Logs estructurados en backend con request_id — `idea`
+- **Prioridad:** P1 | **Esfuerzo:** M
+- **Problema:** Los logs actuales son texto plano (`print` + uvicorn default). En producción (Railway) es imposible correlacionar qué logs corresponden a qué request sin buscar manualmente por timestamp.
+- **Fix:** Middleware que inyecta `request_id` (UUID) en cada request. Logger estructurado (JSON) con campos `request_id`, `studio_id`, `user_id`, `path`, `duration_ms`. Compatible con Railway log drain.
+- **Ganancia:** Debugging en prod en segundos en lugar de minutos. Claude puede analizar logs sin necesitar contexto extra del código.
+
+### DEVEFF-006 · Snapshot de PRODUCTO.md en contexto de sesión — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** S
+- **Problema:** Al arrancar una sesión, hay que leer `PRODUCTO.md` (largo) + `BACKLOG.md` (muy largo) para saber en qué estado está el producto. Alto costo de tokens en el arranque de cada sesión.
+- **Fix:** Hook `UserPromptSubmit` que inyecta automáticamente un resumen de 10 líneas del estado del producto (versión actual, sprint activo, próximas 3 historias) extraído de `PRODUCTO.md`. El hook ya existe — extenderlo.
+- **Ganancia:** Arranca cada sesión con contexto justo, sin cargar documentos completos.
+
+### DEVEFF-007 · Memo de BACKLOG comprimido para Claude — `idea`
+- **Prioridad:** P2 | **Esfuerzo:** S
+- **Problema:** `BACKLOG.md` supera los 38.000 tokens. Cargarlo completo para tareas de planificación consume una fracción significativa del contexto disponible.
+- **Fix:** Mantener un `docs/backlog/BACKLOG_SUMMARY.md` — un índice comprimido de máx. 200 líneas con ID, título, estado y prioridad de cada historia. El CLAUDE.md apunta a este archivo para tareas de planificación; el BACKLOG completo se lee solo cuando se necesita el detalle.
+- **Ganancia:** ~10x menos tokens para tareas de planificación y sprint planning.
+
+---
 
 | ID | Historia | Sprint | Fecha |
 |----|----------|--------|-------|
