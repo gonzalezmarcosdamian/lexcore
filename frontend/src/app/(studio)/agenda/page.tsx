@@ -1006,13 +1006,11 @@ export default function AgendaPage() {
               <button onClick={() => setVista("tablero")} className={`px-2.5 py-1.5 transition ${vista === "tablero" ? "bg-brand-600 text-white" : "bg-white text-ink-500"}`}>Lista</button>
               <button onClick={() => setVista("calendario")} className={`px-2.5 py-1.5 transition ${vista === "calendario" ? "bg-brand-600 text-white" : "bg-white text-ink-500"}`}>Cal.</button>
             </div>
-            <button onClick={() => router.push("/tareas/nueva")} className="flex items-center gap-1 text-xs font-bold bg-blue-600 text-white px-2.5 py-2 rounded-lg transition active:scale-95">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-              Tarea
+            <button onClick={() => router.push("/tareas/nueva")} className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-lg transition active:scale-95" title="Nueva tarea">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
             </button>
-            <button onClick={() => router.push("/movimientos/nuevo")} className="flex items-center gap-1 text-xs font-bold bg-orange-600 text-white px-2.5 py-2 rounded-lg transition active:scale-95">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
-              Mov.
+            <button onClick={() => router.push("/movimientos/nuevo")} className="flex items-center justify-center w-8 h-8 bg-orange-600 text-white rounded-lg transition active:scale-95" title="Nuevo movimiento">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/></svg>
             </button>
           </div>
         </div>
