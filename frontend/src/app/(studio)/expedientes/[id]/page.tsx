@@ -1032,7 +1032,7 @@ export default function ExpedienteDetailPage() {
                 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
                 const grupos: { key: string; label: string; items: ActividadItem[] }[] = [];
                 for (const item of feedItems) {
-                  const fecha = (item.meta as any)?.fecha || (item.meta as any)?.fecha_acuerdo || (item.meta as any)?.fecha_pago || (item.meta as any)?.fecha_limite || item.created_at?.slice?.(0,10);
+                  const fecha = (item.meta as any)?.fecha || (item.meta as any)?.fecha_vencimiento || (item.meta as any)?.fecha_acuerdo || (item.meta as any)?.fecha_pago || (item.meta as any)?.fecha_limite || item.created_at?.slice?.(0,10);
                   const d = fecha ? new Date(String(fecha).slice(0,10) + "T12:00:00") : new Date(item.created_at);
                   const key = isNaN(d.getTime()) ? "sin-fecha" : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
                   const label = isNaN(d.getTime()) ? "Sin fecha" : `${MESES[d.getMonth()]} ${d.getFullYear()}`;
