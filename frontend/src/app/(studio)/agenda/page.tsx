@@ -1015,34 +1015,37 @@ export default function AgendaPage() {
           </div>
         </div>
 
-        {/* Row 2 mobile: control compacto en una sola barra */}
+        {/* Row 2 mobile: filtros en 2 filas */}
         {vista === "tablero" && !loading && (
-          <div className="flex items-center gap-1.5 bg-white border border-ink-100 rounded-xl px-2.5 py-2 shadow-sm overflow-x-auto" style={{scrollbarWidth:"none"}}>
-            <PeriodSelector value={periodoValue} onChange={setPeriodoValue} compact />
-            <div className="w-px h-4 bg-ink-100 flex-shrink-0" />
-            <select value={filtroTipoVenc} onChange={e => setFiltroTipoVenc(e.target.value)}
-              className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none flex-shrink-0 min-w-[90px]">
-              <option value="">Mov: Todos</option>
-              <option value="vencimiento">Venc. procesal</option>
-              <option value="audiencia">Audiencia</option>
-              <option value="presentacion">Presentación</option>
-              <option value="pericia">Pericia</option>
-              <option value="acto_procesal">Acto Procesal</option>
-              <option value="otro">Otro</option>
-            </select>
-            <select value={filtroTipoTarea} onChange={e => setFiltroTipoTarea(e.target.value)}
-              className="text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none flex-shrink-0 min-w-[90px]">
-              <option value="">Tareas: Todas</option>
-              <option value="judicial">Judicial</option>
-              <option value="extrajudicial">Extrajudicial</option>
-              <option value="administrativa">Administrativa</option>
-              <option value="operativa">Operativa</option>
-            </select>
-            <button onClick={() => setFiltroParalizado(p => !p)}
-              className={`flex-shrink-0 p-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-700 border-blue-300" : "border-ink-200 text-ink-400"}`}
-              title="Paralizadas">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-            </button>
+          <div className="bg-white border border-ink-100 rounded-xl px-2.5 py-2 shadow-sm space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <PeriodSelector value={periodoValue} onChange={setPeriodoValue} compact />
+              <button onClick={() => setFiltroParalizado(p => !p)}
+                className={`ml-auto flex-shrink-0 p-1.5 rounded-lg border transition ${filtroParalizado ? "bg-blue-100 text-blue-700 border-blue-300" : "border-ink-200 text-ink-400"}`}
+                title="Paralizadas">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
+              </button>
+            </div>
+            <div className="flex gap-1.5">
+              <select value={filtroTipoVenc} onChange={e => setFiltroTipoVenc(e.target.value)}
+                className="flex-1 text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none min-w-0">
+                <option value="">Mov: Todos</option>
+                <option value="vencimiento">Venc. procesal</option>
+                <option value="audiencia">Audiencia</option>
+                <option value="presentacion">Presentación</option>
+                <option value="pericia">Pericia</option>
+                <option value="acto_procesal">Acto Procesal</option>
+                <option value="otro">Otro</option>
+              </select>
+              <select value={filtroTipoTarea} onChange={e => setFiltroTipoTarea(e.target.value)}
+                className="flex-1 text-xs border border-ink-200 rounded-lg px-2 py-1.5 bg-white text-ink-700 focus:outline-none min-w-0">
+                <option value="">Tareas: Todas</option>
+                <option value="judicial">Judicial</option>
+                <option value="extrajudicial">Extrajudicial</option>
+                <option value="administrativa">Administrativa</option>
+                <option value="operativa">Operativa</option>
+              </select>
+            </div>
           </div>
         )}
 
