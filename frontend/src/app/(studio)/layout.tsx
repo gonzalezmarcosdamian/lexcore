@@ -602,7 +602,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Page content */}
-        <main className="flex-1 px-4 lg:px-6 py-6">{children}</main>
+        <main className="flex-1 px-4 lg:px-6 py-6 overflow-x-hidden">{children}</main>
       </div>
 
       {/* Help widget — floating, siempre presente cuando hay sesión */}
