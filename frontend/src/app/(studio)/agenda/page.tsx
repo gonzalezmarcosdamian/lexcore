@@ -1139,14 +1139,22 @@ export default function AgendaPage() {
         )}
 
         {/* Cobros pendientes — mobile */}
-        {honorariosProximos.length > 0 && (
+        {(() => {
+          const cobrosVisibles = vista === "calendario"
+            ? honorariosProximos.filter(h => {
+                if (!h.fecha_vencimiento) return false;
+                const d = new Date(h.fecha_vencimiento + "T12:00:00");
+                return d.getFullYear() === calAnio && d.getMonth() + 1 === calMes;
+              })
+            : honorariosProximos;
+          return cobrosVisibles.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wide text-emerald-600">Cobros pendientes</span>
               <div className="flex-1 h-px bg-emerald-100" />
-              <span className="text-xs text-ink-300">{honorariosProximos.length}</span>
+              <span className="text-xs text-ink-300">{cobrosVisibles.length}</span>
             </div>
-            {honorariosProximos.map(h => {
+            {cobrosVisibles.map(h => {
               const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
               const urgent = diff < 0;
               const soon = diff >= 0 && diff <= 7;
@@ -1168,7 +1176,8 @@ export default function AgendaPage() {
               );
             })}
           </div>
-        )}
+          );
+        })()}
 
         {/* Detail sheets — mobile only */}
         {mobileDetailTarea && token && (
@@ -1298,14 +1307,22 @@ export default function AgendaPage() {
                 onDetailVenc={(v) => router.push(`/movimientos/${v.id}`)}
                 onDetailTarea={(t) => router.push(`/tareas/${t.id}`)}
               />
-              {honorariosProximos.length > 0 && (
+              {(() => {
+                const cobrosVisibles = vista === "calendario"
+                  ? honorariosProximos.filter(h => {
+                      if (!h.fecha_vencimiento) return false;
+                      const d = new Date(h.fecha_vencimiento + "T12:00:00");
+                      return d.getFullYear() === calAnio && d.getMonth() + 1 === calMes;
+                    })
+                  : honorariosProximos;
+                return cobrosVisibles.length > 0 && (
                 <div className="bg-white border border-emerald-100 rounded-2xl overflow-hidden">
                   <div className="px-4 py-3 border-b border-emerald-50 flex items-center justify-between">
                     <span className="text-xs font-bold uppercase tracking-wide text-emerald-700">Cobros pendientes</span>
-                    <span className="text-xs text-ink-400">{honorariosProximos.length}</span>
+                    <span className="text-xs text-ink-400">{cobrosVisibles.length}</span>
                   </div>
                   <div className="divide-y divide-ink-50">
-                    {honorariosProximos.map(h => {
+                    {cobrosVisibles.map(h => {
                       const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
                       const urgent = diff < 0;
                       const soon = diff >= 0 && diff <= 7;
@@ -1326,7 +1343,8 @@ export default function AgendaPage() {
                     })}
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </>
           )
         )}
