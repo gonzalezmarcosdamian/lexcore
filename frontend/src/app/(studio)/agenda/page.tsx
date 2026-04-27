@@ -922,8 +922,8 @@ export default function AgendaPage() {
         const totalDia = vDia.length + tDia.length;
         const labelDia = new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end bg-black/40" onClick={() => setDiaPickerFecha(null)}>
-            <div className="bg-white w-full sm:w-96 h-full sm:h-auto sm:max-h-[90vh] sm:rounded-l-2xl shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={() => setDiaPickerFecha(null)}>
+            <div className="bg-white w-full sm:w-96 sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-ink-100">
                 <div>

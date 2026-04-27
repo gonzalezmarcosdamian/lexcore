@@ -67,6 +67,30 @@ def listar_clientes(
     return query.order_by(Cliente.nombre).all()
 
 
+def _check_documento_duplicado(db, tenant_id: str, dni: str | None, cuit: str | None, excluir_id: str | None = None):
+    """Lanza 422 si ya existe un cliente activo con el mismo DNI o CUIT en el tenant."""
+    if dni:
+        q = db.query(Cliente).filter(
+            Cliente.tenant_id == tenant_id,
+            Cliente.archivado == False,  # noqa: E712
+            Cliente.dni == dni,
+        )
+        if excluir_id:
+            q = q.filter(Cliente.id != excluir_id)
+        if q.first():
+            raise HTTPException(status_code=422, detail=f"Ya existe un cliente activo con DNI {dni}")
+    if cuit:
+        q = db.query(Cliente).filter(
+            Cliente.tenant_id == tenant_id,
+            Cliente.archivado == False,  # noqa: E712
+            Cliente.cuit == cuit,
+        )
+        if excluir_id:
+            q = q.filter(Cliente.id != excluir_id)
+        if q.first():
+            raise HTTPException(status_code=422, detail=f"Ya existe un cliente activo con CUIT {cuit}")
+
+
 @router.post("", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)
 def crear_cliente(
     body: ClienteCreate,
@@ -74,6 +98,7 @@ def crear_cliente(
     current_user: CurrentUser,
 ):
     tenant_id = current_user["studio_id"]
+    _check_documento_duplicado(db, tenant_id, body.dni, body.cuit)
     cliente = Cliente(
         tenant_id=tenant_id,
         **body.model_dump(),
@@ -115,7 +140,14 @@ def actualizar_cliente(
     ).first()
     if not cliente:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
-    for field, value in body.model_dump(exclude_unset=True).items():
+    data = body.model_dump(exclude_unset=True)
+    _check_documento_duplicado(
+        db, tenant_id,
+        dni=data.get("dni"),
+        cuit=data.get("cuit"),
+        excluir_id=cliente_id,
+    )
+    for field, value in data.items():
         setattr(cliente, field, value)
     cliente.updated_at = utcnow()
     db.commit()
