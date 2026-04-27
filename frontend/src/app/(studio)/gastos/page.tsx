@@ -230,9 +230,7 @@ export default function ContablePage() {
       .finally(() => { setLoadingIngresos(false); setIngresosFetched(true); });
   }, [token, mes, anio, vistaAnual]);
 
-  useEffect(() => {
-    if (tab === "ingresos") fetchIngresos();
-  }, [tab, fetchIngresos]);
+  useEffect(() => { fetchIngresos(); }, [fetchIngresos]);
 
   // Derived
   const recurrentes = gastos.filter((g) => g.plantilla_id);
@@ -471,24 +469,22 @@ export default function ContablePage() {
       {/* ── Barra de control unificada ── */}
       <div className="bg-white border border-ink-100 rounded-2xl shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 flex-wrap gap-3">
-          {/* Tabs izquierda */}
-          <div className="flex gap-1 bg-ink-100 rounded-xl p-1">
+          {/* CTAs izquierda */}
+          <div className="flex gap-2">
             <button
-              onClick={() => setTab("periodo")}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition ${tab === "periodo" ? "bg-white text-red-600 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+              onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoTipo("puntual"); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
+              className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-sm font-semibold transition shadow-sm"
             >
-              <span className="text-base">↓</span>
-              Egresos
-              {pendientesCount > 0 && (
-                <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-red-500 text-white rounded-full">{pendientesCount}</span>
-              )}
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              <span>↓ Egreso</span>
+              {pendientesCount > 0 && <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-white/30 rounded-full">{pendientesCount}</span>}
             </button>
             <button
-              onClick={() => setTab("ingresos")}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition ${tab === "ingresos" ? "bg-white text-green-600 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+              onClick={() => { setShowIngresoForm(true); setEditingIngresoId(null); setIngresoForm({ ...EMPTY_INGRESO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
+              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl px-3 py-2 text-sm font-semibold transition shadow-sm"
             >
-              <span className="text-base">↑</span>
-              Ingresos
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+              <span>↑ Ingreso</span>
             </button>
           </div>
 
@@ -562,45 +558,26 @@ export default function ContablePage() {
         </div>
       </div>
 
-      {/* ══ TAB: PERÍODO ══ */}
-      {tab === "periodo" && (
-        <div className="space-y-5">
+      {/* ══ EGRESOS + INGRESOS ══ */}
+      <div className="space-y-8">
 
-          {/* Acciones */}
-          <div className="flex items-center justify-end gap-2">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
-                {sortOpen && (
-                  <SortModal
-                    options={GASTO_SORT_OPTIONS}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
-                    onClose={() => setSortOpen(false)}
-                  />
-                )}
-              </div>
-              <button
-                onClick={() => setShowPlantillasPanel(true)}
-                className="flex items-center gap-1.5 border border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl px-3 py-2.5 text-sm font-medium transition"
-                title="Gestionar gastos recurrentes"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <span className="hidden sm:inline">Recurrentes</span>
-                {plantillas.length > 0 && <span className="text-xs text-ink-400">({plantillas.length})</span>}
-              </button>
-              <button
-                onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoTipo("puntual"); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
-                className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                Nuevo egreso
-              </button>
+          {/* Acciones egresos */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider flex items-center gap-2">
+              ↓ Egresos
+              {pendientesCount > 0 && <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-600 rounded-full">{pendientesCount} pendientes</span>}
+            </h2>
+            <div className="relative">
+              <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
+              {sortOpen && (
+                <SortModal
+                  options={GASTO_SORT_OPTIONS}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
+                  onClose={() => setSortOpen(false)}
+                />
+              )}
             </div>
           </div>
 
@@ -754,33 +731,10 @@ export default function ContablePage() {
               )}
             </div>
           </section>
-        </div>
-      )}
 
-      {/* ══ TAB: INGRESOS ══ */}
-      {tab === "ingresos" && (
-        <div className="space-y-5">
-
-          {/* Nav de mes (reutiliza el mismo mes/anio que egresos) */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={goPrev} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-              </button>
-              <span className="text-base font-semibold text-ink-900 capitalize min-w-[160px] text-center">{periodoLabel(mes, anio)}</span>
-              <button onClick={goNext} disabled={isCurrentMonth} className="p-2 rounded-xl border border-ink-200 hover:bg-ink-50 text-ink-600 transition disabled:opacity-30">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-              </button>
-              {!isCurrentMonth && <button onClick={() => { setMes(hoy.getMonth() + 1); setAnio(hoy.getFullYear()); }} className="text-xs text-brand-600 hover:text-brand-700 font-medium">Hoy</button>}
-            </div>
-            <button
-              onClick={() => { setShowIngresoForm(true); setEditingIngresoId(null); setIngresoForm({ ...EMPTY_INGRESO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              Registrar ingreso
-            </button>
-          </div>
+        {/* ══ INGRESOS ══ */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider">↑ Ingresos</h2>
 
           {/* Totales */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -841,7 +795,7 @@ export default function ContablePage() {
             )}
           </div>
         </div>
-      )}
+      </div>{/* fin space-y-8 */}
 
       {/* ══ MODAL: Gasto puntual ══ */}
       {showGastoForm && (
