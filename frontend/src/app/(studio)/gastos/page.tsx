@@ -476,7 +476,7 @@ export default function ContablePage() {
               className="flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white rounded-xl px-3 py-2 text-sm font-semibold transition shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              <span>↓ Egreso</span>
+              <span>Egreso</span>
               {pendientesCount > 0 && <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-white/30 rounded-full">{pendientesCount}</span>}
             </button>
             <button
@@ -484,7 +484,7 @@ export default function ContablePage() {
               className="flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white rounded-xl px-3 py-2 text-sm font-semibold transition shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-              <span>↑ Ingreso</span>
+              <span>Ingreso</span>
             </button>
           </div>
 
@@ -564,7 +564,7 @@ export default function ContablePage() {
           {/* Acciones egresos */}
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider flex items-center gap-2">
-              ↓ Egresos
+              Egresos
               {pendientesCount > 0 && <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-600 rounded-full">{pendientesCount} pendientes</span>}
             </h2>
             <div className="relative">
@@ -734,7 +734,7 @@ export default function ContablePage() {
 
         {/* ══ INGRESOS ══ */}
         <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider">↑ Ingresos</h2>
+          <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider">Ingresos</h2>
 
           {/* Totales */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
