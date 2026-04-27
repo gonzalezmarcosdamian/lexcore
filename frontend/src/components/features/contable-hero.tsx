@@ -30,6 +30,13 @@ function fmt(n: number) {
   return `$${Math.abs(n).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
 }
 
+function fmtCompacto(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `$${(abs / 1_000_000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`;
+  if (abs >= 1_000) return `$${(abs / 1_000).toLocaleString("es-AR", { maximumFractionDigits: 0 })}K`;
+  return `$${abs.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+}
+
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const ingresos = payload.find((p: any) => p.dataKey === "ingresos_ars")?.value ?? 0;
@@ -172,37 +179,37 @@ export function ContableHero({ token }: ContableHeroProps) {
 
       {/* KPIs */}
       <div className="grid grid-cols-3 border-t border-ink-100 divide-x divide-ink-100">
-        <div className="px-4 py-3">
-          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">
+        <div className="px-2 sm:px-4 py-3">
+          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5 truncate">
             Resultado {periodo}M
           </p>
           {loading ? (
-            <div className="h-5 w-20 bg-ink-100 rounded animate-pulse" />
+            <div className="h-5 w-16 bg-ink-100 rounded animate-pulse" />
           ) : (
-            <p className={`text-base font-bold ${resultado >= 0 ? "text-green-700" : "text-red-600"}`}>
-              {resultado >= 0 ? "+" : "-"}{fmt(resultado)}
+            <p className={`text-sm sm:text-base font-bold truncate ${resultado >= 0 ? "text-green-700" : "text-red-600"}`}>
+              {resultado >= 0 ? "+" : "-"}{fmtCompacto(resultado)}
             </p>
           )}
         </div>
-        <div className="px-4 py-3">
-          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">Mayor egreso</p>
+        <div className="px-2 sm:px-4 py-3">
+          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5 truncate">Mayor egreso</p>
           {loading ? (
-            <div className="h-5 w-16 bg-ink-100 rounded animate-pulse" />
+            <div className="h-5 w-14 bg-ink-100 rounded animate-pulse" />
           ) : mesMaxEgreso && mesMaxEgreso.egresos_ars > 0 ? (
-            <p className="text-base font-bold text-ink-900">
+            <p className="text-sm sm:text-base font-bold text-ink-900 truncate">
               {mesMaxEgreso.label}
-              <span className="text-xs font-normal text-ink-400 ml-1">{fmt(mesMaxEgreso.egresos_ars)}</span>
+              <span className="text-xs font-normal text-ink-400 ml-1">{fmtCompacto(mesMaxEgreso.egresos_ars)}</span>
             </p>
           ) : (
             <p className="text-sm text-ink-400">—</p>
           )}
         </div>
-        <div className="px-4 py-3">
-          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5">vs mes anterior</p>
+        <div className="px-2 sm:px-4 py-3">
+          <p className="text-[10px] text-ink-400 uppercase tracking-wide mb-0.5 truncate">vs mes ant.</p>
           {loading ? (
-            <div className="h-5 w-14 bg-ink-100 rounded animate-pulse" />
+            <div className="h-5 w-12 bg-ink-100 rounded animate-pulse" />
           ) : tendencia ? (
-            <p className={`text-base font-bold ${tendencia.sube ? "text-green-700" : "text-red-600"}`}>
+            <p className={`text-sm sm:text-base font-bold ${tendencia.sube ? "text-green-700" : "text-red-600"}`}>
               {tendencia.sube ? "↑" : "↓"} {tendencia.pct}%
             </p>
           ) : (
