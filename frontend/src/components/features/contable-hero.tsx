@@ -90,16 +90,23 @@ export function ContableHero({ token }: ContableHeroProps) {
   const totalEgresos = datos.reduce((s, d) => s + d.egresos_ars, 0);
   const resultado = totalIngresos - totalEgresos;
 
-  const mesMaxEgreso = datos.length
-    ? datos.reduce((a, b) => (b.egresos_ars > a.egresos_ars ? b : a))
-    : null;
+  const mesMaxEgreso = (() => {
+    if (!datos.length) return null;
+    const m = datos.reduce((a, b) => (b.egresos_ars > a.egresos_ars ? b : a));
+    return m.egresos_ars > 0 ? m : null;
+  })();
 
   const tendencia = (() => {
     if (datos.length < 2) return null;
     const ultimo = datos[datos.length - 1].resultado_ars;
     const anterior = datos[datos.length - 2].resultado_ars;
+    // Sin datos en ambos meses — no hay tendencia útil
+    if (anterior === 0 && ultimo === 0) return null;
+    // Mes anterior sin datos — comparar contra 0 no tiene sentido
     if (anterior === 0) return null;
     const pct = ((ultimo - anterior) / Math.abs(anterior)) * 100;
+    // Cambio menor a 1% — no mostrar tendencia para evitar ruido
+    if (Math.abs(pct) < 1) return null;
     return { pct: Math.abs(pct).toFixed(0), sube: ultimo >= anterior };
   })();
 
