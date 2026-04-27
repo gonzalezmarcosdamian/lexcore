@@ -2,6 +2,7 @@
 Router de honorarios.
 Maneja honorarios acordados + pagos recibidos por expediente.
 """
+from datetime import date
 from decimal import Decimal
 from typing import List
 

@@ -150,6 +150,7 @@ export default function ContablePage() {
   const [gastoTipo, setGastoTipo] = useState<"puntual" | "recurrente">("puntual");
   const [showMesPicker, setShowMesPicker] = useState(false);
   const [pickerAnio, setPickerAnio] = useState(hoy.getFullYear());
+  const [verTodos, setVerTodos] = useState(false);
   const [showPlantillaForm, setShowPlantillaForm] = useState(false);
   const [showPlantillasPanel, setShowPlantillasPanel] = useState(false);
   const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
@@ -613,11 +614,15 @@ export default function ContablePage() {
             return fb.localeCompare(fa);
           });
 
+          const PREVIEW = 5;
+          const visibles = verTodos ? items : items.slice(0, PREVIEW);
+          const hayMas = items.length > PREVIEW;
+
           return (
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
               {/* Header con sort */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-ink-50">
-                <p className="text-sm font-semibold text-ink-700">Movimientos del período</p>
+                <p className="text-sm font-semibold text-ink-700">Movimientos del período <span className="text-ink-400 font-normal text-xs">({items.length})</span></p>
                 <div className="relative">
                   <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
                   {sortOpen && (
@@ -644,7 +649,7 @@ export default function ContablePage() {
                 </div>
               ) : (
                 <div className="divide-y divide-ink-50">
-                  {items.map((item) => {
+                  {visibles.map((item) => {
                     if (item.kind === "gasto") {
                       const g = item.data;
                       const cfg = ESTADO_CONFIG[g.estado];
@@ -710,6 +715,16 @@ export default function ContablePage() {
                       );
                     }
                   })}
+                </div>
+              )}
+              {hayMas && (
+                <div className="border-t border-ink-50 px-4 py-3 text-center">
+                  <button
+                    onClick={() => setVerTodos((v) => !v)}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    {verTodos ? "Ver menos ↑" : `Ver todos (${items.length}) →`}
+                  </button>
                 </div>
               )}
             </div>
