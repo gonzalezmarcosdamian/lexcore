@@ -138,7 +138,7 @@ export function ContableHero({ token }: ContableHeroProps) {
       </div>
 
       {/* Gráfico */}
-      <div className="px-2 pt-1 pb-2">
+      <div className="px-1 sm:px-2 pt-1 pb-2">
         {loading ? (
           <div className="h-48 flex items-center justify-center">
             <div className="flex gap-1">

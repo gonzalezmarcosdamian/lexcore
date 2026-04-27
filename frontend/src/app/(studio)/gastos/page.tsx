@@ -590,27 +590,27 @@ export default function ContablePage() {
           </div>
 
           {/* Totales del período */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total ARS</p>
-              <p className="text-xl font-bold text-ink-900">
-                {loadingGastos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `$ ${confirmadosARS.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm grid grid-cols-3 divide-x divide-ink-100">
+            <div className="px-3 py-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">ARS</p>
+              <p className="text-sm sm:text-xl font-bold text-ink-900 truncate">
+                {loadingGastos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `$${confirmadosARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}
               </p>
-              <p className="text-xs text-ink-400 mt-0.5">confirmados</p>
+              <p className="text-[10px] text-ink-400 mt-0.5 hidden sm:block">confirmados</p>
             </div>
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total USD</p>
-              <p className="text-xl font-bold text-ink-900">
-                {loadingGastos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `U$D ${confirmadosUSD.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}
+            <div className="px-3 py-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">USD</p>
+              <p className="text-sm sm:text-xl font-bold text-ink-900 truncate">
+                {loadingGastos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `U$D${confirmadosUSD.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}
               </p>
-              <p className="text-xs text-ink-400 mt-0.5">confirmados</p>
+              <p className="text-[10px] text-ink-400 mt-0.5 hidden sm:block">confirmados</p>
             </div>
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Pendientes</p>
-              <p className={`text-xl font-bold ${pendientesCount > 0 ? "text-red-600" : "text-green-600"}`}>
-                {loadingGastos ? <span className="inline-block w-10 h-6 bg-ink-100 rounded animate-pulse" /> : pendientesCount}
+            <div className="px-3 py-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">Pendientes</p>
+              <p className={`text-sm sm:text-xl font-bold truncate ${pendientesCount > 0 ? "text-red-600" : "text-green-600"}`}>
+                {loadingGastos ? <span className="inline-block w-6 h-5 bg-ink-100 rounded animate-pulse" /> : pendientesCount}
               </p>
-              <p className="text-xs text-ink-400 mt-0.5">por confirmar</p>
+              <p className="text-[10px] text-ink-400 mt-0.5 hidden sm:block">por confirmar</p>
             </div>
           </div>
 
@@ -745,18 +745,18 @@ export default function ContablePage() {
           <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider">Ingresos</h2>
 
           {/* Totales */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total ARS</p>
-              <p className="text-xl font-bold text-green-700">{loadingIngresos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `$ ${ingresosARS.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}</p>
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm grid grid-cols-3 divide-x divide-ink-100">
+            <div className="px-3 py-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">ARS</p>
+              <p className="text-sm sm:text-xl font-bold text-green-700 truncate">{loadingIngresos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `$${ingresosARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}</p>
             </div>
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Total USD</p>
-              <p className="text-xl font-bold text-green-700">{loadingIngresos ? <span className="inline-block w-24 h-6 bg-ink-100 rounded animate-pulse" /> : `U$D ${ingresosUSD.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`}</p>
+            <div className="px-3 py-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">USD</p>
+              <p className="text-sm sm:text-xl font-bold text-green-700 truncate">{loadingIngresos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `U$D${ingresosUSD.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}</p>
             </div>
-            <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4">
-              <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-1">Registros</p>
-              <p className="text-xl font-bold text-ink-900">{loadingIngresos ? <span className="inline-block w-10 h-6 bg-ink-100 rounded animate-pulse" /> : ingresos.length}</p>
+            <div className="px-3 py-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">Registros</p>
+              <p className="text-sm sm:text-xl font-bold text-ink-900 truncate">{loadingIngresos ? <span className="inline-block w-6 h-5 bg-ink-100 rounded animate-pulse" /> : ingresos.length}</p>
             </div>
           </div>
 
