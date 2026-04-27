@@ -916,40 +916,94 @@ export default function AgendaPage() {
         <EditTareaModal t={editingT} token={token} expedientes={expedientes} onSaved={(u) => { setTareas(prev => prev.map(x => x.id === u.id ? u : x)); setEditingT(null); }} onClose={() => setEditingT(null)} />
       )}
 
-      {diaPickerFecha && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setDiaPickerFecha(null)}>
-          <div className="bg-white rounded-2xl shadow-xl p-5 w-full max-w-xs" onClick={e => e.stopPropagation()}>
-            <p className="text-sm font-semibold text-ink-800 mb-1">
-              {new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
-            </p>
-            <p className="text-xs text-ink-400 mb-4">¿Qué querés agregar?</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  const fecha = diaPickerFecha ?? "";
-                  setDiaPickerFecha(null);
-                  router.push(`/tareas/nueva${fecha ? `?fecha=${fecha}` : ""}`);
-                }}
-                className="flex-1 flex flex-col items-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl py-4 transition"
-              >
-                <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                <span className="text-xs font-semibold text-blue-700">Tarea</span>
-              </button>
-              <button
-                onClick={() => {
-                  const fecha = diaPickerFecha ?? "";
-                  setDiaPickerFecha(null);
-                  router.push(`/movimientos/nuevo${fecha ? `?fecha=${fecha}` : ""}`);
-                }}
-                className="flex-1 flex flex-col items-center gap-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-xl py-4 transition"
-              >
-                <svg className="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span className="text-xs font-semibold text-orange-700">Movimiento</span>
-              </button>
+      {diaPickerFecha && (() => {
+        const vDia = vFiltradas.filter(v => v.fecha === diaPickerFecha);
+        const tDia = tFiltradas.filter(t => t.fecha_limite === diaPickerFecha);
+        const totalDia = vDia.length + tDia.length;
+        const labelDia = new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end bg-black/40" onClick={() => setDiaPickerFecha(null)}>
+            <div className="bg-white w-full sm:w-96 h-full sm:h-auto sm:max-h-[90vh] sm:rounded-l-2xl shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-ink-100">
+                <div>
+                  <p className="text-base font-semibold text-ink-900 capitalize">{labelDia}</p>
+                  <p className="text-xs text-ink-400 mt-0.5">{totalDia === 0 ? "Sin eventos" : `${totalDia} evento${totalDia > 1 ? "s" : ""}`}</p>
+                </div>
+                <button onClick={() => setDiaPickerFecha(null)} className="text-ink-400 hover:text-ink-600 p-1">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              {/* CTAs */}
+              <div className="flex gap-2 px-5 py-3 border-b border-ink-50">
+                <button
+                  onClick={() => { setDiaPickerFecha(null); router.push(`/tareas/nueva?fecha=${diaPickerFecha}`); }}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded-xl py-2.5 text-sm font-semibold transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Tarea
+                </button>
+                <button
+                  onClick={() => { setDiaPickerFecha(null); router.push(`/movimientos/nuevo?fecha=${diaPickerFecha}`); }}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 rounded-xl py-2.5 text-sm font-semibold transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                  Movimiento
+                </button>
+              </div>
+
+              {/* Eventos del día */}
+              <div className="flex-1 overflow-y-auto">
+                {totalDia === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-ink-400">
+                    <svg className="w-10 h-10 mb-2 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <p className="text-sm">Sin eventos para este día</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-ink-50">
+                    {/* Vencimientos */}
+                    {vDia.map(v => (
+                      <button key={v.id} onClick={() => { setDiaPickerFecha(null); router.push(`/movimientos/${v.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition">
+                        <div className="flex items-start gap-3">
+                          <span className="mt-1 w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-ink-900 truncate">{v.titulo}</p>
+                            <p className="text-xs text-ink-400 mt-0.5">
+                              {v.hora ? v.hora.slice(0, 5) : "Todo el día"} · Vencimiento
+                              {v.tipo && v.tipo !== "vencimiento" ? ` · ${v.tipo}` : ""}
+                            </p>
+                          </div>
+                          {(v.fecha <= new Date().toISOString().slice(0, 10) && v.estado !== "cumplido") ? (
+                            <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Urgente</span>
+                          ) : null}
+                        </div>
+                      </button>
+                    ))}
+                    {/* Tareas */}
+                    {tDia.map(t => (
+                      <button key={t.id} onClick={() => { setDiaPickerFecha(null); router.push(`/tareas/${t.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition">
+                        <div className="flex items-start gap-3">
+                          <span className="mt-1 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-ink-900 truncate">{t.titulo}</p>
+                            <p className="text-xs text-ink-400 mt-0.5">
+                              {t.hora ? t.hora.slice(0, 5) : "Sin hora"} · Tarea · {t.estado === "pendiente" ? "Pendiente" : t.estado === "en_curso" ? "En curso" : "Hecha"}
+                            </p>
+                          </div>
+                          {t.fecha_limite && t.fecha_limite < new Date().toISOString().slice(0, 10) && t.estado !== "hecha" ? (
+                            <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Vencida</span>
+                          ) : null}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal Nuevo Vencimiento */}
       {showVencimientoModal && (

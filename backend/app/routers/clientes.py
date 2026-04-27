@@ -240,3 +240,28 @@ def archivar_cliente(
     cliente.archivado = True
     cliente.updated_at = utcnow()
     db.commit()
+
+
+@router.delete("/{cliente_id}/eliminar", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_cliente_permanente(
+    cliente_id: str,
+    db: DbSession,
+    current_user: CurrentUser,
+):
+    """Elimina el cliente permanentemente. Desvincula expedientes (cliente_id → NULL)."""
+    tenant_id = current_user["studio_id"]
+    cliente = db.query(Cliente).filter(
+        Cliente.id == cliente_id,
+        Cliente.tenant_id == tenant_id,
+    ).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    # Desvincular expedientes: set cliente_id = NULL en lugar de cascade delete
+    db.query(Expediente).filter(
+        Expediente.tenant_id == tenant_id,
+        Expediente.cliente_id == cliente_id,
+    ).update({"cliente_id": None}, synchronize_session=False)
+
+    db.delete(cliente)
+    db.commit()

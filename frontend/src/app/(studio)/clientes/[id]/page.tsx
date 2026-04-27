@@ -83,6 +83,8 @@ export default function ClienteDetailPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmArchivar, setConfirmArchivar] = useState(false);
+  const [confirmEliminar, setConfirmEliminar] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -172,6 +174,18 @@ export default function ClienteDetailPage() {
     }
   };
 
+  const handleEliminar = async () => {
+    if (!token) return;
+    setEliminando(true);
+    try {
+      await api.delete(`/clientes/${id}/eliminar`, token);
+      router.push("/clientes");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error al eliminar");
+      setEliminando(false);
+    }
+  };
+
   const handleCancelEdit = () => {
     if (!cliente) return;
     setForm({
@@ -223,6 +237,35 @@ export default function ClienteDetailPage() {
           onCancel={() => setConfirmArchivar(false)}
         />
       )}
+      {confirmEliminar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Eliminar cliente permanentemente</p>
+                <p className="text-xs text-ink-500 mt-0.5">Esta acción no se puede deshacer</p>
+              </div>
+            </div>
+            {expedientes.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <p className="text-xs text-amber-800 font-medium">
+                  ⚠️ Este cliente tiene <strong>{expedientes.length} expediente{expedientes.length > 1 ? "s" : ""}</strong>. Los expedientes se conservan pero quedarán sin cliente asociado.
+                </p>
+              </div>
+            )}
+            <p className="text-sm text-ink-600">¿Seguro que querés eliminar a <strong>{cliente?.nombre}</strong>?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmEliminar(false)} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+              <button onClick={() => { setConfirmEliminar(false); handleEliminar(); }} disabled={eliminando} className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition disabled:opacity-50">
+                {eliminando ? "Eliminando…" : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs mb-3">
         <Link href="/clientes" className="text-ink-400 hover:text-ink-600 transition">Clientes</Link>
@@ -252,11 +295,14 @@ export default function ClienteDetailPage() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 <span className="hidden sm:inline">Editar</span>
               </button>
-              {!cliente.archivado && (
-                <button onClick={() => setConfirmArchivar(true)} className="border border-red-100 text-red-600 hover:bg-red-50 rounded-xl px-3 py-1.5 text-sm font-medium transition hidden sm:block">
+              {!cliente.archivado && (<>
+                <button onClick={() => setConfirmEliminar(true)} className="border border-red-200 text-red-700 hover:bg-red-50 rounded-xl px-3 py-1.5 text-sm font-medium transition hidden sm:block">
+                  Eliminar
+                </button>
+                <button onClick={() => setConfirmArchivar(true)} className="border border-ink-200 text-ink-600 hover:bg-ink-50 rounded-xl px-3 py-1.5 text-sm font-medium transition hidden sm:block">
                   Archivar
                 </button>
-              )}
+              </>)}
             </div>
           )}
         </div>
