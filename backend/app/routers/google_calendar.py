@@ -337,5 +337,38 @@ def sync_calendar(db: DbSession, current_user: CurrentUser):
         else:
             errors += 1
 
-    total = len(vencimientos) + len(tareas)
+    # Honorarios pendientes de cobro con fecha_vencimiento
+    from app.models.honorario import Honorario, Moneda as MonedaHon
+    honorarios_pend = (
+        db.query(Honorario)
+        .filter(
+            Honorario.tenant_id == tenant_id,
+            Honorario.fecha_vencimiento.isnot(None),
+        )
+        .all()
+    )
+    for h in honorarios_pend:
+        # Solo incluir si tiene saldo pendiente
+        pagos_misma = [p for p in h.pagos if p.moneda == h.moneda]
+        from decimal import Decimal as Dec
+        total_pago = sum((p.importe for p in pagos_misma), Dec("0"))
+        saldo = h.monto_acordado - total_pago
+        if saldo <= 0:
+            continue
+        exp_label = _exp_label(getattr(h, "expediente_id", None))
+        simbolo = "$" if h.moneda == MonedaHon.ARS else "U$D"
+        monto_fmt = f"{simbolo} {float(saldo):,.0f}".replace(",", ".")
+        event = {
+            "summary": f"💰 Cobrar: {h.concepto}",
+            "description": f"Honorario a cobrar\nMonto: {monto_fmt}\nExpediente: {exp_label}\nGenerado por LexCore",
+            "start": {"date": h.fecha_vencimiento},
+            "end": {"date": h.fecha_vencimiento},
+            "reminders": _reminders(h.fecha_vencimiento, None),
+        }
+        if _insert_event(service, cal_id, event):
+            synced += 1
+        else:
+            errors += 1
+
+    total = len(vencimientos) + len(tareas) + len(honorarios_pend)
     return {"synced": synced, "errors": errors, "total": total}

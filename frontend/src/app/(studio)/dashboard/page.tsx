@@ -263,15 +263,38 @@ export default function DashboardPage() {
             onDeleteT={handleDeleteTarea}
           />
 
+          {/* ── Cobros de HOY ── */}
+          {honorariosProximos.filter(h => h.fecha_vencimiento === today).length > 0 && (
+            <div className="bg-emerald-600 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 flex items-center gap-2">
+                <span className="text-lg">💰</span>
+                <p className="text-sm font-semibold text-white">Hoy tenés que cobrar</p>
+              </div>
+              <div className="divide-y divide-emerald-500 bg-emerald-700/30">
+                {honorariosProximos.filter(h => h.fecha_vencimiento === today).map(h => (
+                  <div key={h.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{h.concepto}</p>
+                      <p className="text-xs text-emerald-200 truncate">{(h as any).expediente_numero ?? ""}</p>
+                    </div>
+                    <span className="text-sm font-bold text-white flex-shrink-0">
+                      {h.moneda === "ARS" ? "$" : "U$D"} {Number(h.saldo_pendiente).toLocaleString("es-AR")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ── Cobros próximos ── */}
-          {honorariosProximos.length > 0 && (
+          {honorariosProximos.filter(h => h.fecha_vencimiento !== today).length > 0 && (
             <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-emerald-50 flex items-center justify-between">
                 <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Cobros próximos</p>
                 <span className="text-xs text-ink-400">{honorariosProximos.length}</span>
               </div>
               <div className="divide-y divide-ink-50">
-                {honorariosProximos.slice(0, 5).map(h => {
+                {honorariosProximos.filter(h => h.fecha_vencimiento !== today).slice(0, 5).map(h => {
                   const diff = h.fecha_vencimiento ? (new Date(h.fecha_vencimiento + "T12:00:00").getTime() - Date.now()) / 86400000 : 999;
                   const urgent = diff < 0;
                   const soon = diff >= 0 && diff <= 7;
