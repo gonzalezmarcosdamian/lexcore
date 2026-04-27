@@ -56,7 +56,7 @@ def resumen_honorarios(db: DbSession, current_user: CurrentUser):
 
     res = HonorarioResumen()
     exp_con_deuda = set()
-    hoy_str = hoy.isoformat()
+    hoy_str = date.today().isoformat()
 
     for h in honorarios:
         pagos_misma = [p for p in h.pagos if p.moneda == h.moneda]
