@@ -146,6 +146,9 @@ export default function ContablePage() {
   // UI state
   const [tab, setTab] = useState<"periodo" | "ingresos">("periodo");
   const [showGastoForm, setShowGastoForm] = useState(false);
+  const [gastoTipo, setGastoTipo] = useState<"puntual" | "recurrente">("puntual");
+  const [showMesPicker, setShowMesPicker] = useState(false);
+  const [pickerAnio, setPickerAnio] = useState(hoy.getFullYear());
   const [showPlantillaForm, setShowPlantillaForm] = useState(false);
   const [showPlantillasPanel, setShowPlantillasPanel] = useState(false);
   const [editingGastoId, setEditingGastoId] = useState<string | null>(null);
@@ -211,6 +214,12 @@ export default function ContablePage() {
 
   useEffect(() => { fetchGastos(); }, [fetchGastos]);
   useEffect(() => { fetchPlantillas(); }, [fetchPlantillas]);
+  useEffect(() => {
+    if (!showMesPicker) return;
+    const handler = () => setShowMesPicker(false);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [showMesPicker]);
 
   const fetchIngresos = useCallback(() => {
     if (!token) return;
@@ -349,6 +358,7 @@ export default function ContablePage() {
         setPlantillas((prev) => [...prev, created]);
       }
       setShowPlantillaForm(false);
+      setShowGastoForm(false);
       setEditingPlantillaId(null);
       setPlantillaForm(EMPTY_PLANTILLA_FORM);
     } catch (e: unknown) {
@@ -494,9 +504,51 @@ export default function ContablePage() {
               <button onClick={goPrev} className="p-1.5 rounded-lg hover:bg-ink-50 text-ink-500 transition">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
               </button>
-              <span className="text-sm font-semibold text-ink-900 min-w-[110px] text-center capitalize">
-                {vistaAnual ? String(anio) : periodoLabel(mes, anio)}
-              </span>
+              {/* Label clickeable → picker de mes/año */}
+              <div className="relative">
+                <button
+                  onClick={() => { setPickerAnio(anio); setShowMesPicker((v) => !v); }}
+                  className="text-sm font-semibold text-ink-900 min-w-[110px] text-center capitalize hover:text-brand-600 transition px-1 py-0.5 rounded-lg hover:bg-brand-50"
+                >
+                  {vistaAnual ? String(anio) : periodoLabel(mes, anio)} ▾
+                </button>
+                {showMesPicker && !vistaAnual && (
+                  <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 bg-white rounded-2xl shadow-xl border border-ink-100 p-3 w-56" onClick={(e) => e.stopPropagation()}>
+                    {/* Selector de año */}
+                    <div className="flex items-center justify-between mb-3">
+                      <button onClick={() => setPickerAnio((y) => y - 1)} className="p-1 rounded-lg hover:bg-ink-50 text-ink-500 transition">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                      </button>
+                      <span className="text-sm font-bold text-ink-900">{pickerAnio}</span>
+                      <button onClick={() => setPickerAnio((y) => Math.min(y + 1, hoy.getFullYear()))} disabled={pickerAnio >= hoy.getFullYear()} className="p-1 rounded-lg hover:bg-ink-50 text-ink-500 transition disabled:opacity-30">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                      </button>
+                    </div>
+                    {/* Grilla de meses */}
+                    <div className="grid grid-cols-4 gap-1">
+                      {["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"].map((m, i) => {
+                        const mNum = i + 1;
+                        const esFuturo = pickerAnio === hoy.getFullYear() && mNum > hoy.getMonth() + 1;
+                        const esActual = mNum === mes && pickerAnio === anio;
+                        return (
+                          <button
+                            key={m}
+                            disabled={esFuturo}
+                            onClick={() => { setMes(mNum); setAnio(pickerAnio); setShowMesPicker(false); }}
+                            className={`py-1.5 rounded-lg text-xs font-semibold transition ${
+                              esActual ? "bg-brand-600 text-white" :
+                              esFuturo ? "text-ink-200 cursor-default" :
+                              "hover:bg-brand-50 text-ink-700 hover:text-brand-600"
+                            }`}
+                          >
+                            {m}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button onClick={goNext} disabled={!vistaAnual && isCurrentMonth} className="p-1.5 rounded-lg hover:bg-ink-50 text-ink-500 transition disabled:opacity-30">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
               </button>
@@ -541,13 +593,13 @@ export default function ContablePage() {
                 {plantillas.length > 0 && <span className="text-xs text-ink-400">({plantillas.length})</span>}
               </button>
               <button
-                onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
+                onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoTipo("puntual"); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
                 className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition shadow-sm"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                Nuevo gasto
+                Nuevo egreso
               </button>
             </div>
           </div>
@@ -658,7 +710,7 @@ export default function ContablePage() {
                 <div className="px-5 py-8 text-center">
                   <p className="text-sm text-ink-400">Sin gastos puntuales en este período</p>
                   <button
-                    onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
+                    onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoTipo("puntual"); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
                     className="mt-2 text-sm text-brand-600 hover:text-brand-700 font-medium"
                   >
                     Registrar uno →
@@ -796,56 +848,132 @@ export default function ContablePage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowGastoForm(false); setEditingGastoId(null); setError(""); } }}>
           <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-ink-900">{editingGastoId ? "Editar gasto" : "Nuevo gasto"}</h2>
+              <h2 className="text-base font-semibold text-ink-900">{editingGastoId ? "Editar gasto" : "Nuevo egreso"}</h2>
               <button onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <form onSubmit={handleGastoSubmit} className="px-6 py-5 space-y-4">
-              {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
-              <div>
-                <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
-                <input required autoFocus value={gastoForm.descripcion} onChange={(e) => setGastoForm({ ...gastoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Reparación impresora" />
+
+            {/* Switch Puntual / Recurrente — solo al crear */}
+            {!editingGastoId && (
+              <div className="px-6 pt-4 pb-0">
+                <div className="flex gap-1 bg-ink-100 rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => { setGastoTipo("puntual"); setError(""); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${gastoTipo === "puntual" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+                  >
+                    Puntual
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setGastoTipo("recurrente"); setError(""); }}
+                    className={`flex-1 py-2 rounded-lg text-sm font-semibold transition ${gastoTipo === "recurrente" ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}
+                  >
+                    🔄 Recurrente
+                  </button>
+                </div>
+                {gastoTipo === "recurrente" && (
+                  <p className="text-xs text-ink-400 mt-2 px-1">Se genera automáticamente cada mes en el día indicado.</p>
+                )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            )}
+
+            {/* Formulario Puntual */}
+            {(gastoTipo === "puntual" || editingGastoId) && (
+              <form onSubmit={handleGastoSubmit} className="px-6 py-5 space-y-4">
+                {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
                 <div>
-                  <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
-                  <select required value={gastoForm.categoria} onChange={(e) => setGastoForm({ ...gastoForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
-                    {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
+                  <input required autoFocus value={gastoForm.descripcion} onChange={(e) => setGastoForm({ ...gastoForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Reparación impresora" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
+                    <select required value={gastoForm.categoria} onChange={(e) => setGastoForm({ ...gastoForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
+                      {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
+                    <DateInput value={gastoForm.fecha} onChange={v => setGastoForm({ ...gastoForm, fecha: v })} required />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
+                    <input required type="number" step="0.01" min="0" value={gastoForm.monto} onChange={(e) => setGastoForm({ ...gastoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Moneda</label>
+                    <select value={gastoForm.moneda} onChange={(e) => setGastoForm({ ...gastoForm, moneda: e.target.value as Moneda })} className={inputClass}>
+                      <option value="ARS">ARS — Peso</option>
+                      <option value="USD">USD — Dólar</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Cliente <span className="text-ink-400 font-normal">(opcional)</span></label>
+                  <select value={gastoForm.cliente_id} onChange={(e) => setGastoForm({ ...gastoForm, cliente_id: e.target.value })} className={inputClass}>
+                    <option value="">Sin cliente asociado</option>
+                    {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelClass}>Fecha <span className="text-red-500">*</span></label>
-                  <DateInput value={gastoForm.fecha} onChange={v => setGastoForm({ ...gastoForm, fecha: v })} required />
+                  <label className={labelClass}>Notas</label>
+                  <input value={gastoForm.notas} onChange={(e) => setGastoForm({ ...gastoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                  <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-3 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingGastoId ? "Guardar cambios" : "Registrar"}</button>
+                </div>
+              </form>
+            )}
+
+            {/* Formulario Recurrente */}
+            {gastoTipo === "recurrente" && !editingGastoId && (
+              <form onSubmit={handlePlantillaSubmit} className="px-6 py-5 space-y-4">
+                {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
+                <div>
+                  <label className={labelClass}>Descripción <span className="text-red-500">*</span></label>
+                  <input required autoFocus value={plantillaForm.descripcion} onChange={(e) => setPlantillaForm({ ...plantillaForm, descripcion: e.target.value })} className={inputClass} placeholder="Ej: Alquiler oficina" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelClass}>Categoría <span className="text-red-500">*</span></label>
+                    <select required value={plantillaForm.categoria} onChange={(e) => setPlantillaForm({ ...plantillaForm, categoria: e.target.value as GastoCategoria })} className={inputClass}>
+                      {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Día del mes</label>
+                    <select value={plantillaForm.dia_del_mes} onChange={(e) => setPlantillaForm({ ...plantillaForm, dia_del_mes: e.target.value })} className={inputClass}>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((d) => (
+                        <option key={d} value={String(d)}>Día {d}</option>
+                      ))}
+                      <option value="0">Último día del mes</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Monto esperado <span className="text-red-500">*</span></label>
+                    <input required type="number" step="0.01" min="0" value={plantillaForm.monto_esperado} onChange={(e) => setPlantillaForm({ ...plantillaForm, monto_esperado: e.target.value })} className={inputClass} placeholder="0.00" />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Moneda</label>
+                    <select value={plantillaForm.moneda} onChange={(e) => setPlantillaForm({ ...plantillaForm, moneda: e.target.value as Moneda })} className={inputClass}>
+                      <option value="ARS">ARS — Peso</option>
+                      <option value="USD">USD — Dólar</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Monto <span className="text-red-500">*</span></label>
-                  <input required type="number" step="0.01" min="0" value={gastoForm.monto} onChange={(e) => setGastoForm({ ...gastoForm, monto: e.target.value })} className={inputClass} placeholder="0.00" />
+                  <label className={labelClass}>Notas</label>
+                  <input value={plantillaForm.notas} onChange={(e) => setPlantillaForm({ ...plantillaForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
                 </div>
-                <div>
-                  <label className={labelClass}>Moneda</label>
-                  <select value={gastoForm.moneda} onChange={(e) => setGastoForm({ ...gastoForm, moneda: e.target.value as Moneda })} className={inputClass}>
-                    <option value="ARS">ARS — Peso</option>
-                    <option value="USD">USD — Dólar</option>
-                  </select>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => { setShowGastoForm(false); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
+                  <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-3 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : "Crear recurrente"}</button>
                 </div>
-              </div>
-              <div>
-                <label className={labelClass}>Cliente <span className="text-ink-400 font-normal">(opcional)</span></label>
-                <select value={gastoForm.cliente_id} onChange={(e) => setGastoForm({ ...gastoForm, cliente_id: e.target.value })} className={inputClass}>
-                  <option value="">Sin cliente asociado</option>
-                  {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>Notas</label>
-                <input value={gastoForm.notas} onChange={(e) => setGastoForm({ ...gastoForm, notas: e.target.value })} className={inputClass} placeholder="Opcional" />
-              </div>
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="flex-1 border border-ink-200 text-ink-600 text-sm font-semibold px-4 py-3 rounded-xl hover:bg-ink-50 transition">Cancelar</button>
-                <button type="submit" disabled={saving} className="flex-1 bg-brand-600 hover:bg-brand-700 text-white rounded-xl px-4 py-3 text-sm font-semibold transition shadow-sm disabled:opacity-50">{saving ? "Guardando…" : editingGastoId ? "Guardar cambios" : "Registrar"}</button>
-              </div>
-            </form>
+              </form>
+            )}
           </div>
         </div>
       )}
