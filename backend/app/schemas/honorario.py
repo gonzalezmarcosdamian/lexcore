@@ -118,3 +118,8 @@ class HonorarioResumen(BaseModel):
     saldo_pendiente_ars: Decimal = Decimal("0")
     saldo_pendiente_usd: Decimal = Decimal("0")
     expedientes_con_deuda: int = 0
+    # Desglose: vencidos (fecha_vencimiento < hoy) vs próximos a vencer
+    saldo_vencido_ars: Decimal = Decimal("0")
+    saldo_por_vencer_ars: Decimal = Decimal("0")
+    count_vencidos: int = 0
+    count_por_vencer: int = 0

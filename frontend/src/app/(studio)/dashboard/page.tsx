@@ -306,21 +306,32 @@ export default function DashboardPage() {
                   <p className="text-xs font-semibold text-ink-400 uppercase tracking-wider">Contable</p>
                   <PeriodSelector value={periodoValue} onChange={setPeriodoValue} compact />
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
                   {[
-                    { label: "Ingresos ARS", tooltip: "Total de ingresos registrados en el período seleccionado", value: loadingContable ? null : `$ ${Number(ingARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-green-700" },
-                    { label: "Egresos ARS", tooltip: "Total de egresos registrados en el período seleccionado", value: loadingContable ? null : `$ ${Number(egARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: "text-red-600" },
-                    { label: "Resultado ARS", tooltip: "Ingresos menos egresos del período. Positivo = ganancia", value: loadingContable ? null : `${resultadoARS >= 0 ? "+" : ""}$ ${Number(resultadoARS).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, color: resultadoARS >= 0 ? "text-green-700" : "text-red-600" },
-                    { label: "Hon. pendiente", tooltip: "Honorarios acordados con clientes que aún no fueron cobrados", value: honorarios === null ? null : `$ ${Number(honorarios.saldo_pendiente_ars).toLocaleString("es-AR", { minimumFractionDigits: 0 })}`, sub: honorarios ? `${honorarios.expedientes_con_deuda} exp. con deuda` : undefined, color: "text-ink-900" },
-                  ].map(({ label, tooltip, value, color, sub }) => (
-                    <div key={label} title={tooltip} className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5 cursor-default hover:shadow-md hover:border-ink-200 transition-shadow duration-150">
-                      <p className="text-xs text-ink-400 uppercase tracking-wider font-medium mb-2">{label}</p>
-                      {value === null
-                        ? <span className="inline-block w-24 h-7 bg-ink-100 rounded animate-pulse" />
-                        : <p className={`text-2xl font-bold ${color}`}>{value}</p>}
-                      {sub && <p className="text-xs text-ink-400 mt-1">{sub}</p>}
-                    </div>
-                  ))}
+                    { label: "Ingresos ARS", tooltip: "Total de ingresos registrados en el período seleccionado", value: loadingContable ? null : Number(ingARS), color: "text-green-700" },
+                    { label: "Egresos ARS", tooltip: "Total de egresos registrados en el período seleccionado", value: loadingContable ? null : Number(egARS), color: "text-red-600" },
+                    { label: "Resultado ARS", tooltip: "Ingresos menos egresos del período. Positivo = ganancia", value: loadingContable ? null : Number(resultadoARS), prefix: resultadoARS >= 0 ? "+" : "", color: resultadoARS >= 0 ? "text-green-700" : "text-red-600" },
+                    { label: "Hon. por cobrar", tooltip: "Honorarios pendientes de cobro, aún dentro de su fecha de vencimiento", value: honorarios === null ? null : Number(honorarios.saldo_por_vencer_ars), sub: honorarios && honorarios.count_por_vencer > 0 ? `${honorarios.count_por_vencer} cuota${honorarios.count_por_vencer > 1 ? "s" : ""} por vencer` : undefined, color: "text-amber-600" },
+                    { label: "Hon. vencidos", tooltip: "Honorarios con fecha de vencimiento pasada y sin cobrar", value: honorarios === null ? null : Number(honorarios.saldo_vencido_ars), sub: honorarios && honorarios.count_vencidos > 0 ? `${honorarios.count_vencidos} cuota${honorarios.count_vencidos > 1 ? "s" : ""} vencida${honorarios.count_vencidos > 1 ? "s" : ""}` : undefined, color: honorarios && honorarios.saldo_vencido_ars > 0 ? "text-red-600" : "text-ink-400" },
+                  ].map(({ label, tooltip, value, color, sub, prefix }) => {
+                    const n = value ?? 0;
+                    const fmtVal = value === null ? null
+                      : n >= 1_000_000 ? `${prefix ?? ""}$${(n / 1_000_000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`
+                      : n >= 1_000 ? `${prefix ?? ""}$${(n / 1_000).toLocaleString("es-AR", { maximumFractionDigits: 0 })}K`
+                      : `${prefix ?? ""}$${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+                    return (
+                      <div key={label} title={tooltip} className="bg-white rounded-2xl border border-ink-100 shadow-sm p-4 cursor-default hover:shadow-md hover:border-ink-200 transition-shadow duration-150">
+                        <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1.5 truncate">{label}</p>
+                        {fmtVal === null
+                          ? <span className="inline-block w-20 h-6 bg-ink-100 rounded animate-pulse" />
+                          : <p className={`text-base sm:text-xl font-bold truncate ${color}`}>{fmtVal}</p>}
+                        {sub && <p className="text-[10px] sm:text-xs text-ink-400 mt-1 truncate">{sub}</p>}
+                        {value !== null && !sub && label.startsWith("Hon.") && (
+                          <p className="text-[10px] sm:text-xs text-ink-300 mt-1">—</p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );

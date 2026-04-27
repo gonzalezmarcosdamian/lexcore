@@ -56,6 +56,7 @@ def resumen_honorarios(db: DbSession, current_user: CurrentUser):
 
     res = HonorarioResumen()
     exp_con_deuda = set()
+    hoy_str = hoy.isoformat()
 
     for h in honorarios:
         pagos_misma = [p for p in h.pagos if p.moneda == h.moneda]
@@ -73,6 +74,14 @@ def resumen_honorarios(db: DbSession, current_user: CurrentUser):
 
         if saldo > 0:
             exp_con_deuda.add(h.expediente_id)
+            if h.moneda == Moneda.ARS:
+                vencido = h.fecha_vencimiento and h.fecha_vencimiento < hoy_str
+                if vencido:
+                    res.saldo_vencido_ars += saldo
+                    res.count_vencidos += 1
+                else:
+                    res.saldo_por_vencer_ars += saldo
+                    res.count_por_vencer += 1
 
     res.expedientes_con_deuda = len(exp_con_deuda)
     return res

@@ -201,6 +201,10 @@ export interface HonorarioResumen {
   saldo_pendiente_ars: number;
   saldo_pendiente_usd: number;
   expedientes_con_deuda: number;
+  saldo_vencido_ars: number;
+  saldo_por_vencer_ars: number;
+  count_vencidos: number;
+  count_por_vencer: number;
 }
 
 export interface SearchResult {
