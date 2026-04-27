@@ -575,233 +575,147 @@ export default function ContablePage() {
         </div>
       </div>{/* fin barra de control */}
 
-      {/* ══ EGRESOS + INGRESOS ══ */}
-      <div className="space-y-8">
+      {/* ══ RESUMEN + FEED UNIFICADO ══ */}
+      <div className="space-y-4">
 
-          {/* Acciones egresos */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider flex items-center gap-2">
-              Egresos
-              {pendientesCount > 0 && <span className="inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-bold bg-red-100 text-red-600 rounded-full">{pendientesCount} pendientes</span>}
-            </h2>
-            <div className="relative">
-              <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
-              {sortOpen && (
-                <SortModal
-                  options={GASTO_SORT_OPTIONS}
-                  sortKey={sortKey}
-                  sortDir={sortDir}
-                  onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
-                  onClose={() => setSortOpen(false)}
-                />
-              )}
+        {/* Cards de totales — 6 en 2 filas de 3 */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "Ingresos ARS", value: loadingIngresos ? null : ingresosARS, color: "text-green-700", fmt: (n: number) => `$${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}` },
+            { label: "Egresos ARS", value: loadingGastos ? null : confirmadosARS, color: "text-red-600", fmt: (n: number) => `$${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}` },
+            { label: "Hon. pend.", value: honorariosPendientesARS, color: "text-amber-600", fmt: (n: number) => `$${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}` },
+            { label: "Ingresos USD", value: loadingIngresos ? null : ingresosUSD, color: "text-green-700", fmt: (n: number) => `U$D${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}` },
+            { label: "Egresos USD", value: loadingGastos ? null : confirmadosUSD, color: "text-red-600", fmt: (n: number) => `U$D${n.toLocaleString("es-AR", { maximumFractionDigits: 0 })}` },
+            { label: "Recurrentes", value: loadingGastos ? null : pendientesCount, color: pendientesCount > 0 ? "text-orange-600" : "text-ink-400", fmt: (n: number) => String(n) },
+          ].map(({ label, value, color, fmt }) => (
+            <div key={label} className="bg-white rounded-xl border border-ink-100 shadow-sm px-3 py-2.5">
+              <p className="text-[9px] sm:text-[10px] text-ink-400 uppercase tracking-wide font-medium mb-0.5 truncate">{label}</p>
+              {value === null
+                ? <span className="inline-block w-12 h-4 bg-ink-100 rounded animate-pulse" />
+                : <p className={`text-xs sm:text-sm font-bold truncate ${color}`}>{fmt(value)}</p>}
             </div>
-          </div>
+          ))}
+        </div>
 
-          {/* Totales del período */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm grid grid-cols-3 divide-x divide-ink-100">
-            <div className="px-3 py-3 sm:p-4">
-              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">Egresos ARS</p>
-              <p className="text-sm sm:text-xl font-bold text-ink-900 truncate">
-                {loadingGastos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `$${confirmadosARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}
-              </p>
-              <p className="text-[10px] text-ink-400 mt-0.5 hidden sm:block">confirmados</p>
-            </div>
-            <div className="px-3 py-3 sm:p-4">
-              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">Egresos USD</p>
-              <p className="text-sm sm:text-xl font-bold text-ink-900 truncate">
-                {loadingGastos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `U$D${confirmadosUSD.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}
-              </p>
-              <p className="text-[10px] text-ink-400 mt-0.5 hidden sm:block">confirmados</p>
-            </div>
-            <div className="px-3 py-3 sm:p-4">
-              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">Hon. pend.</p>
-              <p className="text-sm sm:text-xl font-bold text-amber-600 truncate">
-                {honorariosPendientesARS === null
-                  ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" />
-                  : `$${honorariosPendientesARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}
-              </p>
-              <p className="text-[10px] text-ink-400 mt-0.5 hidden sm:block">honorarios a cobrar</p>
-            </div>
-          </div>
+        {/* Feed unificado — egresos + ingresos mezclados por fecha */}
+        {(() => {
+          const loading = loadingGastos || loadingIngresos;
+          type FeedItem =
+            | { kind: "gasto"; data: Gasto }
+            | { kind: "ingreso"; data: Ingreso };
 
+          const items: FeedItem[] = [
+            ...gastos.map((g): FeedItem => ({ kind: "gasto", data: g })),
+            ...ingresos.map((i): FeedItem => ({ kind: "ingreso", data: i })),
+          ].sort((a, b) => {
+            const fa = a.kind === "gasto" ? a.data.fecha : a.data.fecha;
+            const fb = b.kind === "gasto" ? b.data.fecha : b.data.fecha;
+            return fb.localeCompare(fa);
+          });
 
-          {/* Sección: Recurrentes del mes */}
-          {(loadingGastos || recurrentes.length > 0) && (
-            <section>
-              <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-2">Recurrentes</h2>
-              <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-                {loadingGastos ? (
-                  <div className="divide-y divide-ink-50">
-                    {[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-ink-50">
-                    {sortGastos(recurrentes).map((g) => {
-                      const cfg = ESTADO_CONFIG[g.estado];
-                      return (
-                        <div key={g.id} className="px-4 py-3">
-                          {/* Fila 1: descripción + monto */}
-                          <div className="flex items-start justify-between gap-2 mb-1.5">
-                            <p className="text-sm text-ink-900 font-medium truncate flex-1">{g.descripcion}</p>
-                            <span className="text-sm font-semibold text-ink-900 flex-shrink-0">
-                              {formatMoney(Number(g.monto), g.moneda)}
-                            </span>
-                          </div>
-                          {/* Fila 2: badges + fecha + acciones */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                              {cfg.label}
-                            </span>
-                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>
-                              {catLabel(g.categoria)}
-                            </span>
-                            <span className="text-xs text-ink-400">
-                              {new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
-                            </span>
-                            <div className="flex items-center gap-1 ml-auto">
-                            {g.estado === "pendiente" && (
-                              <button
-                                onClick={() => openConfirmar(g)}
-                                className="text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 px-2.5 py-1 rounded-lg transition"
-                              >
-                                Confirmar
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDeleteGasto(g.id)}
-                              disabled={deletingId === g.id}
-                              className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50"
-                            >
-                              {deletingId === g.id ? (
-                                <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
-                              ) : (
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                          </div>{/* fin fila 2 */}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Sección: Puntuales del mes */}
-          <section>
-            <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-2">Puntuales</h2>
+          return (
             <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-              {loadingGastos ? (
-                <div className="divide-y divide-ink-50">
-                  {[...Array(2)].map((_, i) => <SkeletonRow key={i} />)}
+              {/* Header con sort */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-ink-50">
+                <p className="text-sm font-semibold text-ink-700">Movimientos del período</p>
+                <div className="relative">
+                  <SortButton open={sortOpen} onToggle={() => setSortOpen((o) => !o)} />
+                  {sortOpen && (
+                    <SortModal
+                      options={GASTO_SORT_OPTIONS}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onChange={(k, d) => { setSortKey(k); setSortDir(d); }}
+                      onClose={() => setSortOpen(false)}
+                    />
+                  )}
                 </div>
-              ) : puntuales.length === 0 ? (
-                <div className="px-5 py-8 text-center">
-                  <p className="text-sm text-ink-400">Sin gastos puntuales en este período</p>
-                  <button
-                    onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoTipo("puntual"); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }}
-                    className="mt-2 text-sm text-brand-600 hover:text-brand-700 font-medium"
-                  >
-                    Registrar uno →
-                  </button>
+              </div>
+
+              {loading ? (
+                <div className="divide-y divide-ink-50">{[...Array(4)].map((_, i) => <SkeletonRow key={i} />)}</div>
+              ) : items.length === 0 ? (
+                <div className="px-5 py-10 text-center">
+                  <p className="text-sm text-ink-400">Sin movimientos en este período</p>
+                  <div className="flex justify-center gap-3 mt-3">
+                    <button onClick={() => { setShowGastoForm(true); setEditingGastoId(null); setGastoTipo("puntual"); setGastoForm({ ...EMPTY_GASTO_FORM, fecha: `${anio}-${String(mes).padStart(2, "0")}-01` }); setError(""); }} className="text-sm text-red-500 hover:text-red-600 font-medium">+ Egreso</button>
+                    <button onClick={() => { setShowIngresoForm(true); setError(""); }} className="text-sm text-green-600 hover:text-green-700 font-medium">+ Ingreso</button>
+                  </div>
                 </div>
               ) : (
                 <div className="divide-y divide-ink-50">
-                  {sortGastos(puntuales).map((g) => (
-                    <div key={g.id} className="px-4 py-3">
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <p className="text-sm text-ink-900 font-medium truncate flex-1">{g.descripcion}</p>
-                        <span className="text-sm font-semibold text-ink-900 flex-shrink-0">{formatMoney(Number(g.monto), g.moneda)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>{catLabel(g.categoria)}</span>
-                        <span className="text-xs text-ink-400">{new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
-                        <div className="flex items-center gap-1 ml-auto">
-                          <button onClick={() => handleEditGasto(g)} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          </button>
-                          <button onClick={() => handleDeleteGasto(g.id)} disabled={deletingId === g.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-                            {deletingId === g.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
-                          </button>
+                  {items.map((item) => {
+                    if (item.kind === "gasto") {
+                      const g = item.data;
+                      const cfg = ESTADO_CONFIG[g.estado];
+                      return (
+                        <div key={`g-${g.id}`} className="px-4 py-3">
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+                              <p className="text-sm text-ink-900 font-medium truncate">{g.descripcion}</p>
+                            </div>
+                            <span className="text-sm font-semibold text-red-600 flex-shrink-0">-{formatMoney(Number(g.monto), g.moneda)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap pl-3.5">
+                            {g.plantilla_id && (
+                              <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />🔄 {cfg.label}
+                              </span>
+                            )}
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>{catLabel(g.categoria)}</span>
+                            <span className="text-xs text-ink-400">{new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
+                            <div className="flex items-center gap-1 ml-auto">
+                              {g.plantilla_id && g.estado === "pendiente" && (
+                                <button onClick={() => openConfirmar(g)} className="text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 px-2 py-0.5 rounded-lg transition">Confirmar</button>
+                              )}
+                              {!g.plantilla_id && (
+                                <button onClick={() => handleEditGasto(g)} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                              )}
+                              <button onClick={() => handleDeleteGasto(g.id)} disabled={deletingId === g.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+                                {deletingId === g.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    } else {
+                      const i = item.data;
+                      const iCatLabel = CATEGORIAS_INGRESO.find((c) => c.value === i.categoria)?.label ?? i.categoria;
+                      return (
+                        <div key={`i-${i.id}`} className="px-4 py-3">
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
+                              <p className="text-sm text-ink-900 font-medium truncate">{i.descripcion}</p>
+                            </div>
+                            <span className="text-sm font-semibold text-green-700 flex-shrink-0">+{formatMoney(Number(i.monto), i.moneda)}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap pl-3.5">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{iCatLabel}</span>
+                            <span className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
+                            {i.expediente_id && (() => { const exp = expedientes.find(e => e.id === i.expediente_id); return exp ? <span className="text-xs font-mono text-ink-500 bg-ink-50 border border-ink-100 rounded px-1.5 py-0.5">{exp.numero}</span> : null; })()}
+                            <div className="flex items-center gap-1 ml-auto">
+                              <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "", cliente_id: i.cliente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                              <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+                                {deletingId === i.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                  })}
                 </div>
               )}
             </div>
-          </section>
-
-        {/* ══ INGRESOS ══ */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-ink-500 uppercase tracking-wider">Ingresos</h2>
-
-          {/* Totales */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm grid grid-cols-3 divide-x divide-ink-100">
-            <div className="px-3 py-3 sm:p-4">
-              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">ARS</p>
-              <p className="text-sm sm:text-xl font-bold text-green-700 truncate">{loadingIngresos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `$${ingresosARS.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}</p>
-            </div>
-            <div className="px-3 py-3 sm:p-4">
-              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">USD</p>
-              <p className="text-sm sm:text-xl font-bold text-green-700 truncate">{loadingIngresos ? <span className="inline-block w-16 h-5 bg-ink-100 rounded animate-pulse" /> : `U$D${ingresosUSD.toLocaleString("es-AR", { maximumFractionDigits: 0 })}`}</p>
-            </div>
-            <div className="px-3 py-3 sm:p-4">
-              <p className="text-[10px] sm:text-xs text-ink-400 uppercase tracking-wider font-medium mb-1 truncate">Registros</p>
-              <p className="text-sm sm:text-xl font-bold text-ink-900 truncate">{loadingIngresos ? <span className="inline-block w-6 h-5 bg-ink-100 rounded animate-pulse" /> : ingresos.length}</p>
-            </div>
-          </div>
-
-          {/* Lista */}
-          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-            {loadingIngresos ? (
-              <div className="divide-y divide-ink-50">{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
-            ) : ingresos.length === 0 ? (
-              <div className="px-5 py-10 text-center">
-                <p className="text-sm text-ink-400">Sin ingresos registrados en este período</p>
-                <button onClick={() => { setShowIngresoForm(true); setError(""); }} className="mt-2 text-sm text-green-600 hover:text-green-700 font-medium">Registrar el primero →</button>
-              </div>
-            ) : (
-              <div className="divide-y divide-ink-50">
-                {sortGastos(ingresos as unknown as Gasto[]).map((raw) => {
-                  const i = raw as unknown as Ingreso;
-                  const catLabel = CATEGORIAS_INGRESO.find((c) => c.value === i.categoria)?.label ?? i.categoria;
-                  return (
-                    <div key={i.id} className="px-4 py-3">
-                      <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <p className="text-sm text-ink-900 font-medium truncate flex-1">{i.descripcion}</p>
-                        <span className="text-sm font-semibold text-green-700 flex-shrink-0">{formatMoney(Number(i.monto), i.moneda)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{catLabel}</span>
-                        <span className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
-                        {i.expediente_id && (() => {
-                          const exp = expedientes.find(e => e.id === i.expediente_id);
-                          return exp ? <span className="text-xs font-mono text-ink-500 bg-ink-50 border border-ink-100 rounded px-1.5 py-0.5">{exp.numero}</span> : null;
-                        })()}
-                        <div className="flex items-center gap-1 ml-auto">
-                          <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "", cliente_id: i.cliente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          </button>
-                          <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-                            {deletingId === i.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>{/* fin space-y-8 */}
+          );
+        })()}
+      </div>
 
       {/* ══ MODAL: Gasto puntual ══ */}
       {showGastoForm && (
