@@ -964,36 +964,35 @@ export default function AgendaPage() {
                   <div className="divide-y divide-ink-50">
                     {/* Vencimientos */}
                     {vDia.map(v => (
-                      <button key={v.id} onClick={() => { setDiaPickerFecha(null); router.push(`/movimientos/${v.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition">
-                        <div className="flex items-start gap-3">
-                          <span className="mt-1 w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
+                      <button key={v.id} onClick={() => { setDiaPickerFecha(null); router.push(`/movimientos/${v.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition group">
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-ink-900 truncate">{v.titulo}</p>
                             <p className="text-xs text-ink-400 mt-0.5">
-                              {v.hora ? v.hora.slice(0, 5) : "Todo el día"} · Vencimiento
-                              {v.tipo && v.tipo !== "vencimiento" ? ` · ${v.tipo}` : ""}
+                              {v.hora ? v.hora.slice(0, 5) : "Todo el día"} · Vencimiento{v.tipo && v.tipo !== "vencimiento" ? ` · ${v.tipo}` : ""}
                             </p>
                           </div>
-                          {(v.fecha <= new Date().toISOString().slice(0, 10) && v.estado !== "cumplido") ? (
-                            <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Urgente</span>
-                          ) : null}
+                          {(v.fecha <= new Date().toISOString().slice(0, 10) && v.estado !== "cumplido")
+                            ? <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Urgente</span>
+                            : <svg className="w-4 h-4 text-ink-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
                         </div>
                       </button>
                     ))}
                     {/* Tareas */}
                     {tDia.map(t => (
-                      <button key={t.id} onClick={() => { setDiaPickerFecha(null); router.push(`/tareas/${t.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition">
-                        <div className="flex items-start gap-3">
-                          <span className="mt-1 w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                      <button key={t.id} onClick={() => { setDiaPickerFecha(null); router.push(`/tareas/${t.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition group last:rounded-b-2xl">
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-ink-900 truncate">{t.titulo}</p>
                             <p className="text-xs text-ink-400 mt-0.5">
                               {t.hora ? t.hora.slice(0, 5) : "Sin hora"} · Tarea · {t.estado === "pendiente" ? "Pendiente" : t.estado === "en_curso" ? "En curso" : "Hecha"}
                             </p>
                           </div>
-                          {t.fecha_limite && t.fecha_limite < new Date().toISOString().slice(0, 10) && t.estado !== "hecha" ? (
-                            <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Vencida</span>
-                          ) : null}
+                          {t.fecha_limite && t.fecha_limite < new Date().toISOString().slice(0, 10) && t.estado !== "hecha"
+                            ? <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full flex-shrink-0">Vencida</span>
+                            : <svg className="w-4 h-4 text-ink-300 opacity-0 group-hover:opacity-100 transition flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>}
                         </div>
                       </button>
                     ))}
