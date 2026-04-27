@@ -4,9 +4,9 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-23
-**Sprint activo:** Sprint 16 — COMPLETADO
-**Versión:** 0.19.0
+**Última actualización:** 2026-04-27
+**Sprint activo:** Sprint 17 — COMPLETADO
+**Versión:** 0.20.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
@@ -323,6 +323,49 @@ Estado actual: **producto funcional completo — clientes, expedientes (número 
 
 **Migraciones:** `5fa0ba36dbc4` (flag_paralizado en expedientes)
 **Archivos clave:** `expedientes/page.tsx`, `expedientes/[id]/page.tsx`, `agenda/page.tsx`, `dashboard/page.tsx`, `tarea-detail-sheet.tsx`, `vencimiento-detail-sheet.tsx`, `tareas/[id]/page.tsx`, `vencimientos/[id]/page.tsx`, `filter-pills.tsx`
+
+### Sprint 17 — COMPLETADO (2026-04-27)
+
+#### Módulo Contable — Hero financiero y feed unificado ✓
+- [x] `GET /gastos/historico?meses=3|6|12` — evolución mensual egresos + ingresos en una llamada
+- [x] `ContableHero` — gráfico barras agrupadas (recharts), chips 3M/6M/12M, 3 KPIs (resultado, mayor egreso, tendencia)
+- [x] Feed unificado de movimientos (egresos + ingresos mezclados por fecha), 5 items + "Ver todos"
+- [x] Expediente y cliente navegables desde el feed (links clickeables)
+- [x] Cards totales en grilla 3×2: Ingresos ARS/USD, Egresos ARS/USD, Hon. pend., Recurrentes
+- [x] Rows con layout 2 líneas para mobile (descripción+monto arriba, badges+acciones abajo)
+- [x] Barra de control 2 filas en mobile: CTAs full-width arriba, período abajo
+
+#### Honorarios — Cobros y Calendar ✓
+- [x] `HonorarioResumen` ampliado: `saldo_vencido_ars`, `saldo_por_vencer_ars`, `count_vencidos`, `count_por_vencer`
+- [x] Dashboard: 5 cards contable (Ingresos, Egresos, Resultado, Hon. por cobrar, Hon. vencidos) con escala K/M
+- [x] Alerta "Hoy tenés que cobrar" en dashboard — bloque verde cuando hay honorarios con fecha_vencimiento === hoy
+- [x] Google Calendar sync incluye honorarios pendientes con saldo > 0 como eventos `💰 Cobrar: concepto`
+
+#### Clientes — Eliminar y validar duplicados ✓
+- [x] `DELETE /clientes/{id}/eliminar` — eliminación permanente con SET NULL en expedientes (no cascade)
+- [x] Botón "Eliminar" en detalle del cliente con modal de confirmación + advertencia de expedientes
+- [x] Validación DNI/CUIT únicos por tenant al crear y editar (422 con mensaje claro)
+
+#### Agenda — Panel día ✓
+- [x] Click en día del calendario abre modal centrado con todos los eventos del día (vencimientos + tareas)
+- [x] Eventos navegables al detalle, chevron en hover, CTAs "+ Tarea" y "+ Movimiento"
+- [x] Bottom-sheet en mobile, modal centrado en desktop
+
+#### UX / Modales de ayuda ✓
+- [x] Contenido actualizado en 6 páginas (dashboard, vencimientos, gastos, perfil, tareas, equipo)
+- [x] Fix overflow mobile: `left-0 sm:right-0`, `max-h-[80vh]`
+
+#### Landing ✓
+- [x] Features actualizadas a estado real (alertas Calendar, sync manual, feriados AR, cuotas honorarios, gráfico contable)
+- [x] Precio en ARS (antes USD), límite de 2 usuarios en trial, garantía corregida
+- [x] Nueva FAQ: ¿Cómo funciona el Google Calendar?
+
+#### Tests ✓ (197 total, +20 nuevos)
+- [x] TestClientesDuplicados (5 tests), TestClienteEliminarPermanente (3 tests)
+- [x] TestGastosHistorico (7 tests), TestHonorariosResumenDesglose (5 tests)
+
+**Endpoints nuevos:** `GET /gastos/historico`, `DELETE /clientes/{id}/eliminar`
+**Archivos clave:** `contable-hero.tsx`, `gastos/page.tsx`, `dashboard/page.tsx`, `clientes/[id]/page.tsx`, `agenda/page.tsx`, `page.tsx` (landing)
 
 ---
 

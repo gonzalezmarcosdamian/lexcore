@@ -377,43 +377,43 @@ export default function LandingPage() {
                 icon: <IconBell />,
                 color: "bg-red-50 text-red-600",
                 title: "Vencimientos que no se olvidan",
-                body: "Cargás el plazo una sola vez. LexCore te avisa 7 días antes, 48hs antes y el mismo día. Sincroniza con Google Calendar automáticamente.",
-                stat: "Alertas a 7d, 48h y el mismo día",
+                body: "Cargás el plazo una sola vez. LexCore te manda email automático y sincroniza con Google Calendar con dos alertas: a medianoche y 1 hora antes.",
+                stat: "Email + Google Calendar con alertas",
               },
               {
                 icon: <IconFolder />,
                 color: "bg-blue-50 text-blue-600",
                 title: "Expedientes centralizados",
-                body: "Cada caso tiene su propia página: movimientos, equipo, documentos, tareas, honorarios y bitácora completa. Accesible desde el celular.",
-                stat: "Todo en un solo lugar",
+                body: "Cada caso tiene su propia página: movimientos, equipo, documentos, tareas, honorarios y bitácora completa. Con número judicial y número interno.",
+                stat: "Bitácora automática de todo lo que pasa",
               },
               {
                 icon: <IconCheck />,
                 color: "bg-purple-50 text-purple-600",
-                title: "Tareas para el equipo",
-                body: "Delegá trabajo con fecha límite y responsable. Nadie puede decir 'no sabía' o 'no me llegó'.",
-                stat: "Con responsable y fecha límite",
+                title: "Agenda con feriados argentinos",
+                body: "Calendario mensual con todos tus vencimientos y tareas. Marca automáticamente los feriados nacionales para que no cometas errores de cómputo.",
+                stat: "Feriados AR integrados, sin configurar",
               },
               {
                 icon: <IconMoney />,
                 color: "bg-emerald-50 text-emerald-600",
-                title: "Honorarios y cobranza",
-                body: "Registrá lo acordado, los pagos parciales y el saldo pendiente. En ARS y USD. Sabés exactamente lo que te debe cada cliente.",
-                stat: "ARS y USD, con saldo en tiempo real",
+                title: "Honorarios y cobros con cuotas",
+                body: "Registrá honorarios en cuotas, pagos parciales y saldo en ARS y USD. El sistema te avisa el día que tenés que cobrar, antes de que se te pase.",
+                stat: "Alertas de cobro el día del vencimiento",
               },
               {
                 icon: <IconUsers />,
                 color: "bg-amber-50 text-amber-600",
                 title: "Tu estudio en equipo",
-                body: "Invitá socios, asociados y pasantes con distintos niveles de acceso. Cada uno ve lo que le corresponde.",
-                stat: "Usuarios ilimitados, sin costo extra",
+                body: "Invitá socios, asociados y pasantes con distintos niveles de acceso. Cada uno ve lo que le corresponde y nada más.",
+                stat: "Admin, socio, asociado y pasante",
               },
               {
                 icon: <IconChart />,
                 color: "bg-indigo-50 text-indigo-600",
-                title: "Módulo contable",
-                body: "Ingresos, egresos y resultado mensual en un panel. Sabés cómo está el estudio financieramente sin hojas de cálculo.",
-                stat: "Cierre mensual en un vistazo",
+                title: "Contable con gráfico histórico",
+                body: "Ingresos, egresos y resultado en un feed unificado. Gráfico de evolución de los últimos 3, 6 o 12 meses. Sin hojas de cálculo.",
+                stat: "Evolución financiera de un vistazo",
               },
             ].map((feat) => (
               <div key={feat.title} className="border border-ink-100 rounded-2xl p-6 hover:border-brand-200 hover:shadow-sm transition-all duration-150 group">
@@ -501,11 +501,12 @@ export default function LandingPage() {
               <div className="bg-white px-6 py-6">
                 <ul className="space-y-3 mb-6">
                   {[
-                    "Expedientes ilimitados",
-                    "Equipo ilimitado (sin cobro por usuario)",
+                    "Expedientes y clientes ilimitados",
+                    "Hasta 2 usuarios en el trial",
                     "Vencimientos + Google Calendar sync",
-                    "Tareas y agenda",
-                    "Honorarios y módulo contable",
+                    "Agenda con feriados argentinos",
+                    "Honorarios con cuotas y alertas de cobro",
+                    "Módulo contable con gráfico histórico",
                     "Documentos adjuntos",
                     "Soporte por WhatsApp",
                   ].map((feat) => (
@@ -524,7 +525,7 @@ export default function LandingPage() {
                   Empezar gratis — sin tarjeta <IconChevron />
                 </Link>
                 <p className="text-center text-xs text-ink-400 mt-3">
-                  Después del trial, desde <strong>USD 39/mes</strong> por estudio completo
+                  Después del trial, desde <strong>$17.000 ARS/mes</strong> por estudio completo
                 </p>
               </div>
             </div>
@@ -532,7 +533,7 @@ export default function LandingPage() {
             <div className="mt-5 text-center">
               <p className="text-sm text-ink-500 flex items-center justify-center gap-1.5">
                 <span className="text-emerald-600"><IconShield /></span>
-                Si en los primeros 30 días no ves el valor, te devolvemos el dinero. Sin preguntas.
+                30 días gratis, sin tarjeta. Si luego suscribís y no quedás conforme, te devolvemos el primer pago.
               </p>
             </div>
           </div>
@@ -566,7 +567,7 @@ export default function LandingPage() {
             />
             <FAQItem
               q="¿Cuántos usuarios puedo tener?"
-              a="El plan incluye usuarios ilimitados para tu estudio. No cobramos por asiento — el precio es por estudio, no por persona."
+              a="En el trial podés invitar hasta 2 usuarios. Los planes pagos incluyen desde 2 hasta usuarios ilimitados según el plan. En todos los casos el precio es por estudio, no por persona."
             />
             <FAQItem
               q="¿Es seguro guardar información de mis clientes ahí?"
@@ -575,6 +576,10 @@ export default function LandingPage() {
             <FAQItem
               q="¿Puedo migrar mis expedientes actuales?"
               a="Sí. Si tenés la información en una planilla o en otro sistema, te ayudamos a migrarla. El onboarding incluye soporte directo por WhatsApp."
+            />
+            <FAQItem
+              q="¿Cómo funciona el Google Calendar?"
+              a="Conectás tu cuenta de Google desde tu perfil con un click. Luego podés sincronizar todos tus vencimientos, tareas y cobros de honorarios en el calendario que elijas. Cada evento tiene dos alertas automáticas: a medianoche del día y 1 hora antes."
             />
           </div>
         </div>

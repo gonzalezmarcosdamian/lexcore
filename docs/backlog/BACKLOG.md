@@ -32,6 +32,20 @@
 
 ## COMPLETADAS ✓
 
+### Sprint 17 — 2026-04-27 (sesión actual)
+- **CONT-HERO-001** · Hero financiero con gráfico de barras y chips 3M/6M/12M en módulo contable — `done`
+- **CONT-FEED-001** · Feed unificado de movimientos (egresos + ingresos mezclados por fecha) con 5 items + ver todos — `done`
+- **CONT-HON-001** · Card honorarios pendientes en contable + desglose vencidos/por cobrar en dashboard — `done`
+- **CONT-MOBILE-001** · Layout mobile del módulo contable: barra de control 2 filas, rows de 2 líneas — `done`
+- **GCAL-HON-001** · Honorarios con fecha_vencimiento y saldo pendiente incluidos en sync de Google Calendar — `done`
+- **HON-COBRO-HOY-001** · Alerta "hoy tenés que cobrar" en dashboard cuando hay honorarios con fecha_vencimiento === hoy — `done`
+- **CLT-ELIMINAR-001** · Eliminar cliente permanentemente (desvincula expedientes, no cascade) — `done`
+- **CLT-DUPLICADO-001** · Validación DNI/CUIT único por tenant al crear y editar cliente — `done`
+- **AGENDA-DIA-001** · Panel día en calendario: slide-over/modal centrado con todos los eventos + CTAs — `done`
+- **UX-HELP-002** · Modales de ayuda actualizados a estado real de la app + fix overflow mobile — `done`
+- **LANDING-001** · Landing page actualizada: features reales, alertas correctas, precio en ARS, FAQ Google Calendar — `done`
+- **TEST-001** · +20 tests backend: duplicados cliente, eliminar permanente, histórico contable, honorarios resumen desglose — `done`
+
 ### Auth
 - **AUTH-001** · Registro de estudio y primer usuario admin — `done`
 - **AUTH-002** · Login con email y contraseña — `done`
