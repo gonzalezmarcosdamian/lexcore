@@ -5,6 +5,7 @@ import { todayAR } from "@/lib/date";
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente, Cliente } from "@/lib/api";
 import { ContableHero } from "@/components/features/contable-hero";
 import { PageHelp } from "@/components/ui/page-help";
@@ -99,6 +100,7 @@ function SkeletonRow() {
 export default function ContablePage() {
   const { data: session } = useSession();
   const token = session?.user?.backendToken;
+  const router = useRouter();
 
   const hoy = new Date();
   const [mes, setMes] = useState(hoy.getMonth() + 1);
@@ -670,6 +672,8 @@ export default function ContablePage() {
                             )}
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>{catLabel(g.categoria)}</span>
                             <span className="text-xs text-ink-400">{new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
+                            {g.expediente_id && (() => { const exp = expedientes.find(e => e.id === g.expediente_id); return exp ? <button onClick={() => router.push(`/expedientes/${exp.id}`)} className="text-xs font-mono text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-100 rounded px-1.5 py-0.5 transition">{exp.numero}</button> : null; })()}
+                            {g.cliente_id && (() => { const cli = clientes.find(c => c.id === g.cliente_id); return cli ? <button onClick={() => router.push(`/clientes/${cli.id}`)} className="text-xs text-ink-500 hover:text-brand-600 hover:underline transition truncate max-w-[100px]">{cli.nombre}</button> : null; })()}
                             <div className="flex items-center gap-1 ml-auto">
                               {g.plantilla_id && g.estado === "pendiente" && (
                                 <button onClick={() => openConfirmar(g)} className="text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 px-2 py-0.5 rounded-lg transition">Confirmar</button>
@@ -701,7 +705,8 @@ export default function ContablePage() {
                           <div className="flex items-center gap-2 flex-wrap pl-3.5">
                             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{iCatLabel}</span>
                             <span className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
-                            {i.expediente_id && (() => { const exp = expedientes.find(e => e.id === i.expediente_id); return exp ? <span className="text-xs font-mono text-ink-500 bg-ink-50 border border-ink-100 rounded px-1.5 py-0.5">{exp.numero}</span> : null; })()}
+                            {i.expediente_id && (() => { const exp = expedientes.find(e => e.id === i.expediente_id); return exp ? <button onClick={() => router.push(`/expedientes/${exp.id}`)} className="text-xs font-mono text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-100 rounded px-1.5 py-0.5 transition">{exp.numero}</button> : null; })()}
+                            {i.cliente_id && (() => { const cli = clientes.find(c => c.id === i.cliente_id); return cli ? <button onClick={() => router.push(`/clientes/${cli.id}`)} className="text-xs text-ink-500 hover:text-brand-600 hover:underline transition truncate max-w-[100px]">{cli.nombre}</button> : null; })()}
                             <div className="flex items-center gap-1 ml-auto">
                               <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "", cliente_id: i.cliente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
