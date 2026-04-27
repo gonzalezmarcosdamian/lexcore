@@ -247,6 +247,10 @@ export default function ContablePage() {
   const handleIngresoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+    if (!ingresoForm.fecha || !/^\d{4}-\d{2}-\d{2}$/.test(ingresoForm.fecha)) {
+      setError("La fecha es obligatoria. Usá el formato DD/MM/AAAA.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -282,6 +286,10 @@ export default function ContablePage() {
   const handleGastoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+    if (!gastoForm.fecha || !/^\d{4}-\d{2}-\d{2}$/.test(gastoForm.fecha)) {
+      setError("La fecha es obligatoria. Usá el formato DD/MM/AAAA.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {

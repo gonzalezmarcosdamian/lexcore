@@ -14,11 +14,20 @@ interface DateInputProps {
   disabled?: boolean;
 }
 
-// Convierte DD/MM/AAAA → YYYY-MM-DD
+// Convierte DD/MM/AAAA → YYYY-MM-DD, con validación de rangos
 function parseDisplay(display: string): string {
   const m = display.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (!m) return "";
   const [, d, mo, y] = m;
+  const day = parseInt(d, 10);
+  const month = parseInt(mo, 10);
+  const year = parseInt(y, 10);
+  if (month < 1 || month > 12) return "";
+  if (day < 1 || day > 31) return "";
+  if (year < 1900 || year > 2100) return "";
+  // Validar que la fecha exista realmente (ej: 31/02 no existe)
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return "";
   return `${y}-${mo.padStart(2,"0")}-${d.padStart(2,"0")}`;
 }
 
@@ -75,8 +84,10 @@ export function DateInput({
     setTextVal(masked);
     const iso = parseDisplay(masked);
     if (iso) onChange(iso);
-    else if (masked === "") onChange("");
+    // No emitir onChange("") mientras el usuario escribe a medias
   };
+
+  const [invalid, setInvalid] = useState(false);
 
   const handleTextBlur = () => {
     setFocused(false);
@@ -84,13 +95,20 @@ export function DateInput({
     if (iso) {
       onChange(iso);
       setTextVal(toDisplay(iso));
-    } else if (textVal.replace(/\D/g,"").length > 0) {
-      // Entrada inválida — restaurar el valor anterior
+      setInvalid(false);
+    } else if (textVal.replace(/\D/g, "").length > 0) {
+      // Fecha incompleta o inválida — restaurar valor anterior y marcar error
       setTextVal(toDisplay(value));
+      setInvalid(true);
+    } else {
+      setInvalid(false);
     }
   };
 
-  const baseCls = `relative flex items-center w-full bg-white border border-ink-200 rounded-xl px-3 py-2.5 gap-2 transition focus-within:ring-2 focus-within:border-transparent ${ringColor} ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
+  const baseCls = `relative flex items-center w-full bg-white rounded-xl px-3 py-2.5 gap-2 transition focus-within:ring-2 focus-within:border-transparent
+    ${invalid ? "border-red-400 ring-1 ring-red-300" : "border border-ink-200"}
+    ${invalid ? "focus-within:ring-red-400" : ringColor}
+    ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className}`;
 
   return (
     <div className={baseCls}>
