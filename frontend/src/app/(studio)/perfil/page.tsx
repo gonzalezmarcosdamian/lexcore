@@ -486,10 +486,10 @@ function PerfilPageInner() {
           title="Mi perfil y configuración"
           description="Desde acá gestionás tu cuenta personal y los datos del estudio que ven tus clientes y el equipo."
           items={[
-            { icon: "👤", title: "Datos personales", description: "Tu nombre, email y contraseña. El email no se puede cambiar si usás Google para ingresar." },
-            { icon: "🏛️", title: "Datos del estudio", description: "Nombre, dirección y email de contacto. El email de contacto es requerido — se usa para notificaciones a clientes." },
-            { icon: "📅", title: "Google Calendar", description: "Conectá tu cuenta de Google para sincronizar vencimientos automáticamente en tu calendario. Cada cambio en LexCore se refleja allí." },
-            { icon: "💬", title: "WhatsApp Business", description: "Opcional. Si tenés número de WhatsApp del estudio podés configurarlo para que aparezca en las notificaciones a clientes." },
+            { icon: "👤", title: "Datos personales", description: "Tu nombre, email y rol en el estudio. El email no se puede cambiar si usás Google para ingresar." },
+            { icon: "🏛️", title: "Datos del estudio", description: "Nombre del estudio, logo, dirección y email de contacto. El logo aparece en el sidebar reemplazando el ícono de balanza." },
+            { icon: "📅", title: "Google Calendar", description: "Conectá tu cuenta de Google para sincronizar vencimientos y tareas manualmente. Una vez conectado, podés elegir en qué calendario guardar los eventos." },
+            { icon: "💳", title: "Mi plan", description: "Muestra tu plan activo, días de trial restantes y el historial de pagos. Desde acá podés suscribirte o cancelar tu suscripción." },
             { icon: "🔒", title: "Cambio de contraseña", description: "Solo disponible si usás acceso con email y contraseña. Los usuarios de Google gestionan su contraseña desde Google." },
           ]}
           tip="El email de contacto del estudio es lo que reciben tus clientes cuando les enviás notificaciones desde LexCore."

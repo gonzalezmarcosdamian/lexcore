@@ -16,7 +16,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession
-from app.models.gasto import Gasto, GastoCategoria, GastoEstado, GastoPlantilla
+from app.models.gasto import Gasto, GastoCategoria, GastoEstado, GastoPlantilla, Ingreso as IngresoModel
 from app.models.honorario import Moneda
 from app.schemas.gasto import GastoCreate, GastoOut, GastoResumen, GastoUpdate
 
@@ -163,6 +163,68 @@ def eliminar_plantilla(plantilla_id: str, db: DbSession, current_user: CurrentUs
 
 
 # ── Gastos ────────────────────────────────────────────────────────────────────
+
+class MesHistorico(BaseModel):
+    mes: int
+    anio: int
+    label: str
+    egresos_ars: float
+    ingresos_ars: float
+    resultado_ars: float
+
+
+@router.get("/historico", response_model=list[MesHistorico])
+def historico_contable(
+    db: DbSession,
+    current_user: CurrentUser,
+    meses: int = 6,
+):
+    """Devuelve N meses hacia atrás con totales de egresos e ingresos en ARS."""
+    if meses not in (3, 6, 12):
+        meses = 6
+
+    MESES_ES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    tenant_id = current_user["studio_id"]
+    hoy = date.today()
+    resultado: list[MesHistorico] = []
+
+    for offset in range(meses - 1, -1, -1):
+        mes_total = hoy.year * 12 + hoy.month - 1 - offset
+        anio_ref = mes_total // 12
+        mes_ref = mes_total % 12 + 1
+
+        gastos = db.query(Gasto).filter(
+            Gasto.tenant_id == tenant_id,
+            Gasto.mes == mes_ref,
+            Gasto.anio == anio_ref,
+            Gasto.estado == GastoEstado.confirmado,
+            Gasto.moneda == Moneda.ARS,
+        ).all()
+
+        ingresos = db.query(IngresoModel).filter(
+            IngresoModel.tenant_id == tenant_id,
+            IngresoModel.mes == mes_ref,
+            IngresoModel.anio == anio_ref,
+            IngresoModel.moneda == Moneda.ARS,
+        ).all()
+
+        egresos_ars = float(sum(g.monto for g in gastos))
+        ingresos_ars = float(sum(i.monto for i in ingresos))
+
+        label = MESES_ES[mes_ref - 1]
+
+        resultado.append(MesHistorico(
+            mes=mes_ref,
+            anio=anio_ref,
+            label=label,
+            egresos_ars=egresos_ars,
+            ingresos_ars=ingresos_ars,
+            resultado_ars=ingresos_ars - egresos_ars,
+        ))
+
+    return resultado
+
 
 @router.get("/resumen", response_model=GastoResumen)
 def resumen_gastos(

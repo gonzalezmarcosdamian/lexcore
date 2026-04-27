@@ -45,7 +45,7 @@ export function PageHelp({ title, description, items, tip }: PageHelpProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-9 z-50 w-80 bg-white rounded-2xl shadow-xl border border-ink-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute left-0 sm:left-auto sm:right-0 top-9 z-50 w-[calc(100vw-2rem)] sm:w-80 max-h-[80vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-ink-100 animate-in fade-in slide-in-from-top-2 duration-150">
           {/* Header */}
           <div className="bg-brand-600 px-4 py-3">
             <h3 className="text-sm font-semibold text-white">{title}</h3>

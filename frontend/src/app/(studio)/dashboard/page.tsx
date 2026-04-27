@@ -227,13 +227,13 @@ export default function DashboardPage() {
           title="Dashboard"
           description="Vista general del estado del estudio en tiempo real. Todo lo que necesitás ver al arrancar el día está acá."
           items={[
-            { icon: "✅", title: "Tareas pendientes", description: "Tus tareas sin completar, ordenadas por fecha límite. Las vencidas aparecen primero en rojo. Podés cambiar el estado directamente desde acá." },
-            { icon: "📅", title: "Movimientos procesales", description: "Plazos procesales de los próximos 365 días. Los urgentes (< 48hs) se destacan en rojo y generan el badge de alerta en el header." },
-            { icon: "💰", title: "Honorarios pendientes", description: "Total a cobrar en ARS y USD, sumando todos los expedientes activos con saldo pendiente." },
-            { icon: "📊", title: "Selector de período", description: "Filtrá los KPIs financieros (ingresos, egresos, honorarios cobrados) por mes, trimestre, semestre o año." },
-            { icon: "📈", title: "Gráfico de egresos", description: "Evolución mensual de los gastos del estudio dentro del período seleccionado." },
+            { icon: "📅", title: "Mini-semana", description: "Calendario navegable con los vencimientos y tareas de cada día. Hacé click en un día para ver el panel lateral con el detalle de eventos." },
+            { icon: "✅", title: "Tareas y vencimientos del día", description: "Panel con los ítems del día seleccionado. Podés cambiar el estado de una tarea o marcar un vencimiento como cumplido sin salir del dashboard." },
+            { icon: "💰", title: "KPIs financieros", description: "Ingresos, egresos y honorarios pendientes del período seleccionado. Los totales se calculan en ARS y USD por separado." },
+            { icon: "📊", title: "Selector de período", description: "Filtrá los KPIs financieros por mes, trimestre, semestre o año. No afecta el calendario de la semana." },
+            { icon: "📈", title: "Gráfico de expedientes", description: "Distribución de expedientes del estudio por estado: Activos, Archivados y Cerrados." },
           ]}
-          tip="El dashboard no reemplaza la Agenda: los KPIs son financieros, mientras que Movimientos y Tareas son operativos."
+          tip="El calendario del dashboard muestra la semana actual. Para ver y gestionar toda tu agenda usá la sección Agenda."
         />
       </div>
 

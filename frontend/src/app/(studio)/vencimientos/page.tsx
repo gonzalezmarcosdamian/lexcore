@@ -472,12 +472,12 @@ export default function VencimientosPage() {
             title="Vencimientos y Agenda"
             description="Los vencimientos son plazos procesales externos: audiencias, presentaciones, pericias, notificaciones. Distintos de las Tareas, que son trabajo interno del estudio."
             items={[
-              { icon: "🔴", title: "Urgente (< 48hs)", description: "Aparecen en rojo y se notifican en el header de toda la app. Si vence hoy o mañana, no lo podés perder de vista." },
+              { icon: "🔴", title: "Urgente (< 48hs)", description: "Aparecen en rojo y se notifican en el header de toda la app. LexCore también envía un email automático a todos los miembros del estudio." },
               { icon: "🟡", title: "Próximo (esta semana)", description: "Vence en los próximos 7 días. Amarillo como advertencia temprana para prepararse." },
               { icon: "⚠️", title: "Diferencia con tareas", description: "Vencimiento = plazo del proceso judicial (externo, con fecha fija). Tarea = trabajo del estudio (interno, asignable a personas)." },
-              { icon: "📅", title: "Google Calendar", description: "Si conectás tu Google Calendar desde Perfil, cada vencimiento se sincroniza automáticamente con recordatorios en 7 días, 48hs y 2hs." },
-              { icon: "✅", title: "Marcar cumplido", description: "Al cumplirlo desaparece de pendientes y queda en el historial del expediente. También se elimina del calendario." },
-              { icon: "🔍", title: "Filtros", description: "Filtrá por tipo (audiencia, presentación, pericia, notificación, otro), por estado o por expediente." },
+              { icon: "📅", title: "Google Calendar", description: "Conectá tu Google Calendar desde Perfil y sincronizá manualmente. Los eventos se crean con el número de expediente en las notas y dos alertas: a medianoche y 1h antes." },
+              { icon: "✅", title: "Marcar cumplido", description: "Al cumplirlo desaparece de pendientes y queda en el historial del expediente. Se puede deshacer desde el detalle." },
+              { icon: "🔍", title: "Filtros", description: "Filtrá por tipo (audiencia, presentación, pericia, otro), por estado o por expediente. También podés buscar por mes con el calendario lateral." },
             ]}
             tip="Creá vencimientos directamente desde el detalle del expediente para que queden vinculados al caso automáticamente."
           />

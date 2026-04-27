@@ -6,6 +6,7 @@ import { todayAR } from "@/lib/date";
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente, Cliente } from "@/lib/api";
+import { ContableHero } from "@/components/features/contable-hero";
 import { PageHelp } from "@/components/ui/page-help";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
 
@@ -444,16 +445,18 @@ export default function ContablePage() {
           title="Módulo Contable"
           description="Controlá egresos e ingresos del estudio mes a mes. Los totales alimentan el dashboard financiero."
           items={[
-            { icon: "🔄", title: "Gastos recurrentes", description: "Plantillas para gastos fijos mensuales (alquiler, sueldos, servicios). Se generan automáticamente al inicio de cada mes como 'pendientes'." },
-            { icon: "💸", title: "Gastos puntuales", description: "Cualquier gasto no programado: honorarios de terceros, materiales, viáticos. Se registran directamente en el mes correspondiente." },
-            { icon: "🟢", title: "Confirmado vs pendiente", description: "Pendiente (naranja) = gasto previsto pero no ejecutado. Confirmado (verde) = pagado y verificado. Solo los confirmados se suman al total del período." },
-            { icon: "💵", title: "Monedas ARS / USD", description: "Podés registrar gastos en pesos o dólares. El dashboard los convierte al tipo MEP del día para mostrar totales unificados." },
-            { icon: "📋", title: "Ingresos", description: "Registrá ingresos del estudio que no son honorarios de expedientes (ej: consultas, asesoramiento externo, retenciones)." },
-            { icon: "📅", title: "Navegación por período", description: "Usá las flechas para ver y editar gastos de cualquier mes histórico." },
+            { icon: "💸", title: "Gastos", description: "Registrá cualquier gasto del estudio: alquiler, sueldos, servicios, costos judiciales, honorarios a terceros. Podés vincularlo a un expediente para ver el costo del caso." },
+            { icon: "🟢", title: "Confirmado vs pendiente", description: "Pendiente (naranja) = gasto previsto pero no ejecutado. Confirmado (verde) = pagado. Solo los confirmados se suman a los totales del período." },
+            { icon: "💵", title: "Monedas ARS / USD", description: "Podés registrar gastos en pesos o dólares. Los KPIs del dashboard muestran los totales por moneda por separado." },
+            { icon: "📋", title: "Ingresos", description: "Registrá ingresos que no son honorarios de expedientes: consultas, asesoramiento externo, retenciones. También se pueden vincular a un expediente." },
+            { icon: "📅", title: "Navegación por período", description: "Usá las flechas para ver y editar gastos e ingresos de cualquier mes histórico." },
           ]}
           tip="Asociar un gasto a un expediente te permite ver el costo real de cada caso en el detalle del expediente."
         />
       </div>
+
+      {/* ── Hero financiero ── */}
+      {token && <ContableHero token={token} />}
 
       {/* ── Barra de control unificada ── */}
       <div className="bg-white border border-ink-100 rounded-2xl shadow-sm overflow-hidden">
