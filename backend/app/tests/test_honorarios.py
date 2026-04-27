@@ -203,3 +203,51 @@ class TestHonorariosAislamientoTenant:
         client.post("/honorarios", json={**HON_BASE, "expediente_id": exp_a.id}, headers=auth_a)
         r = client.get("/honorarios/resumen", headers=auth_b)
         assert float(r.json()["total_acordado_ars"]) == 0.0
+
+
+class TestHonorariosResumenDesglose:
+    """Campos nuevos: saldo_vencido_ars / saldo_por_vencer_ars."""
+
+    def _crear(self, client, headers, exp_id, monto="100000", fecha_vencimiento=None):
+        body = {**HON_BASE, "expediente_id": exp_id, "monto_acordado": monto}
+        if fecha_vencimiento:
+            body["fecha_vencimiento"] = fecha_vencimiento
+        return client.post("/honorarios", json=body, headers=headers).json()["id"]
+
+    def test_resumen_incluye_campos_desglose(self, client, auth_a, exp_a):
+        r = client.get("/honorarios/resumen", headers=auth_a)
+        data = r.json()
+        assert "saldo_vencido_ars" in data
+        assert "saldo_por_vencer_ars" in data
+        assert "count_vencidos" in data
+        assert "count_por_vencer" in data
+
+    def test_honorario_vencido_suma_a_vencido(self, client, auth_a, exp_a):
+        self._crear(client, auth_a, exp_a.id, monto="50000", fecha_vencimiento="2020-01-01")
+        r = client.get("/honorarios/resumen", headers=auth_a)
+        data = r.json()
+        assert float(data["saldo_vencido_ars"]) == 50000.0
+        assert data["count_vencidos"] == 1
+
+    def test_honorario_futuro_suma_a_por_vencer(self, client, auth_a, exp_a):
+        self._crear(client, auth_a, exp_a.id, monto="75000", fecha_vencimiento="2099-12-31")
+        r = client.get("/honorarios/resumen", headers=auth_a)
+        data = r.json()
+        assert float(data["saldo_por_vencer_ars"]) == 75000.0
+        assert data["count_por_vencer"] == 1
+
+    def test_honorario_pagado_no_suma_a_vencido(self, client, auth_a, exp_a):
+        hon_id = self._crear(client, auth_a, exp_a.id, monto="30000", fecha_vencimiento="2020-01-01")
+        client.post(f"/honorarios/{hon_id}/pagos", json={
+            "importe": "30000", "moneda": "ARS", "fecha": "2020-01-01",
+        }, headers=auth_a)
+        r = client.get("/honorarios/resumen", headers=auth_a)
+        assert float(r.json()["saldo_vencido_ars"]) == 0.0
+
+    def test_sin_fecha_vencimiento_suma_a_por_vencer(self, client, auth_a, exp_a):
+        """Sin fecha_vencimiento el honorario está pendiente sin vencer — va a saldo_por_vencer."""
+        self._crear(client, auth_a, exp_a.id, monto="20000")
+        r = client.get("/honorarios/resumen", headers=auth_a)
+        data = r.json()
+        assert float(data["saldo_vencido_ars"]) == 0.0
+        assert float(data["saldo_por_vencer_ars"]) == 20000.0

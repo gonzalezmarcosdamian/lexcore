@@ -82,6 +82,62 @@ class TestClientesCRUD:
         assert r.status_code in (401, 403)
 
 
+class TestClientesDuplicados:
+    """Validación de unicidad de DNI/CUIT por tenant."""
+
+    def test_no_permite_dni_duplicado(self, client, auth_a):
+        client.post("/clientes", json={"nombre": "García", "tipo": "fisica", "dni": "12345678"}, headers=auth_a)
+        r = client.post("/clientes", json={"nombre": "García Bis", "tipo": "fisica", "dni": "12345678"}, headers=auth_a)
+        assert r.status_code == 422
+        assert "DNI" in r.json()["detail"]
+
+    def test_no_permite_cuit_duplicado(self, client, auth_a):
+        client.post("/clientes", json={"nombre": "Empresa A", "tipo": "juridica", "cuit": "30-12345678-9"}, headers=auth_a)
+        r = client.post("/clientes", json={"nombre": "Empresa B", "tipo": "juridica", "cuit": "30-12345678-9"}, headers=auth_a)
+        assert r.status_code == 422
+        assert "CUIT" in r.json()["detail"]
+
+    def test_permite_mismo_dni_en_otro_tenant(self, client, auth_a, auth_b):
+        client.post("/clientes", json={"nombre": "García A", "tipo": "fisica", "dni": "99999999"}, headers=auth_a)
+        r = client.post("/clientes", json={"nombre": "García B", "tipo": "fisica", "dni": "99999999"}, headers=auth_b)
+        assert r.status_code == 201
+
+    def test_permite_mismo_dni_si_otro_archivado(self, client, auth_a):
+        r1 = client.post("/clientes", json={"nombre": "García", "tipo": "fisica", "dni": "77777777"}, headers=auth_a)
+        cid = r1.json()["id"]
+        client.delete(f"/clientes/{cid}", headers=auth_a)  # archivar
+        r2 = client.post("/clientes", json={"nombre": "García Nuevo", "tipo": "fisica", "dni": "77777777"}, headers=auth_a)
+        assert r2.status_code == 201
+
+    def test_no_permite_editar_con_dni_de_otro(self, client, auth_a):
+        client.post("/clientes", json={"nombre": "García", "tipo": "fisica", "dni": "11111111"}, headers=auth_a)
+        r2 = client.post("/clientes", json={"nombre": "López", "tipo": "fisica", "dni": "22222222"}, headers=auth_a)
+        cid2 = r2.json()["id"]
+        r = client.patch(f"/clientes/{cid2}", json={"dni": "11111111"}, headers=auth_a)
+        assert r.status_code == 422
+
+
+class TestClienteEliminarPermanente:
+    """DELETE /clientes/{id}/eliminar — eliminación real con desvinculación."""
+
+    def test_eliminar_cliente_sin_expedientes(self, client, auth_a):
+        cid = create_cliente(client, auth_a, "A Eliminar").json()["id"]
+        r = client.delete(f"/clientes/{cid}/eliminar", headers=auth_a)
+        assert r.status_code == 204
+        # ya no existe
+        r2 = client.get(f"/clientes/{cid}", headers=auth_a)
+        assert r2.status_code == 404
+
+    def test_eliminar_cliente_de_otro_tenant_404(self, client, auth_a, auth_b):
+        cid = create_cliente(client, auth_a).json()["id"]
+        r = client.delete(f"/clientes/{cid}/eliminar", headers=auth_b)
+        assert r.status_code == 404
+
+    def test_eliminar_inexistente_404(self, client, auth_a):
+        r = client.delete("/clientes/id-falso/eliminar", headers=auth_a)
+        assert r.status_code == 404
+
+
 class TestClientesAislamientoTenant:
     """Invariante crítico: tenant A nunca ve datos de tenant B."""
 

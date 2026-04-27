@@ -208,3 +208,71 @@ class TestGastosAislamientoTenant:
         r = client.get("/gastos/plantillas", headers=auth_b)
         assert r.status_code == 200
         assert len(r.json()) == 0
+
+
+class TestGastosHistorico:
+    """GET /gastos/historico — evolución financiera para el gráfico."""
+
+    def test_historico_retorna_n_meses(self, client, auth_a):
+        for n in (3, 6, 12):
+            r = client.get(f"/gastos/historico?meses={n}", headers=auth_a)
+            assert r.status_code == 200
+            assert len(r.json()) == n
+
+    def test_historico_estructura_campos(self, client, auth_a):
+        r = client.get("/gastos/historico?meses=3", headers=auth_a)
+        item = r.json()[0]
+        assert "mes" in item
+        assert "anio" in item
+        assert "label" in item
+        assert "egresos_ars" in item
+        assert "ingresos_ars" in item
+        assert "resultado_ars" in item
+
+    def test_historico_labels_en_espanol(self, client, auth_a):
+        r = client.get("/gastos/historico?meses=12", headers=auth_a)
+        labels = [d["label"] for d in r.json()]
+        meses_validos = {"Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"}
+        assert all(l in meses_validos for l in labels)
+
+    def test_historico_ultimo_mes_es_actual(self, client, auth_a):
+        from datetime import date
+        hoy = date.today()
+        r = client.get("/gastos/historico?meses=3", headers=auth_a)
+        ultimo = r.json()[-1]
+        assert ultimo["mes"] == hoy.month
+        assert ultimo["anio"] == hoy.year
+
+    def test_historico_egresos_mes_pasado(self, client, auth_a):
+        """Crea gasto en mes pasado y verifica que aparece en el histórico de 6M."""
+        from datetime import date
+        hoy = date.today()
+        # Usar mes anterior para evitar auto-generación de recurrentes en mes actual
+        if hoy.month == 1:
+            mes_ant, anio_ant = 12, hoy.year - 1
+        else:
+            mes_ant, anio_ant = hoy.month - 1, hoy.year
+        fecha = f"{anio_ant}-{str(mes_ant).zfill(2)}-15"
+        client.post("/gastos", json={**GASTO_BASE, "monto": "10000", "fecha": fecha}, headers=auth_a)
+        r = client.get("/gastos/historico?meses=6", headers=auth_a)
+        assert r.status_code == 200
+        # El penúltimo elemento debe ser el mes pasado
+        penultimo = r.json()[-2]
+        assert penultimo["mes"] == mes_ant
+        assert float(penultimo["egresos_ars"]) == 10000.0
+
+    def test_historico_sin_auth_401(self, client):
+        r = client.get("/gastos/historico?meses=3")
+        assert r.status_code in (401, 403)
+
+    def test_historico_aislado_por_tenant(self, client, auth_a, auth_b):
+        from datetime import date
+        hoy = date.today()
+        if hoy.month == 1:
+            mes_ant, anio_ant = 12, hoy.year - 1
+        else:
+            mes_ant, anio_ant = hoy.month - 1, hoy.year
+        fecha = f"{anio_ant}-{str(mes_ant).zfill(2)}-15"
+        client.post("/gastos", json={**GASTO_BASE, "monto": "99000", "fecha": fecha}, headers=auth_a)
+        r = client.get("/gastos/historico?meses=6", headers=auth_b)
+        assert all(d["egresos_ars"] == 0.0 for d in r.json())
