@@ -640,33 +640,31 @@ export default function ContablePage() {
                     {sortGastos(recurrentes).map((g) => {
                       const cfg = ESTADO_CONFIG[g.estado];
                       return (
-                        <div key={g.id} className="flex items-center gap-3 px-5 py-3.5">
-                          {/* Semáforo */}
-                          <span className={`flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                            {cfg.label}
-                          </span>
-                          {/* Categoría */}
-                          <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>
-                            {catLabel(g.categoria)}
-                          </span>
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-ink-900 font-medium truncate">{g.descripcion}</p>
-                            <p className="text-xs text-ink-400">
-                              {new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
-                            </p>
+                        <div key={g.id} className="px-4 py-3">
+                          {/* Fila 1: descripción + monto */}
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <p className="text-sm text-ink-900 font-medium truncate flex-1">{g.descripcion}</p>
+                            <span className="text-sm font-semibold text-ink-900 flex-shrink-0">
+                              {formatMoney(Number(g.monto), g.moneda)}
+                            </span>
                           </div>
-                          {/* Monto */}
-                          <span className="text-sm font-semibold text-ink-900 flex-shrink-0">
-                            {formatMoney(Number(g.monto), g.moneda)}
-                          </span>
-                          {/* Acciones */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
+                          {/* Fila 2: badges + fecha + acciones */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${cfg.color}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                              {cfg.label}
+                            </span>
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>
+                              {catLabel(g.categoria)}
+                            </span>
+                            <span className="text-xs text-ink-400">
+                              {new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                            </span>
+                            <div className="flex items-center gap-1 ml-auto">
                             {g.estado === "pendiente" && (
                               <button
                                 onClick={() => openConfirmar(g)}
-                                className="text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 px-3 py-1.5 rounded-lg transition"
+                                className="text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-100 px-2.5 py-1 rounded-lg transition"
                               >
                                 Confirmar
                               </button>
@@ -685,6 +683,7 @@ export default function ContablePage() {
                               )}
                             </button>
                           </div>
+                          </div>{/* fin fila 2 */}
                         </div>
                       );
                     })}
@@ -715,34 +714,22 @@ export default function ContablePage() {
               ) : (
                 <div className="divide-y divide-ink-50">
                   {sortGastos(puntuales).map((g) => (
-                    <div key={g.id} className="flex items-center gap-3 px-5 py-3.5">
-                      <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>
-                        {catLabel(g.categoria)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-ink-900 font-medium truncate">{g.descripcion}</p>
-                        <p className="text-xs text-ink-400">
-                          {new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
-                        </p>
+                    <div key={g.id} className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <p className="text-sm text-ink-900 font-medium truncate flex-1">{g.descripcion}</p>
+                        <span className="text-sm font-semibold text-ink-900 flex-shrink-0">{formatMoney(Number(g.monto), g.moneda)}</span>
                       </div>
-                      <span className="text-sm font-semibold text-ink-900 flex-shrink-0">
-                        {formatMoney(Number(g.monto), g.moneda)}
-                      </span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => handleEditGasto(g)} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button onClick={() => handleDeleteGasto(g.id)} disabled={deletingId === g.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-                          {deletingId === g.id ? (
-                            <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" />
-                          ) : (
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          )}
-                        </button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORIA_COLORS[g.categoria]}`}>{catLabel(g.categoria)}</span>
+                        <span className="text-xs text-ink-400">{new Date(g.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button onClick={() => handleEditGasto(g)} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                          <button onClick={() => handleDeleteGasto(g.id)} disabled={deletingId === g.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+                            {deletingId === g.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -786,26 +773,26 @@ export default function ContablePage() {
                   const i = raw as unknown as Ingreso;
                   const catLabel = CATEGORIAS_INGRESO.find((c) => c.value === i.categoria)?.label ?? i.categoria;
                   return (
-                    <div key={i.id} className="flex items-center gap-3 px-5 py-3.5">
-                      <span className={`flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{catLabel}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-ink-900 font-medium truncate">{i.descripcion}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</p>
-                          {i.expediente_id && (() => {
-                            const exp = expedientes.find(e => e.id === i.expediente_id);
-                            return exp ? <span className="text-xs font-mono text-ink-500 bg-ink-50 border border-ink-100 rounded px-1.5 py-0.5">{exp.numero}</span> : null;
-                          })()}
-                        </div>
+                    <div key={i.id} className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <p className="text-sm text-ink-900 font-medium truncate flex-1">{i.descripcion}</p>
+                        <span className="text-sm font-semibold text-green-700 flex-shrink-0">{formatMoney(Number(i.monto), i.moneda)}</span>
                       </div>
-                      <span className="text-sm font-semibold text-green-700 flex-shrink-0">{formatMoney(Number(i.monto), i.moneda)}</span>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "", cliente_id: i.cliente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                        <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
-                          {deletingId === i.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
-                        </button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${INGRESO_COLORS[i.categoria]}`}>{catLabel}</span>
+                        <span className="text-xs text-ink-400">{new Date(i.fecha + "T12:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}</span>
+                        {i.expediente_id && (() => {
+                          const exp = expedientes.find(e => e.id === i.expediente_id);
+                          return exp ? <span className="text-xs font-mono text-ink-500 bg-ink-50 border border-ink-100 rounded px-1.5 py-0.5">{exp.numero}</span> : null;
+                        })()}
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button onClick={() => { setIngresoForm({ descripcion: i.descripcion, categoria: i.categoria, monto: String(i.monto), moneda: i.moneda, fecha: i.fecha, notas: i.notas ?? "", expediente_id: i.expediente_id ?? "", cliente_id: i.cliente_id ?? "" }); setEditingIngresoId(i.id); setShowIngresoForm(true); setError(""); }} className="text-ink-400 hover:text-ink-700 p-1.5 rounded-lg hover:bg-ink-50 transition">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                          <button onClick={() => handleDeleteIngreso(i.id)} disabled={deletingId === i.id} className="text-ink-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition disabled:opacity-50">
+                            {deletingId === i.id ? <span className="w-3.5 h-3.5 block rounded-full border-2 border-red-300 border-t-transparent animate-spin" /> : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
