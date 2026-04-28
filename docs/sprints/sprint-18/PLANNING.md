@@ -21,13 +21,15 @@ Prioridades: no operar a ciegas en superadmin + fricción de login Google + deud
 | AUTH-SESSION-001 | Sesión Google dura 30 días (refresh token NextAuth) | 3 | P0 |
 | SADM-010 | Gestión de precios de planes desde UI superadmin | 5 | P0 |
 | SADM-011 | Trials a punto de vencer — lista + CTA extender | 3 | P0 |
+| **UX-COLOR-001** | **Paleta uniforme: tareas=azul, movimientos=naranja en toda la app** | **2** | **P1** |
+| **UX-AGENDA-ROWS-001** | **Filas de agenda con expediente + cliente + adjuntos visibles** | **3** | **P1** |
 | SADM-013 | Actividad reciente por tenant (DAU/WAU, último login) | 5 | P1 |
 | SADM-014 | Adopción por feature (% de uso por módulo) | 3 | P1 |
 | DT-VCT-002 | `/vencimientos` → redirect a `/agenda` | 1 | P1 |
 | DT-VCT-005 | Default tipo Movimiento `"vencimiento"` → `"otro"` | 1 | P2 |
 | UX-SHEET-001 | Swipe-down para cerrar bottom sheets (drag handle) | 5 | P1 |
 
-**Total:** 26 puntos
+**Total:** 31 puntos
 
 ---
 
@@ -107,15 +109,50 @@ Componente `BottomSheet` genérico con drag handle:
 
 ---
 
+## Detalle — Nuevas historias UX (feedback beta 2026-04-28)
+
+### UX-COLOR-001 (2pts) — P1
+**Regla única:** tareas = azul, movimientos/vencimientos = naranja, en toda la app.
+**Archivos a tocar:**
+- `calendar-mensual.tsx` — dots de color en el calendario mensual
+- `agenda/page.tsx` — pills en lista cronológica y kanban
+- `dashboard/page.tsx` — AgendaWidget (mini-semana + panel día)
+- `expedientes/[id]/page.tsx` — bitácora (cards de tarea vs movimiento)
+**Criterios:**
+- [ ] En cualquier pantalla, el dot/pill de una tarea es azul
+- [ ] En cualquier pantalla, el dot/pill de un movimiento es naranja/ámbar
+- [ ] Urgente sigue siendo rojo (se superpone al color base)
+
+### UX-AGENDA-ROWS-001 (3pts) — P1
+**Formato de fila deseado en vista lista de agenda:**
+```
+[PENDIENTE ▾]  [VENCIMIENTO]  [+ Urgente]
+Vence Noticia Contestación de Exhorto (Con Cargo)
+Jue 30 de abril · 10:00 · EXP-2026-0014 · Campos Marcela Jimena
+▸ Adjuntos (2)
+```
+**Fix:**
+- Agregar línea 2 debajo del título: `fecha larga · hora · numero_expediente · cliente_nombre`
+- Si tiene documentos: link colapsable "▸ Adjuntos (N)" que navega al detalle
+- Solo en la **vista lista** (no kanban — el kanban tiene cards más compactas)
+**Criterios:**
+- [ ] Cada fila muestra expediente y cliente sin abrir el detalle
+- [ ] "Adjuntos" visible si hay documentos, oculto si no
+- [ ] Funciona en mobile 375px sin overflow
+
+---
+
 ## Orden de implementación
 
 ```
-Día 1-2:  AUTH-SESSION-001  — fricción diaria para usuarios reales
-Día 3-4:  SADM-011          — valor comercial inmediato (trials)
-Día 5-7:  SADM-010          — necesario antes de más usuarios pagos
-Día 8-9:  SADM-013 + 014    — visibilidad de uso
-Día 10:   DT-VCT-002 + 005  — limpieza rápida
-Día 11:   UX-SHEET-001      — si queda tiempo
+Día 1-2:  AUTH-SESSION-001         — fricción diaria para usuarios reales
+Día 3:    UX-COLOR-001             — visible y molesto para el usuario beta
+Día 4:    UX-AGENDA-ROWS-001       — pedido directo del usuario real
+Día 5-6:  SADM-011                 — valor comercial inmediato (trials)
+Día 7-9:  SADM-010                 — necesario antes de más usuarios pagos
+Día 10:   SADM-013 + 014           — visibilidad de uso
+Día 11:   DT-VCT-002 + 005         — limpieza rápida (2pts, 1h c/u)
+Día 12:   UX-SHEET-001             — si queda tiempo
 ```
 
 ---

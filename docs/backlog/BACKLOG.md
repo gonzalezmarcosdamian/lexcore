@@ -128,6 +128,30 @@
 
 ### P1 — Feedback usuarios (idea, sin iniciar)
 
+- **UX-COLOR-001** · Paleta de colores uniforme en toda la app — `idea`
+  - **Fuente:** Martín (beta) — 2026-04-28
+  - **Problema:** Tareas y movimientos usan colores distintos según la pantalla. No hay consistencia entre calendar semanal, agenda lista, agenda kanban, dashboard y expediente.
+  - **Regla a aplicar:**
+    - Tareas → siempre **azul** (`blue-500` dot, `bg-blue-50` pill)
+    - Movimientos/Vencimientos → siempre **naranja/ámbar** (`orange-500` dot, `bg-orange-50` pill)
+    - Urgente → rojo (se mantiene)
+  - **Afecta:** `calendar-mensual.tsx`, `agenda/page.tsx` (calendario semanal, kanban, lista), `dashboard/page.tsx` (AgendaWidget), `expedientes/[id]/page.tsx` (bitácora)
+  - **Criterio:** el dot o pill de color de una tarea es siempre azul en cualquier pantalla donde aparezca
+
+- **UX-AGENDA-ROWS-001** · Filas de agenda con más contexto: expediente + cliente visibles — `idea`
+  - **Fuente:** Martín (beta) — 2026-04-28
+  - **Problema:** En la vista lista de agenda, las filas muestran título y poco más. El usuario necesita ver el número de expediente y el nombre del cliente sin abrir el detalle.
+  - **Formato deseado** (como se ve en las screenshots):
+    ```
+    [PENDIENTE] [VENCIMIENTO] + Urgente
+    Título del movimiento
+    Jue 30 de abril · 10:00 · 14064248 · Campos Marcela Jimena
+    > Adjuntos
+    ```
+  - **Fix:** en las filas de la lista de agenda, agregar debajo del título: fecha+hora · número expediente · nombre cliente
+  - **"Adjuntos":** link colapsable si el movimiento/tarea tiene documentos adjuntos
+  - **Afecta:** `agenda/page.tsx` — vista lista (no kanban)
+
 - **UX-SHEET-001** · Bottom sheets mobile: swipe down mueve la pantalla de fondo en lugar de cerrar el sheet — `idea`
   - **Causa:** falta `overscroll-behavior: contain` + bloqueo de scroll del body cuando el sheet está abierto
   - **Fix:** agregar `document.body.style.overflow = 'hidden'` al abrir y restaurar al cerrar; `touch-action: pan-y` en el handle de arrastre
