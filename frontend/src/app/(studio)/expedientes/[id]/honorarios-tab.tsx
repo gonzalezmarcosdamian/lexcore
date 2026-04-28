@@ -29,7 +29,9 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
   const [honorarios, setHonorarios] = useState<Honorario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  // null = usar default por card (pendiente=expandido, saldado=colapsado)
+  // string = override manual
+  const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [confirmEliminarId, setConfirmEliminarId] = useState<string | null>(null);
@@ -246,7 +248,8 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
           {honorarios.map(h => {
             const saldo = h.saldo_pendiente;
             const pct = h.monto_acordado > 0 ? Math.min(100, (h.total_capital / h.monto_acordado) * 100) : 0;
-            const isExpanded = expandedId === h.id;
+            const defaultExpanded = h.saldo_pendiente > 0; // pendiente=abierto, saldado=cerrado
+            const isExpanded = h.id in expandedOverride ? expandedOverride[h.id] : defaultExpanded;
             const pf = pagoForm[h.id] ?? { importe: "", moneda: h.moneda, fecha: today, comprobante: "", tipo: "capital" as const };
             const vencBadge = (() => {
               if (!h.fecha_vencimiento || saldo <= 0) return null;
@@ -270,7 +273,7 @@ export function HonorariosTab({ expedienteId, token, onCreated, sidebarMode }: {
                 {/* Header — concepto como título principal */}
                 <div
                   className="px-4 pt-4 pb-3 cursor-pointer hover:bg-ink-50/50 transition"
-                  onClick={() => setExpandedId(isExpanded ? null : h.id)}
+                  onClick={() => setExpandedOverride(prev => ({ ...prev, [h.id]: !isExpanded }))}
                 >
                   {/* Fila 1: concepto + moneda + estado + pagar + chevron */}
                   <div className="flex items-start justify-between gap-2 mb-2">

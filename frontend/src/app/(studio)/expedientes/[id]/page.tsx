@@ -980,7 +980,23 @@ export default function ExpedienteDetailPage() {
               >
                 <svg className={`w-3.5 h-3.5 text-ink-400 transition-transform duration-150 ${bitOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 <div>
-                  <h2 className="text-sm font-semibold text-ink-700 group-hover:text-ink-900 transition">Bitácora</h2>
+                  <h2 className="text-sm font-semibold text-ink-700 group-hover:text-ink-900 transition">
+                    Bitácora
+                    {!bitOpen && actividad.length > 0 && (
+                      <span className="ml-2 text-xs font-normal text-ink-400">
+                        {actividad.length} entradas · Última: {(() => {
+                          const last = actividad[0];
+                          if (!last) return "—";
+                          const d = new Date(last.created_at);
+                          const dias = Math.floor((Date.now() - d.getTime()) / 86400000);
+                          if (dias === 0) return "hoy";
+                          if (dias === 1) return "ayer";
+                          if (dias <= 7) return `hace ${dias}d`;
+                          return d.toLocaleDateString("es-AR", { day: "2-digit", month: "short" });
+                        })()}
+                      </span>
+                    )}
+                  </h2>
                   {bitOpen && <p className="text-xs text-ink-400 mt-0.5">Historial completo del expediente</p>}
                 </div>
               </button>
@@ -1086,17 +1102,47 @@ export default function ExpedienteDetailPage() {
           </div>
 
           {/* Honorarios — ancho completo igual que bitácora */}
+          {(() => {
+            const honOpen = honorarios.length === 0 || honorarios.some(h => h.saldo_pendiente > 0);
+            const [honSectionOpen, setHonSectionOpen] = useState(honOpen);
+            const fmtK = (n: number, m: string) => {
+              const s = m === "ARS" ? "$" : "U$D";
+              if (n >= 1_000_000) return `${s}${(n/1_000_000).toLocaleString("es-AR",{maximumFractionDigits:1})}M`;
+              if (n >= 1_000) return `${s}${(n/1_000).toLocaleString("es-AR",{maximumFractionDigits:0})}K`;
+              return `${s}${n.toLocaleString("es-AR",{maximumFractionDigits:0})}`;
+            };
+            return (
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-ink-50 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-ink-700">Honorarios</h2>
-                <p className="text-xs text-ink-400 mt-0.5">Acuerdos y pagos</p>
-              </div>
+              <button onClick={() => setHonSectionOpen(o => !o)} className="flex items-center gap-2 flex-1 text-left group">
+                <svg className={`w-3.5 h-3.5 text-ink-400 transition-transform duration-150 ${honSectionOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <div>
+                  <h2 className="text-sm font-semibold text-ink-700 group-hover:text-ink-900 transition">
+                    Honorarios
+                    {honorarios.length > 0 && <span className="ml-1 text-xs font-normal text-ink-400">· {honorarios.length} acuerdo{honorarios.length > 1 ? "s" : ""}</span>}
+                  </h2>
+                  {!honSectionOpen && honorarios.length > 0 && (
+                    <p className="text-xs text-ink-400 mt-0.5">
+                      {["ARS","USD"].map(m => {
+                        const hm = honorarios.filter(h => h.moneda === m);
+                        if (!hm.length) return null;
+                        const ac = hm.reduce((s,h) => s + Number(h.monto_acordado), 0);
+                        const co = hm.reduce((s,h) => s + Number(h.total_capital), 0);
+                        const pe = hm.reduce((s,h) => s + Number(h.saldo_pendiente), 0);
+                        return `${m}: ${fmtK(ac,m)} acordado · ${fmtK(co,m)} cobrado · ${fmtK(pe,m)} pendiente`;
+                      }).filter(Boolean).join("  |  ")}
+                    </p>
+                  )}
+                  {honSectionOpen && <p className="text-xs text-ink-400 mt-0.5">Acuerdos y pagos</p>}
+                </div>
+              </button>
             </div>
-            <div className="p-4">
+            {honSectionOpen && <div className="p-4">
               {token && <HonorariosTab expedienteId={id} token={token} onCreated={loadActividad} />}
-            </div>
+            </div>}
           </div>
+            );
+          })()}
 
         </div>
       </div>
