@@ -250,6 +250,43 @@ for (const f of Object.keys(map)) {
 
 ---
 
+---
+
+## 2026-04-28 — Sesión 014
+
+### useState dentro de IIFE en JSX rompe React (regla crítica)
+**Bug:** Usar `{(() => { const [x, setX] = useState(true); return (<div>...</div>); })()}` en el JSX de un componente viola las Rules of Hooks y crashea la app con "Application error: a client-side exception has occurred".
+**Causa:** React exige que los hooks se llamen siempre en el mismo orden y solo dentro de componentes o custom hooks. Un IIFE no es un componente.
+**Fix:** Mover todos los `useState` al nivel del componente padre antes del `return`.
+**Ocurrió dos veces** en la misma sesión (bitácora y honorarios). Incorporar al checklist de revisión de código.
+
+### DatatypeMismatch en CASE con SQLAlchemy + PostgreSQL
+**Bug:** `CASE types date and character varying cannot be matched` al usar `case((col.isnot(None), col), else_=func.date(other_col))` cuando `col` es `String` y `func.date()` devuelve `date`.
+**Fix:** `cast(func.date(other_col), SAString)` para igualar los tipos dentro del CASE.
+**Archivo:** `backend/app/routers/expedientes.py` en el `order_by` de `actos-bitacora`.
+
+### Google OAuth refresh_token — sesión de 30 días
+**Decisión:** El callback `jwt` de NextAuth ahora renueva el Google `access_token` automáticamente cuando quedan < 5 minutos para vencer (Google lo expira en 1 hora).
+**Implementación:**
+- Al login se guardan `googleAccessToken` + `googleAccessTokenExpires` en el JWT
+- En cada request: si `Date.now() > expires - 5min` → `POST oauth2.googleapis.com/token` con `grant_type: refresh_token`
+- Fallo silencioso: si el refresh falla, la sesión NextAuth (30 días) sigue válida
+**Resultado:** El usuario no necesita re-loguearse durante 30 días en uso normal.
+
+### Validación de duplicados en onBlur (antes de submit)
+**Decisión:** Para campos únicos (DNI, CUIT, email en clientes), validar contra el backend en el evento `onBlur` del campo, no solo al hacer submit.
+**Implementación:** Endpoint `GET /clientes/check-duplicado?dni=&cuit=&email=` devuelve `{ok, campo, mensaje}`. El frontend llama en `onBlur` y muestra el error debajo del campo específico con "Verificando…" mientras espera.
+**Beneficio UX:** El usuario ve el error antes de intentar guardar, con contexto del campo exacto.
+
+### Superadmin: User.tenant_id, no User.studio_id
+**Bug:** `User` hereda de `TenantModel` cuyo campo es `tenant_id`, no `studio_id`. Usar `User.studio_id` en SQLAlchemy queries causa `AttributeError` y 500.
+**Regla:** Siempre usar `User.tenant_id` (heredado) en lugar de `studio_id`.
+
+### GA4 con @next/third-parties — carga condicional
+**Decisión:** `<GoogleAnalytics gaId={GA_ID} />` solo se renderiza si `process.env.NEXT_PUBLIC_GA_ID` está definido.
+**Beneficio:** Sin la variable, GA no carga (cero impacto en performance en local). En prod se activa seteando la env var en Vercel.
+**ID activo:** `G-BXJ8Y780BY`
+
 ### pydantic[email] obligatorio
 **Decisión:** Usar `pydantic[email]` en requirements.txt, no `pydantic` solo.
 **Razón:** `EmailStr` de Pydantic requiere `email-validator` instalado. Sin el extra, el backend falla al arrancar.

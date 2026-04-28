@@ -4,6 +4,86 @@
 
 ---
 
+## Sesión 014 — 2026-04-28
+
+**Sprint:** Sprint 17/18 (transición)
+**Versión al cierre:** v0.21.0
+
+### Qué se hizo
+
+**Módulo Contable:**
+- Hero financiero con gráfico de barras agrupadas (recharts), chips 3M/6M/12M
+- Endpoint `GET /gastos/historico?meses=N` — evolución mensual en una sola query
+- Feed unificado de movimientos (egresos + ingresos mezclados por fecha), 5 items + "Ver todos"
+- Expediente y cliente navegables desde el feed
+- Cards de totales en grilla 3×2, layout mobile 2 filas, rows de 2 líneas
+
+**Honorarios:**
+- `HonorarioResumen` ampliado: `saldo_vencido_ars`, `saldo_por_vencer_ars`, `count_*`
+- Dashboard: 5 cards con escala K/M, separación vencidos vs por cobrar
+- Alerta "Hoy tenés que cobrar" en dashboard
+- Google Calendar sync incluye honorarios pendientes (`💰 Cobrar: concepto`)
+- Cards individuales colapsables: saldado=cerrado, pendiente=abierto por default
+
+**Clientes:**
+- `DELETE /clientes/{id}/eliminar` — eliminación permanente con SET NULL en expedientes
+- Validación DNI/CUIT/email únicos por tenant (crear y editar)
+- Endpoint `GET /clientes/check-duplicado` — validación en `onBlur` antes del submit
+- Errores mapeados al campo específico en el formulario
+
+**Superadmin:**
+- `list_studios` enriquecido: `ultima_actividad`, `exp_esta_semana`, `total_expedientes`, `total_usuarios`
+- Card "Trials por vencer" al tope cuando hay estudios en últimos 10 días
+- Botón "+15d" inline en tabla y card de trials
+- `POST /superadmin/studios/{id}/extend-trial`
+- Fix: `User.studio_id` → `User.tenant_id` (500 resuelto)
+
+**Auth y sesión:**
+- Refresh automático del Google `access_token` en NextAuth jwt callback
+- Sesión efectiva: 30 días sin re-login
+
+**Agenda:**
+- Panel día al clickear en calendario: modal centrado con eventos + CTAs
+- Chevron en hover de filas
+
+**UX:**
+- Bitácora colapsable (todo el expediente) con resumen en header cerrado
+- Separadores de mes como marcas visuales (no colapsables por mes)
+- Honorarios sección colapsable con totales en header cerrado
+- Modales de ayuda actualizados + fix overflow mobile
+- `useBodyScrollLock` hook en sheets y modales
+
+**Google Analytics:**
+- `@next/third-parties` instalado, `GoogleAnalytics` en root layout
+- 8 eventos custom: `begin_registration`, `sign_up`, `login`, `first_cliente`, `first_expediente`, `first_movimiento`, `calendar_connected`, `calendar_sync`, `begin_checkout`
+- GA4 activo: `G-BXJ8Y780BY`
+
+**Tests:**
+- +20 tests backend: duplicados cliente, eliminar permanente, histórico contable, honorarios resumen desglose
+- Total: 197 tests, todos ✅
+
+**Bugs resueltos:**
+- `useState` dentro de IIFE en JSX → crash (ocurrió 2 veces, aprendizaje documentado)
+- `DatatypeMismatch` en `order_by` de `actos-bitacora` (CASE date vs varchar)
+- `User.studio_id` → `User.tenant_id` en superadmin
+- `date` no importado en `honorarios.py` → 500 en resumen
+- `hoy` no definido en scope de `resumen_honorarios` → 500
+
+### Decisiones tomadas
+- Bitácora: colapsable por expediente completo, marcas de mes solo visuales (no clickeables)
+- Honorarios: saldado=colapsado, pendiente=expandido como default semántico
+- Validación duplicados: onBlur con endpoint liviano, no solo en submit
+- Google Analytics: carga condicional con `NEXT_PUBLIC_GA_ID`
+
+### Pendiente (Sprint 18)
+- AUTH-SESSION-001: sesión Google extendida (deployado, validar duración real)
+- SADM-010: UI gestión de precios de planes
+- UX-COLOR-001: paleta uniforme tareas=azul/movimientos=naranja
+- UX-AGENDA-ROWS-001: filas de agenda con expediente+cliente visibles
+- UX-SHEET-001: swipe-down para cerrar bottom sheets
+
+---
+
 ## Sesión 013 — 2026-04-23
 
 **Sprint:** Sprint 16

@@ -128,7 +128,7 @@
 
 ### P1 — Feedback usuarios (idea, sin iniciar)
 
-- **UX-COLOR-001** · Paleta de colores uniforme en toda la app — `idea`
+- **UX-COLOR-001** · Paleta de colores uniforme en toda la app — `ready`
   - **Fuente:** Martín (beta) — 2026-04-28
   - **Problema:** Tareas y movimientos usan colores distintos según la pantalla. No hay consistencia entre calendar semanal, agenda lista, agenda kanban, dashboard y expediente.
   - **Regla a aplicar:**
@@ -138,7 +138,7 @@
   - **Afecta:** `calendar-mensual.tsx`, `agenda/page.tsx` (calendario semanal, kanban, lista), `dashboard/page.tsx` (AgendaWidget), `expedientes/[id]/page.tsx` (bitácora)
   - **Criterio:** el dot o pill de color de una tarea es siempre azul en cualquier pantalla donde aparezca
 
-- **UX-AGENDA-ROWS-001** · Filas de agenda con más contexto: expediente + cliente visibles — `idea`
+- **UX-AGENDA-ROWS-001** · Filas de agenda con más contexto: expediente + cliente visibles — `ready`
   - **Fuente:** Martín (beta) — 2026-04-28
   - **Problema:** En la vista lista de agenda, las filas muestran título y poco más. El usuario necesita ver el número de expediente y el nombre del cliente sin abrir el detalle.
   - **Formato deseado** (como se ve en las screenshots):
@@ -157,7 +157,7 @@
   - **Fix:** agregar `document.body.style.overflow = 'hidden'` al abrir y restaurar al cerrar; `touch-action: pan-y` en el handle de arrastre
   - **Afecta:** todos los modales bottom-sheet de la app (agenda, contable, detalle tarea/vencimiento, etc.)
 
-- **AUTH-SESSION-001** · Sesión Google OAuth vence muy seguido — usuario debe re-loguearse cada día — `idea`
+- **AUTH-SESSION-001** · Sesión Google OAuth 30 días con refresh automático — `done` (2026-04-28)
   - **Causa probable:** `maxAge` de la sesión NextAuth está en el default (30 días) pero el `access_token` de Google vence en 1h y el refresh no está configurado
   - **Fix:** en NextAuth config, agregar `session: { maxAge: 30 * 24 * 60 * 60 }` y manejar el refresh del Google access_token en el callback `jwt`
   - **Prioridad alta:** es fricción diaria para usuarios con login Google

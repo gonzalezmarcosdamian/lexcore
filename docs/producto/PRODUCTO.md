@@ -4,9 +4,9 @@
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-27
-**Sprint activo:** Sprint 17 — COMPLETADO
-**Versión:** 0.20.0
+**Última actualización:** 2026-04-28
+**Sprint activo:** Sprint 18 — EN CURSO
+**Versión:** 0.21.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
