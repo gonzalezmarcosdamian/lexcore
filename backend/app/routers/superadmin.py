@@ -32,6 +32,11 @@ class StudioListItem(BaseModel):
     subscription_status: Optional[str]
     trial_ends_at: Optional[str]
     created_at: str
+    # Actividad
+    ultima_actividad: Optional[str] = None
+    exp_esta_semana: int = 0
+    total_expedientes: int = 0
+    total_usuarios: int = 0
 
 
 class OverrideRequest(BaseModel):
@@ -53,7 +58,47 @@ class PlanPriceCreate(BaseModel):
 @router.get("/studios", response_model=list[StudioListItem])
 def list_studios(db: DbSession, current_user: CurrentUser):
     from app.models.studio import Studio
+    from app.models.expediente import Expediente, Movimiento
+    from app.models.user import User
+    from sqlalchemy import func
+
     studios = db.query(Studio).order_by(Studio.created_at.desc()).all()
+    studio_ids = [s.id for s in studios]
+
+    hace_7_dias = datetime.now(timezone.utc) - timedelta(days=7)
+
+    # Última actividad (MAX created_at de movimientos por tenant)
+    ultima_act = dict(
+        db.query(Movimiento.tenant_id, func.max(Movimiento.created_at))
+        .filter(Movimiento.tenant_id.in_(studio_ids))
+        .group_by(Movimiento.tenant_id)
+        .all()
+    )
+
+    # Expedientes creados esta semana
+    exp_semana = dict(
+        db.query(Expediente.tenant_id, func.count(Expediente.id))
+        .filter(Expediente.tenant_id.in_(studio_ids), Expediente.created_at >= hace_7_dias)
+        .group_by(Expediente.tenant_id)
+        .all()
+    )
+
+    # Total expedientes por tenant
+    total_exp = dict(
+        db.query(Expediente.tenant_id, func.count(Expediente.id))
+        .filter(Expediente.tenant_id.in_(studio_ids))
+        .group_by(Expediente.tenant_id)
+        .all()
+    )
+
+    # Total usuarios por tenant
+    total_users = dict(
+        db.query(User.studio_id, func.count(User.id))
+        .filter(User.studio_id.in_(studio_ids))
+        .group_by(User.studio_id)
+        .all()
+    )
+
     return [
         StudioListItem(
             id=s.id,
@@ -64,9 +109,36 @@ def list_studios(db: DbSession, current_user: CurrentUser):
             subscription_status=s.subscription_status,
             trial_ends_at=s.trial_ends_at.isoformat() if s.trial_ends_at else None,
             created_at=s.created_at.isoformat(),
+            ultima_actividad=ultima_act[s.id].isoformat() if s.id in ultima_act else None,
+            exp_esta_semana=exp_semana.get(s.id, 0),
+            total_expedientes=total_exp.get(s.id, 0),
+            total_usuarios=total_users.get(s.id, 0),
         )
         for s in studios
     ]
+
+
+@router.post("/studios/{studio_id}/extend-trial", status_code=200)
+def extend_trial(studio_id: str, db: DbSession, current_user: CurrentUser, dias: int = 15):
+    """Extiende el trial de un estudio N días desde hoy."""
+    from app.models.studio import Studio
+    from app.models.subscription_event import SubscriptionEvent
+    studio = db.query(Studio).filter(Studio.id == studio_id).first()
+    if not studio:
+        raise HTTPException(status_code=404, detail="Studio no encontrado")
+    base = max(studio.trial_ends_at or datetime.now(timezone.utc), datetime.now(timezone.utc))
+    studio.trial_ends_at = base + timedelta(days=dias)
+    studio.subscription_updated_at = datetime.now(timezone.utc)
+    evt = SubscriptionEvent(
+        tenant_id=studio.id,
+        event_type="manual_override",
+        plan=studio.plan,
+        billing_cycle=studio.billing_cycle,
+        metadata_json=json.dumps({"by": current_user.get("sub"), "extend_days": dias}),
+    )
+    db.add(evt)
+    db.commit()
+    return {"trial_ends_at": studio.trial_ends_at.isoformat()}
 
 
 @router.patch("/studios/{studio_id}/override")
