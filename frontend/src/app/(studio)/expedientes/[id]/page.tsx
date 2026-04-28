@@ -302,6 +302,8 @@ export default function ExpedienteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [bitOpen, setBitOpen] = useState(true);
+  const [honSectionOpen, setHonSectionOpen] = useState(true);
+  const [expandedOverrideHon, setExpandedOverrideHon] = useState<Record<string, boolean>>({});
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -1103,8 +1105,6 @@ export default function ExpedienteDetailPage() {
 
           {/* Honorarios — ancho completo igual que bitácora */}
           {(() => {
-            const honOpen = honorarios.length === 0 || honorarios.some(h => h.saldo_pendiente > 0);
-            const [honSectionOpen, setHonSectionOpen] = useState(honOpen);
             const fmtK = (n: number, m: string) => {
               const s = m === "ARS" ? "$" : "U$D";
               if (n >= 1_000_000) return `${s}${(n/1_000_000).toLocaleString("es-AR",{maximumFractionDigits:1})}M`;
