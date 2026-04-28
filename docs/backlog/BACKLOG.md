@@ -32,6 +32,39 @@
 
 ## PENDIENTES ACTIVAS
 
+### Deuda técnica — Residuo "vencimientos" (migración conceptual a "movimientos")
+
+> Contexto: El modelo DB ya se llama `Movimiento`/`movimientos`. El sidebar no tiene ítem "Vencimientos".
+> `/vencimientos/[id]` ya redirige a `/movimientos/[id]`. Lo que sigue es limpieza progresiva post-MVP.
+
+- **DT-VCT-001** · Breadcrumb y links de notificaciones urgentes — `done` (2026-04-28)
+  - Breadcrumb `"Vencimientos"` → `"Agenda"` cuando pathname empieza con `/vencimientos`
+  - `"Ver todos los vencimientos →"` → `"Ver en Agenda →"` apuntando a `/agenda`
+  - Fallback sin expediente en notif urgentes → `/agenda` (antes `/vencimientos`)
+
+- **DT-VCT-002** · Eliminar `/vencimientos/page.tsx` como lista independiente — `idea`
+  - La página existe con filtros avanzados (tipo, estado, mes). Antes de eliminar, asegurar que la Agenda tenga esos mismos filtros
+  - Agregar redirect `GET /vencimientos → /agenda` en Next.js middleware o page.tsx
+  - **Precondición:** validar que ningún usuario tiene `/vencimientos` bookmarkeado en prod
+
+- **DT-VCT-003** · Eliminar `/vencimientos/nuevo/page.tsx` — `idea`
+  - El formulario de creación existe standalone. Crear desde la Agenda es suficiente
+  - Redirigir a `/movimientos/nuevo?tipo=vencimiento` o al modal inline de agenda
+
+- **DT-VCT-004** · Renombrar endpoint backend `/vencimientos/sync-calendar` → `/movimientos/sync-calendar` — `idea`
+  - El prefijo `/vencimientos` en el router de sync es legacy. El endpoint sincroniza movimientos + tareas
+  - **Impacto:** cambiar el router prefix, actualizar `perfil/page.tsx` y `calendar-sync-button.tsx`
+  - **Riesgo:** bajo — es una URL interna, no pública
+
+- **DT-VCT-005** · `tipo: default="vencimiento"` en modelo `Movimiento` → `"otro"` — `idea`
+  - El default actual crea movimientos nuevos con tipo "vencimiento" aunque no lo sean
+  - Fix: cambiar default a `"otro"` en el modelo + migración Alembic
+  - **Riesgo:** bajo — solo afecta movimientos creados sin tipo explícito
+
+- **DT-VCT-006** · Interface TypeScript `Vencimiento` en `api.ts` — `idea`
+  - Existe como alias de `Movimiento` con campos heredados. Evaluar si merece un tipo unificado
+  - **No urgente** — el tipado funciona, es deuda de naming
+
 ### P1 — Feedback usuarios (idea, sin iniciar)
 
 - **UX-SHEET-001** · Bottom sheets mobile: swipe down mueve la pantalla de fondo en lugar de cerrar el sheet — `idea`

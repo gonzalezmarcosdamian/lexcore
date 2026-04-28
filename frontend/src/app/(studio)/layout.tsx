@@ -460,7 +460,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                 {(() => {
                   if (pathname.startsWith("/clientes")) return "Clientes";
                   if (pathname.startsWith("/tareas")) return "Tareas";
-                  if (pathname.startsWith("/vencimientos")) return "Vencimientos";
+                  if (pathname.startsWith("/vencimientos")) return "Agenda";
                   return NAV_SIDEBAR.find((n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(n.href)))?.label ?? "Inicio";
                 })()}
               </span>
@@ -512,7 +512,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                           {urgentesList.map((v) => (
                             <Link
                               key={v.id}
-                              href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/vencimientos`}
+                              href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/agenda`}
                               onClick={() => setNotifOpen(false)}
                               className="flex items-start gap-3 px-4 py-3.5 hover:bg-ink-50 transition"
                             >
@@ -530,8 +530,8 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                           ))}
                         </div>
                         <div className="px-4 py-3 border-t border-ink-100 pb-safe">
-                          <Link href="/vencimientos" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-                            Ver todos los vencimientos →
+                          <Link href="/agenda" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
+                            Ver en Agenda →
                           </Link>
                         </div>
                       </div>
@@ -545,7 +545,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                           {urgentesList.map((v) => (
                             <Link
                               key={v.id}
-                              href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/vencimientos`}
+                              href={v.expediente_id ? `/expedientes/${v.expediente_id}` : `/agenda`}
                               onClick={() => setNotifOpen(false)}
                               className="flex items-start gap-3 px-4 py-3 hover:bg-ink-50 transition"
                             >
@@ -563,8 +563,8 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                           ))}
                         </div>
                         <div className="px-4 py-2.5 border-t border-ink-100">
-                          <Link href="/vencimientos" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-                            Ver todos los vencimientos →
+                          <Link href="/agenda" onClick={() => setNotifOpen(false)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
+                            Ver en Agenda →
                           </Link>
                         </div>
                       </div>
