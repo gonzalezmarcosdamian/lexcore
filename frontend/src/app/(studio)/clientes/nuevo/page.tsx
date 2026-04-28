@@ -62,6 +62,25 @@ export default function NuevoClientePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
+  const [checking, setChecking] = useState<string | null>(null);
+
+  const checkDuplicado = async (campo: "dni" | "cuit" | "email", valor: string) => {
+    if (!token || !valor) return;
+    setChecking(campo);
+    try {
+      const params: Record<string, string> = { [campo]: valor };
+      const res = await api.get<{ ok: boolean; campo: string | null; mensaje: string | null }>(
+        "/clientes/check-duplicado", token, params
+      );
+      if (!res.ok && res.campo && res.mensaje) {
+        setServerErrors(prev => ({ ...prev, [res.campo!]: res.mensaje! }));
+      } else {
+        setServerErrors(prev => { const next = { ...prev }; delete next[campo]; return next; });
+      }
+    } catch { /* silencioso */ } finally {
+      setChecking(null);
+    }
+  };
 
   const errores = {
     dni: form.dni ? validarDni(form.dni) : null,
@@ -157,32 +176,30 @@ export default function NuevoClientePage() {
               <label className={labelCls}>DNI</label>
               <input
                 value={form.dni}
-                onChange={(e) => setForm({ ...form, dni: e.target.value.replace(/\D/g, "").slice(0, 8) })}
-                onBlur={() => setTouched((t) => ({ ...t, dni: true }))}
+                onChange={(e) => { setForm({ ...form, dni: e.target.value.replace(/\D/g, "").slice(0, 8) }); setServerErrors(p => { const n={...p}; delete n.dni; return n; }); }}
+                onBlur={(e) => { setTouched((t) => ({ ...t, dni: true })); checkDuplicado("dni", e.target.value); }}
                 className={touched.dni && errores.dni ? inputErrCls : inputCls}
                 placeholder="12345678"
                 inputMode="numeric"
               />
               {touched.dni && errores.dni && <p role="alert" className="text-xs text-red-600 mt-1">{errores.dni}</p>}
-              {serverErrors.dni && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.dni}</p>}
+              {checking === "dni" && <p className="text-xs text-ink-400 mt-1">Verificando…</p>}
+              {!checking && serverErrors.dni && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.dni}</p>}
             </div>
           )}
           <div>
             <label className={labelCls}>CUIT</label>
             <input
               value={form.cuit}
-              onChange={(e) => {
-                const raw = e.target.value;
-                const isDeleting = raw.length < form.cuit.length;
-                setForm({ ...form, cuit: isDeleting ? raw : formatCuit(raw) });
-              }}
-              onBlur={() => setTouched((t) => ({ ...t, cuit: true }))}
+              onChange={(e) => { const raw = e.target.value; const isDeleting = raw.length < form.cuit.length; setForm({ ...form, cuit: isDeleting ? raw : formatCuit(raw) }); setServerErrors(p => { const n={...p}; delete n.cuit; return n; }); }}
+              onBlur={(e) => { setTouched((t) => ({ ...t, cuit: true })); checkDuplicado("cuit", e.target.value.replace(/\D/g, "")); }}
               className={touched.cuit && errores.cuit ? inputErrCls : inputCls}
               placeholder={form.tipo === "fisica" ? "20-12345678-9" : "30-12345678-9"}
               inputMode="numeric"
             />
             {touched.cuit && errores.cuit && <p role="alert" className="text-xs text-red-600 mt-1">{errores.cuit}</p>}
-            {serverErrors.cuit && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.cuit}</p>}
+            {checking === "cuit" && <p className="text-xs text-ink-400 mt-1">Verificando…</p>}
+            {!checking && serverErrors.cuit && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.cuit}</p>}
           </div>
         </div>
 
@@ -204,14 +221,15 @@ export default function NuevoClientePage() {
             <input
               type="text"
               value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+              onChange={(e) => { setForm({ ...form, email: e.target.value }); setServerErrors(p => { const n={...p}; delete n.email; return n; }); }}
+              onBlur={(e) => { setTouched((t) => ({ ...t, email: true })); checkDuplicado("email", e.target.value); }}
               className={touched.email && errores.email ? inputErrCls : inputCls}
               placeholder="cliente@ejemplo.com"
               inputMode="email"
             />
             {touched.email && errores.email && <p role="alert" className="text-xs text-red-600 mt-1">{errores.email}</p>}
-            {serverErrors.email && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.email}</p>}
+            {checking === "email" && <p className="text-xs text-ink-400 mt-1">Verificando…</p>}
+            {!checking && serverErrors.email && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.email}</p>}
           </div>
         </div>
 

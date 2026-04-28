@@ -99,6 +99,37 @@ def _check_duplicados(
 _check_documento_duplicado = _check_duplicados
 
 
+@router.get("/check-duplicado", status_code=200)
+def check_duplicado(
+    db: DbSession,
+    current_user: CurrentUser,
+    dni: Optional[str] = None,
+    cuit: Optional[str] = None,
+    email: Optional[str] = None,
+    excluir_id: Optional[str] = None,
+):
+    """Verifica si ya existe un cliente activo con ese DNI/CUIT/email. Retorna {ok, campo, mensaje}."""
+    tenant_id = current_user["studio_id"]
+    checks = [
+        (dni,   Cliente.dni,   "dni",   lambda v: f"Ya existe un cliente con DNI {v}"),
+        (cuit,  Cliente.cuit,  "cuit",  lambda v: f"Ya existe un cliente con CUIT {v}"),
+        (email, Cliente.email, "email", lambda v: f"Ya existe un cliente con email {v}"),
+    ]
+    for valor, columna, campo, msg in checks:
+        if not valor:
+            continue
+        q = db.query(Cliente).filter(
+            Cliente.tenant_id == tenant_id,
+            Cliente.archivado == False,  # noqa: E712
+            columna == valor,
+        )
+        if excluir_id:
+            q = q.filter(Cliente.id != excluir_id)
+        if q.first():
+            return {"ok": False, "campo": campo, "mensaje": msg(valor)}
+    return {"ok": True, "campo": None, "mensaje": None}
+
+
 @router.post("", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)
 def crear_cliente(
     body: ClienteCreate,
