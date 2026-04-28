@@ -301,6 +301,7 @@ export default function ExpedienteDetailPage() {
   const [actividad, setActividad] = useState<ActividadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [bitOpen, setBitOpen] = useState(true);
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -971,9 +972,6 @@ export default function ExpedienteDetailPage() {
           </SectionCollapsible>
 
           {/* ── BITÁCORA (protagonista) ── */}
-          {(() => {
-            const [bitOpen, setBitOpen] = React.useState(true);
-            return (
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-ink-50 flex items-center justify-between">
               <button
@@ -1086,8 +1084,6 @@ export default function ExpedienteDetailPage() {
               })()}
             </div>}
           </div>
-            );
-          })()}
 
           {/* Honorarios — ancho completo igual que bitácora */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
