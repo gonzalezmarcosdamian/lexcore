@@ -61,6 +61,7 @@ export default function NuevoClientePage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [serverErrors, setServerErrors] = useState<Record<string, string>>({});
 
   const errores = {
     dni: form.dni ? validarDni(form.dni) : null,
@@ -77,6 +78,7 @@ export default function NuevoClientePage() {
     if (hayErrores || !token) return;
     setLoading(true);
     setError("");
+    setServerErrors({});
     try {
       const body = {
         nombre: form.nombre,
@@ -93,7 +95,12 @@ export default function NuevoClientePage() {
       trackFirstCliente();
       router.push("/clientes");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error al crear cliente");
+      const msg = e instanceof Error ? e.message : "Error al crear cliente";
+      // Mapear error del servidor al campo correspondiente
+      if (msg.includes("DNI")) setServerErrors({ dni: msg });
+      else if (msg.includes("CUIT")) setServerErrors({ cuit: msg });
+      else if (msg.includes("email")) setServerErrors({ email: msg });
+      else setError(msg);
       setLoading(false);
     }
   };
@@ -157,6 +164,7 @@ export default function NuevoClientePage() {
                 inputMode="numeric"
               />
               {touched.dni && errores.dni && <p role="alert" className="text-xs text-red-600 mt-1">{errores.dni}</p>}
+              {serverErrors.dni && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.dni}</p>}
             </div>
           )}
           <div>
@@ -174,6 +182,7 @@ export default function NuevoClientePage() {
               inputMode="numeric"
             />
             {touched.cuit && errores.cuit && <p role="alert" className="text-xs text-red-600 mt-1">{errores.cuit}</p>}
+            {serverErrors.cuit && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.cuit}</p>}
           </div>
         </div>
 
@@ -202,6 +211,7 @@ export default function NuevoClientePage() {
               inputMode="email"
             />
             {touched.email && errores.email && <p role="alert" className="text-xs text-red-600 mt-1">{errores.email}</p>}
+            {serverErrors.email && <p role="alert" className="text-xs text-red-600 mt-1 font-medium">⚠ {serverErrors.email}</p>}
           </div>
         </div>
 
