@@ -93,9 +93,9 @@ def list_studios(db: DbSession, current_user: CurrentUser):
 
     # Total usuarios por tenant
     total_users = dict(
-        db.query(User.studio_id, func.count(User.id))
-        .filter(User.studio_id.in_(studio_ids))
-        .group_by(User.studio_id)
+        db.query(User.tenant_id, func.count(User.id))
+        .filter(User.tenant_id.in_(studio_ids))
+        .group_by(User.tenant_id)
         .all()
     )
 
