@@ -32,6 +32,67 @@
 
 ## PENDIENTES ACTIVAS
 
+### Superadmin — Mejoras planificadas
+
+> El superadmin actual tiene: lista de estudios, override plan/trial, gestión de precios (tabla `plan_prices`), metrics_snapshots.
+> Analytics de funnels/conversión → Google Analytics 4 (ya integrado).
+> Lo que sigue es lo que GA no puede darte: visibilidad interna de negocio y operaciones.
+
+#### P0 — Sin esto operás a ciegas en prod
+
+- **SADM-010** · Gestión de precios de planes desde UI — `idea`
+  - Hoy los precios están en `plan_prices` en DB pero no hay UI para editarlos — hay que hacer SQL directo
+  - CRUD de precios: plan (starter/pro/estudio), ciclo (mensual/anual), monto, moneda, vigente_desde
+  - Historial completo: ver qué precio pagó cada estudio en cada período
+  - **Ya existe:** tabla `plan_prices` + endpoint `GET/POST /superadmin/plan-prices`
+  - **Falta:** UI en `/superadmin` para listar, crear y marcar precio activo
+
+- **SADM-011** · Trials a punto de vencer — lista de contacto proactivo — `idea`
+  - Lista de estudios en día 20-30 del trial, ordenados por `trial_ends_at ASC`
+  - Muestra: nombre estudio, email admin, días restantes, actividad (expedientes, últimos 7 días)
+  - CTA: "Extender trial" (ya existe el override) + "Copiar email" para contacto directo
+  - **Valor:** permite contactar antes de que venza y mejora conversión trial → pago
+
+- **SADM-012** · Consumo de storage en MB por tenant — `idea`
+  - Sumar el peso de todos los documentos en R2/MinIO por `studio_id`
+  - Mostrar en la tabla de estudios: columna "Storage" con MB usados
+  - Endpoint: `GET /superadmin/studios/{id}/storage` que consulta la metadata de objetos en R2
+  - **Valor:** saber qué estudio consume más y estimar costos de infraestructura
+
+#### P1 — Visibilidad de uso y salud
+
+- **SADM-013** · Actividad reciente por tenant — `idea`
+  - Para cada estudio: último login, expedientes creados esta semana, movimientos esta semana, DAU/WAU
+  - Permite identificar estudios activos vs dormidos vs que nunca arrancaron
+  - Backend: queries sobre `expedientes.created_at`, `movimientos.created_at`, session logs (si existen)
+
+- **SADM-014** · Adopción por feature — `idea`
+  - ¿Qué % de estudios usa Google Calendar? ¿Módulo contable? ¿Resumen IA? ¿Documentos?
+  - Métricas simples: `estudios_con_google_calendar / total_estudios`, etc.
+  - Backend: queries a `users.google_calendar_id IS NOT NULL`, `gastos COUNT > 0`, etc.
+
+- **SADM-015** · Métricas de retención semanal — `idea`
+  - Estudios activos esta semana vs semana pasada vs hace 30 días
+  - Gráfico de estudios que crearon al menos 1 acción en los últimos N días
+  - Permite detectar churn temprano antes de que cancelen
+
+- **SADM-016** · Exportar CSV de estudios/leads — `idea`
+  - Exportar lista de estudios con: nombre, email admin, plan, trial_ends_at, created_at, última actividad
+  - Para campañas de email, seguimiento comercial o análisis externo
+  - Endpoint: `GET /superadmin/studios/export.csv`
+
+#### P2 — Operaciones
+
+- **SADM-017** · Log de errores recientes por tenant — `idea`
+  - Ver si un estudio reportó errores en las últimas 24h (500s en los endpoints)
+  - Útil para soporte: antes de responder a un usuario, ver si hubo errores del sistema
+  - Implementación simple: tabla `error_logs` append-only en el middleware FastAPI
+
+- **SADM-018** · Override de plan desde UI (ya existe el endpoint) — `idea`
+  - El endpoint `PATCH /superadmin/studios/{id}/override` existe pero la UI es mínima
+  - Mejorar: dropdown de plan, selector de fecha de vencimiento, campo de razón del cambio
+  - Audit trail: mostrar historial de overrides anteriores para ese estudio
+
 ### Deuda técnica — Residuo "vencimientos" (migración conceptual a "movimientos")
 
 > Contexto: El modelo DB ya se llama `Movimiento`/`movimientos`. El sidebar no tiene ítem "Vencimientos".
