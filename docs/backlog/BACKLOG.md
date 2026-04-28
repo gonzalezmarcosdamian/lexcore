@@ -44,7 +44,7 @@
   - **Fix:** en NextAuth config, agregar `session: { maxAge: 30 * 24 * 60 * 60 }` y manejar el refresh del Google access_token en el callback `jwt`
   - **Prioridad alta:** es fricción diaria para usuarios con login Google
 
-- **MOV-LOCALIDAD-001** · Movimiento procesal detalle: agregar tribunal y localidad del expediente — `idea`
+- **MOV-LOCALIDAD-001** · Movimiento procesal detalle: tribunal y localidad siempre visibles (con `—` si vacíos) — `done` (2026-04-28)
   - El detalle de un movimiento (`/movimientos/{id}`) no muestra en qué tribunal/localidad está radicado el expediente
   - **Fix:** en el endpoint `GET /movimientos/{id}` (o el componente frontend), incluir `expediente.juzgado` y `expediente.localidad` en la respuesta y mostrarlos en el header del detalle
   - **Ya existe:** el detalle de tarea y vencimiento ya muestran tribunal/localidad — aplicar el mismo patrón
