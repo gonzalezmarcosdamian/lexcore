@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { trackBeginRegistration } from "@/lib/analytics";
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 
@@ -277,6 +278,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
           <Link
             href="/register"
+            onClick={trackBeginRegistration}
             className="flex items-center justify-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold px-7 py-3.5 rounded-xl text-base transition-colors shadow-lg shadow-amber-700/20 cursor-pointer"
           >
             Empezar prueba gratuita — 30 días

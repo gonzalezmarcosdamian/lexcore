@@ -7,6 +7,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { AddressAutocomplete } from "@/components/ui/address-autocomplete";
 import { PageHelp } from "@/components/ui/page-help";
+import { trackCalendarConnected, trackCalendarSync, trackBeginCheckout } from "@/lib/analytics";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -278,6 +279,7 @@ function PerfilPageInner() {
     setSubsMsg(null);
     try {
       const res = await api.post<{ checkout_url: string }>("/suscripcion/checkout", { plan, billing_cycle: selectedCycle }, token);
+      trackBeginCheckout(plan);
       window.location.href = res.checkout_url;
     } catch (err: unknown) {
       setSubsMsg({ text: err instanceof Error ? err.message : "Error al iniciar checkout", type: "err" });
@@ -415,6 +417,7 @@ function PerfilPageInner() {
       );
       if (!res.ok) throw new Error("Error al guardar");
       setProfile((p) => p ? { ...p, google_calendar_id: selectedCalendar } : p);
+      trackCalendarConnected();
       setCalendarMsg({ text: "Calendario guardado. Ya podés sincronizar.", type: "ok" });
     } catch (err: unknown) {
       setCalendarMsg({ text: err instanceof Error ? err.message : "Error", type: "err" });
@@ -427,6 +430,7 @@ function PerfilPageInner() {
     setCalendarMsg(null);
     try {
       const res = await api.post<{ synced: number; errors: number }>("/vencimientos/sync-calendar", {}, token);
+      trackCalendarSync(res.synced);
       setCalendarMsg({
         text: `${res.synced} movimiento${res.synced !== 1 ? "s" : ""} sincronizado${res.synced !== 1 ? "s" : ""}${res.errors > 0 ? ` (${res.errors} con error)` : ""}`,
         type: "ok",

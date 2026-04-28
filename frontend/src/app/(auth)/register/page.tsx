@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { trackSignUp } from "@/lib/analytics";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function RegisterPage() {
     setError("");
     try {
       await api.post("/auth/register", form);
+      trackSignUp("email");
       const res = await signIn("credentials", {
         email: form.email,
         password: form.password,
@@ -151,7 +153,7 @@ export default function RegisterPage() {
 
       <button
         type="button"
-        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+        onClick={() => { trackSignUp("google"); signIn("google", { callbackUrl: "/dashboard" }); }}
         className="w-full flex items-center justify-center gap-3 bg-white border border-ink-200 hover:border-ink-300 text-ink-700 rounded-xl py-3 text-sm font-medium transition shadow-sm hover:shadow"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24">

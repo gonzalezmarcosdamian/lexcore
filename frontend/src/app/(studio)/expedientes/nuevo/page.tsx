@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Cliente } from "@/lib/api";
+import { trackFirstExpediente } from "@/lib/analytics";
 
 const FUEROS = ["Civil", "Laboral", "Penal", "Comercial", "Contencioso administrativo", "Familia", "Otro"];
 
@@ -161,6 +162,7 @@ export default function NuevoExpedientePage() {
         cliente_id: selectedClientes[0]?.id,
         cliente_ids: selectedClientes.map((c) => c.id),
       }, token);
+      trackFirstExpediente();
       router.push("/expedientes");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al crear expediente");

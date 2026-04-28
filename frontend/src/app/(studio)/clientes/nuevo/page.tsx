@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, TipoCliente } from "@/lib/api";
+import { trackFirstCliente } from "@/lib/analytics";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
 
 function formatCuit(valor: string): string {
@@ -89,6 +90,7 @@ export default function NuevoClientePage() {
         domicilio_lng: form.domicilio_lng,
       };
       await api.post("/clientes", body, token);
+      trackFirstCliente();
       router.push("/clientes");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al crear cliente");

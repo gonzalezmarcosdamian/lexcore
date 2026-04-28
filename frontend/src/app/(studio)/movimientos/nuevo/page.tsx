@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, Expediente } from "@/lib/api";
+import { trackFirstMovimiento } from "@/lib/analytics";
 import { ExpedienteSelect } from "@/components/ui/expediente-select";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -95,6 +96,7 @@ function NuevoMovimientoInner() {
         }));
       }
 
+      trackFirstMovimiento();
       router.push(form.expediente_id ? `/expedientes/${form.expediente_id}` : "/agenda");
     } catch (err: unknown) {
       setErrors({ _: err instanceof Error ? err.message : "Error al crear el movimiento" });

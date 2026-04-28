@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import Link from "next/link";
+import { trackLogin } from "@/lib/analytics";
 
 function LoginPageInner() {
   const router = useRouter();
@@ -24,12 +25,14 @@ function LoginPageInner() {
     if (res?.error) {
       setError("Email o contraseña incorrectos");
     } else {
+      trackLogin("email");
       router.push(callbackUrl);
     }
   }
 
   async function handleGoogle() {
     setLoading(true);
+    trackLogin("google");
     await signIn("google", { callbackUrl });
   }
 
