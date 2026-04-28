@@ -1,5 +1,7 @@
 "use client";
 
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+
 interface Props {
   title: string;
   description?: string;
@@ -19,6 +21,7 @@ export function ConfirmModal({
   onConfirm,
   onCancel,
 }: Props) {
+  useBodyScrollLock(true);
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4"

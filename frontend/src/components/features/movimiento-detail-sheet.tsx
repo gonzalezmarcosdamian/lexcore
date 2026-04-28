@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { api, Movimiento, Nota, Expediente } from "@/lib/api";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { DocumentosSection } from "@/components/ui/documentos-section";
 import { DateInput } from "@/components/ui/date-input";
 import { TimeInput } from "@/components/ui/time-input";
@@ -34,6 +35,7 @@ interface Props {
 }
 
 export function MovimientoDetailSheet({ movimientoId, token, onClose, onDeleted, onUpdated }: Props) {
+  useBodyScrollLock(true);
   const [mov, setMov] = useState<Movimiento | null>(null);
   const [exp, setExp] = useState<Expediente | null>(null);
   const [notas, setNotas] = useState<Nota[]>([]);
@@ -138,7 +140,7 @@ export function MovimientoDetailSheet({ movimientoId, token, onClose, onDeleted,
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-ink-200" />
         </div>
-        <div className="overflow-y-auto flex-1 px-4 pb-8 space-y-4">
+        <div className="overflow-y-auto overscroll-contain flex-1 px-4 pb-8 space-y-4">
           {loading ? (
             <div className="space-y-3 py-4 animate-pulse">
               <div className="h-4 bg-ink-100 rounded w-1/3" />
