@@ -181,7 +181,8 @@ def listar_actos_bitacora(
     db: DbSession,
     current_user: CurrentUser,
 ):
-    from sqlalchemy import case, func
+    from sqlalchemy import case, func, cast
+    from sqlalchemy import String as SAString
     _get_expediente(db, expediente_id, current_user["studio_id"])
     return (
         db.query(ActoBitacora)
@@ -189,7 +190,7 @@ def listar_actos_bitacora(
         .order_by(
             case(
                 (ActoBitacora.fecha_manual.isnot(None), ActoBitacora.fecha_manual),
-                else_=func.date(ActoBitacora.created_at),
+                else_=cast(func.date(ActoBitacora.created_at), SAString),
             ).desc(),
             ActoBitacora.hora_acto.desc().nullslast(),
             ActoBitacora.created_at.desc(),
