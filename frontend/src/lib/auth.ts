@@ -92,6 +92,7 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, account }) {
+      // Primer login — cargar datos del usuario
       if (user) {
         token.userId = user.id;
         token.studioId = (user as any).studioId;
@@ -104,18 +105,54 @@ export const authOptions: NextAuthOptions = {
         token.authProvider = account.provider;
       }
       if (account?.provider === "google") {
-        token.googleRefreshToken = account.refresh_token;
+        // Guardar tokens de Google al hacer login
+        token.googleRefreshToken = account.refresh_token ?? token.googleRefreshToken;
+        token.googleAccessToken = account.access_token;
+        token.googleAccessTokenExpires = account.expires_at
+          ? account.expires_at * 1000
+          : Date.now() + 55 * 60 * 1000; // 55 min por defecto
       }
-      // Renovar backendToken si quedan menos de 7 días (expira a los 30)
+
+      // Renovar Google access_token si expiró o está por expirar (< 5 min)
+      const googleExpires = (token.googleAccessTokenExpires as number) ?? 0;
+      if (
+        token.authProvider === "google" &&
+        token.googleRefreshToken &&
+        googleExpires > 0 &&
+        Date.now() > googleExpires - 5 * 60 * 1000
+      ) {
+        try {
+          const resp = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              client_id: process.env.GOOGLE_CLIENT_ID!,
+              client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+              grant_type: "refresh_token",
+              refresh_token: token.googleRefreshToken as string,
+            }),
+          });
+          if (resp.ok) {
+            const refreshed = await resp.json();
+            token.googleAccessToken = refreshed.access_token;
+            token.googleAccessTokenExpires = Date.now() + (refreshed.expires_in ?? 3600) * 1000;
+            // Si Google devuelve un refresh_token nuevo, guardarlo
+            if (refreshed.refresh_token) {
+              token.googleRefreshToken = refreshed.refresh_token;
+            }
+          }
+        } catch {
+          // Si falla, no bloquear — la sesión NextAuth sigue siendo válida
+        }
+      }
+
+      // Renovar backendToken de LexCore si está por expirar (< 7 días)
       const issuedAt = (token.backendTokenIssuedAt as number) ?? 0;
       const age = Date.now() - issuedAt;
       const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
       const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
       if (issuedAt && age > THIRTY_DAYS - SEVEN_DAYS && token.backendToken) {
         try {
-          const API_URL = process.env.NEXTAUTH_URL
-            ? process.env.NEXTAUTH_URL.replace(":3001", ":8000").replace("3001", "8000")
-            : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
           const res = await fetch(`${API_URL}/auth/refresh`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token.backendToken}` },
@@ -126,7 +163,7 @@ export const authOptions: NextAuthOptions = {
             token.backendTokenIssuedAt = Date.now();
           }
         } catch {
-          // Si falla el refresh, el token existente sigue siendo válido por varios días más
+          // El backendToken sigue siendo válido por varios días más
         }
       }
       return token;
