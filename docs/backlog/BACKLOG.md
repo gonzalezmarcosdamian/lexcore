@@ -30,6 +30,27 @@
 
 ---
 
+## PENDIENTES ACTIVAS
+
+### P1 — Feedback usuarios (idea, sin iniciar)
+
+- **UX-SHEET-001** · Bottom sheets mobile: swipe down mueve la pantalla de fondo en lugar de cerrar el sheet — `idea`
+  - **Causa:** falta `overscroll-behavior: contain` + bloqueo de scroll del body cuando el sheet está abierto
+  - **Fix:** agregar `document.body.style.overflow = 'hidden'` al abrir y restaurar al cerrar; `touch-action: pan-y` en el handle de arrastre
+  - **Afecta:** todos los modales bottom-sheet de la app (agenda, contable, detalle tarea/vencimiento, etc.)
+
+- **AUTH-SESSION-001** · Sesión Google OAuth vence muy seguido — usuario debe re-loguearse cada día — `idea`
+  - **Causa probable:** `maxAge` de la sesión NextAuth está en el default (30 días) pero el `access_token` de Google vence en 1h y el refresh no está configurado
+  - **Fix:** en NextAuth config, agregar `session: { maxAge: 30 * 24 * 60 * 60 }` y manejar el refresh del Google access_token en el callback `jwt`
+  - **Prioridad alta:** es fricción diaria para usuarios con login Google
+
+- **MOV-LOCALIDAD-001** · Movimiento procesal detalle: agregar tribunal y localidad del expediente — `idea`
+  - El detalle de un movimiento (`/movimientos/{id}`) no muestra en qué tribunal/localidad está radicado el expediente
+  - **Fix:** en el endpoint `GET /movimientos/{id}` (o el componente frontend), incluir `expediente.juzgado` y `expediente.localidad` en la respuesta y mostrarlos en el header del detalle
+  - **Ya existe:** el detalle de tarea y vencimiento ya muestran tribunal/localidad — aplicar el mismo patrón
+
+---
+
 ## COMPLETADAS ✓
 
 ### Sprint 17 — 2026-04-27 (sesión actual)
