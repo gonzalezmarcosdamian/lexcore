@@ -971,12 +971,22 @@ export default function ExpedienteDetailPage() {
           </SectionCollapsible>
 
           {/* ── BITÁCORA (protagonista) ── */}
+          {(() => {
+            const [bitOpen, setBitOpen] = React.useState(true);
+            return (
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3.5 border-b border-ink-50 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-ink-700">Bitácora</h2>
-                <p className="text-xs text-ink-400 mt-0.5">Historial completo del expediente</p>
-              </div>
+              <button
+                onClick={() => setBitOpen(o => !o)}
+                className="flex items-center gap-2 flex-1 text-left group"
+              >
+                <svg className={`w-3.5 h-3.5 text-ink-400 transition-transform duration-150 ${bitOpen ? "" : "-rotate-90"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <div>
+                  <h2 className="text-sm font-semibold text-ink-700 group-hover:text-ink-900 transition">Bitácora</h2>
+                  {bitOpen && <p className="text-xs text-ink-400 mt-0.5">Historial completo del expediente</p>}
+                </div>
+              </button>
+              {bitOpen && (
               <button
                 onClick={loadActividad}
                 title="Actualizar bitácora"
@@ -986,8 +996,9 @@ export default function ExpedienteDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
+              )}
             </div>
-            <div className="p-4 space-y-4">
+            {bitOpen && <div className="p-4 space-y-4">
               {/* Botones de acción */}
               <div className="flex gap-2">
                 <Link
@@ -1073,8 +1084,10 @@ export default function ExpedienteDetailPage() {
                   </div>
                 );
               })()}
-            </div>
+            </div>}
           </div>
+            );
+          })()}
 
           {/* Honorarios — ancho completo igual que bitácora */}
           <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
@@ -1116,35 +1129,18 @@ export default function ExpedienteDetailPage() {
 
 // ── Fila de actividad ─────────────────────────────────────────────────────────
 
-function GrupoMes({ label, count, children, defaultOpen }: { label: string; count: number; children: React.ReactNode; defaultOpen?: boolean }) {
-  const [open, setOpen] = React.useState(defaultOpen ?? true);
+function GrupoMes({ label, children }: { label: string; count: number; children: React.ReactNode; defaultOpen?: boolean }) {
   return (
     <div>
-      {/* Separador tipo cuaderno */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 py-2 group"
-      >
+      {/* Separador visual tipo cuaderno — solo marca, no colapsa */}
+      <div className="w-full flex items-center gap-3 py-2">
         <div className="flex-1 h-px bg-ink-200" />
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <svg
-            className={`w-3 h-3 text-ink-400 transition-transform duration-150 ${open ? "rotate-0" : "-rotate-90"}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
-          </svg>
-          <span className="text-[11px] font-semibold text-ink-500 uppercase tracking-widest group-hover:text-ink-700 transition">
-            {label}
-          </span>
-          {!open && (
-            <span className="text-[10px] text-ink-400 bg-ink-100 px-1.5 py-0.5 rounded-full ml-1">
-              {count}
-            </span>
-          )}
-        </div>
+        <span className="text-[11px] font-semibold text-ink-400 uppercase tracking-widest flex-shrink-0">
+          {label}
+        </span>
         <div className="flex-1 h-px bg-ink-200" />
-      </button>
-      {open && <div className="pb-2">{children}</div>}
+      </div>
+      <div className="pb-2">{children}</div>
     </div>
   );
 }
