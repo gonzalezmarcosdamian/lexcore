@@ -917,8 +917,9 @@ export default function AgendaPage() {
       )}
 
       {diaPickerFecha && (() => {
-        const vDia = vFiltradas.filter(v => v.fecha === diaPickerFecha);
-        const tDia = tFiltradas.filter(t => t.fecha_limite === diaPickerFecha);
+        // Buscar en el conjunto COMPLETO, no en el filtrado por período
+        const vDia = vencimientos.filter(v => v.fecha === diaPickerFecha && v.estado !== "cumplido");
+        const tDia = tareas.filter(t => t.fecha_limite === diaPickerFecha && t.estado !== "hecha");
         const totalDia = vDia.length + tDia.length;
         const labelDia = new Date(diaPickerFecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" });
         return (
