@@ -63,7 +63,7 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
   const displayNumero = (e: ExpedienteOption) => e.numero_judicial || e.numero || "";
 
   const label = selected
-    ? `${displayNumero(selected) ? displayNumero(selected) + " · " : ""}${selected.cliente_nombre ?? selected.caratula ?? ""}`
+    ? `${displayNumero(selected) ? displayNumero(selected) + " · " : ""}${selected.caratula ?? selected.cliente_nombre ?? ""}`
     : placeholder;
 
   return (
@@ -108,7 +108,7 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
                 className={`px-3 py-2.5 text-sm cursor-pointer hover:bg-ink-50 transition ${value === e.id ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-900"}`}
               >
                 <span className="font-medium text-ink-700 mr-1">{displayNumero(e)}</span>
-                <span className="text-ink-500">{e.cliente_nombre ?? e.caratula}</span>
+                <span className="text-ink-500">{e.caratula ?? e.cliente_nombre}</span>
               </li>
             ))}
           </ul>
