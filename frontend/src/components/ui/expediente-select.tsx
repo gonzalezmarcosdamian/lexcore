@@ -59,11 +59,13 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
     setOpen(false);
   };
 
-  // Mostrar numero_judicial si existe (el que ingresa el abogado), sino el interno
   const displayNumero = (e: ExpedienteOption) => e.numero_judicial || e.numero || "";
 
+  const numeroLabel = selected
+    ? (selected.numero_judicial || selected.numero || "")
+    : "";
   const label = selected
-    ? `${displayNumero(selected) ? displayNumero(selected) + " · " : ""}${selected.caratula ?? selected.cliente_nombre ?? ""}`
+    ? `${numeroLabel ? numeroLabel + " · " : ""}${selected.caratula ?? selected.cliente_nombre ?? ""}`
     : placeholder;
 
   return (
@@ -107,8 +109,15 @@ export function ExpedienteSelect({ expedientes, value, onChange, placeholder = "
                 onClick={() => select(e.id)}
                 className={`px-3 py-2.5 text-sm cursor-pointer hover:bg-ink-50 transition ${value === e.id ? "bg-brand-50 text-brand-700 font-medium" : "text-ink-900"}`}
               >
-                <span className="font-medium text-ink-700 mr-1">{displayNumero(e)}</span>
-                <span className="text-ink-500">{e.caratula ?? e.cliente_nombre}</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {e.numero_judicial && (
+                    <span className="font-semibold text-ink-900">{e.numero_judicial}</span>
+                  )}
+                  {!e.numero_judicial && e.numero && (
+                    <span className="font-medium text-ink-500 text-xs">{e.numero}</span>
+                  )}
+                  <span className="text-ink-600 truncate">{e.caratula ?? e.cliente_nombre}</span>
+                </div>
               </li>
             ))}
           </ul>
