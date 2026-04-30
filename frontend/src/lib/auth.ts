@@ -53,6 +53,7 @@ export const authOptions: NextAuthOptions = {
             studioId: data.studio_id,
             role: data.role,
             backendToken: data.access_token,
+            needsStudio: data.needs_studio ?? false,
           };
         } catch {
           return null;

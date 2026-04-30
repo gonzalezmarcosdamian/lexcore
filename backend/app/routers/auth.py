@@ -51,6 +51,7 @@ class TokenResponse(BaseModel):
     full_name: str
     studio_id: str
     role: str
+    needs_studio: bool = False
 
 
 # ── Email + Password ─────────────────────────────────────────────────────────
@@ -137,6 +138,7 @@ def login(body: LoginRequest, db: DbSession, request: Request):
         full_name=user.full_name,
         studio_id=user.tenant_id,
         role=user.role.value,
+        needs_studio=(user.tenant_id == "pending"),
     )
 
 
