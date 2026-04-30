@@ -91,7 +91,16 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
 
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session: sessionUpdate }) {
+      // Actualización manual vía update() — ej: después de setup-studio
+      if (trigger === "update" && sessionUpdate) {
+        if (sessionUpdate.backendToken) token.backendToken = sessionUpdate.backendToken;
+        if (sessionUpdate.studioId) token.studioId = sessionUpdate.studioId;
+        if (sessionUpdate.needsStudio !== undefined) token.needsStudio = sessionUpdate.needsStudio;
+        if (sessionUpdate.backendToken) token.backendTokenIssuedAt = Date.now();
+        return token;
+      }
+
       // Primer login — cargar datos del usuario
       if (user) {
         token.userId = user.id;
@@ -218,6 +227,10 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
 
-  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 }, // 30 días
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,    // 30 días
+    updateAge: 24 * 60 * 60,       // renovar cookie cada 24h sin pedir login
+  },
   secret: process.env.NEXTAUTH_SECRET,
 };
