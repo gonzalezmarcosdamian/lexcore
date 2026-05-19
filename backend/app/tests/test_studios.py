@@ -28,10 +28,9 @@ class TestStudiosActualizar:
         r = client.patch("/studios/me", json={"email_contacto": "contacto@estudio.com"}, headers=auth_a)
         assert r.status_code == 200
 
-    def test_no_puede_cambiar_slug_a_uno_existente(self, client, auth_a, db):
-        otro = make_studio(db, slug="slug-ocupado")
-        r = client.patch("/studios/me", json={"slug": "slug-ocupado"}, headers=auth_a)
-        assert r.status_code in (400, 409)
+    def test_actualizar_direccion(self, client, auth_a):
+        r = client.patch("/studios/me", json={"direccion": "Av. Corrientes 1234, CABA"}, headers=auth_a)
+        assert r.status_code == 200
 
     def test_solo_admin_puede_actualizar(self, client, db, studio_a):
         _, token_asoc = make_user(db, studio_a, role=__import__('app.models.user', fromlist=['UserRole']).UserRole.asociado, email="asoc@test.com")

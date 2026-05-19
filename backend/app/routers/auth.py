@@ -22,7 +22,7 @@ _WINDOW_MINUTES = 15
 
 def _check_rate_limit(ip: str, db: Session | None = None) -> None:
     if db is None:
-        return  # fallback silencioso si no hay DB
+        return
     try:
         window_start = datetime.now(timezone.utc) - timedelta(minutes=_WINDOW_MINUTES)
         result = db.execute(
@@ -38,36 +38,46 @@ def _check_rate_limit(ip: str, db: Session | None = None) -> None:
     except HTTPException:
         raise
     except Exception:
-        pass  # Si la tabla no existe todavía, no bloquear el login
+        pass  # tabla no existe aún (test/first deploy) — no bloquear
 
 
 def _register_failure(ip: str, db: Session | None = None) -> None:
     if db is None:
         return
     try:
+        # Usar SAVEPOINT para no contaminar la transacción principal
+        db.execute(text("SAVEPOINT rl_insert"))
         db.execute(
             text("INSERT INTO login_attempts (ip, created_at) VALUES (:ip, :now)"),
             {"ip": ip, "now": datetime.now(timezone.utc)},
         )
-        # Limpiar intentos viejos de este IP para no acumular
         window_start = datetime.now(timezone.utc) - timedelta(minutes=_WINDOW_MINUTES * 2)
         db.execute(
             text("DELETE FROM login_attempts WHERE ip = :ip AND created_at < :old"),
             {"ip": ip, "old": window_start},
         )
+        db.execute(text("RELEASE SAVEPOINT rl_insert"))
         db.commit()
     except Exception:
-        db.rollback()
+        try:
+            db.execute(text("ROLLBACK TO SAVEPOINT rl_insert"))
+        except Exception:
+            pass  # SQLite no soporta SAVEPOINT en todos los contextos
 
 
 def _clear_failures(ip: str, db: Session | None = None) -> None:
     if db is None:
         return
     try:
+        db.execute(text("SAVEPOINT rl_clear"))
         db.execute(text("DELETE FROM login_attempts WHERE ip = :ip"), {"ip": ip})
+        db.execute(text("RELEASE SAVEPOINT rl_clear"))
         db.commit()
     except Exception:
-        db.rollback()
+        try:
+            db.execute(text("ROLLBACK TO SAVEPOINT rl_clear"))
+        except Exception:
+            pass
 
 
 class TokenResponse(BaseModel):
