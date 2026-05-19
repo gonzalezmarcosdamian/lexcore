@@ -9,7 +9,7 @@ Agrega índices en columnas usadas frecuentemente en filtros y ORDER BY.
 from alembic import op
 
 revision = 'a1b2c3d4e5f6'
-down_revision = 'f95cf53e34ad'
+down_revision = '8b84f5e85d5d'
 branch_labels = None
 depends_on = None
 
