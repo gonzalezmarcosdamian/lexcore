@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente, Cliente } from "@/lib/api";
 import { ContableHero } from "@/components/features/contable-hero";
+import { formatMoney as formatMoneyLib } from "@/lib/formatters";
 import { PageHelp } from "@/components/ui/page-help";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
 
@@ -63,9 +64,7 @@ function catLabel(cat: GastoCategoria) {
   return CATEGORIAS.find((c) => c.value === cat)?.label ?? cat;
 }
 
-function formatMoney(monto: number, moneda: Moneda) {
-  return `${moneda === "ARS" ? "$" : "U$D"} ${monto.toLocaleString("es-AR", { minimumFractionDigits: 0 })}`;
-}
+const formatMoney = (monto: number, moneda: Moneda) => formatMoneyLib(monto, moneda);
 
 function periodoLabel(mes: number, anio: number) {
   const d = new Date(anio, mes - 1, 1);

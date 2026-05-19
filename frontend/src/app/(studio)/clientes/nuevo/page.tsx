@@ -6,14 +6,9 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api, TipoCliente } from "@/lib/api";
 import { trackFirstCliente } from "@/lib/analytics";
+import { formatCuit } from "@/lib/formatters";
 import { AddressAutocomplete, AddressValue } from "@/components/ui/address-autocomplete";
 
-function formatCuit(valor: string): string {
-  const clean = valor.replace(/\D/g, "").slice(0, 11);
-  if (clean.length <= 2) return clean;
-  if (clean.length <= 10) return `${clean.slice(0, 2)}-${clean.slice(2)}`;
-  return `${clean.slice(0, 2)}-${clean.slice(2, 10)}-${clean.slice(10)}`;
-}
 
 function validarDni(valor: string): string | null {
   const clean = valor.replace(/[\s.]/g, "");

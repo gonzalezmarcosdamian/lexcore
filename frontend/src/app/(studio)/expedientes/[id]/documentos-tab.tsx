@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, Documento } from "@/lib/api";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { formatSize, formatDate } from "@/lib/formatters";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -19,15 +20,6 @@ const ICON: Record<string, string> = {
 
 function fileIcon(ct: string) { return ICON[ct] ?? "📎"; }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 interface Props { expedienteId: string; token: string; onCreated?: () => void; }
 
