@@ -1,10 +1,9 @@
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 from datetime import datetime, timezone, timedelta
-from collections import defaultdict
-import time
 import secrets
 
 from app.core.auth import create_access_token, hash_password, verify_password, decode_token
@@ -15,32 +14,60 @@ from app.models.user import AuthProvider, User, UserRole
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# ── Rate limiting in-memory (MVP) ────────────────────────────────────────────
-# {ip: [timestamp, ...]}  — solo intentos fallidos
-_failed_attempts: dict[str, list[float]] = defaultdict(list)
+# ── Rate limiting DB-backed ───────────────────────────────────────────────────
+# Persiste entre deploys. Usa tabla login_attempts en PostgreSQL.
 _MAX_ATTEMPTS = 5
-_WINDOW_SECONDS = 15 * 60  # 15 minutos
+_WINDOW_MINUTES = 15
 
 
-def _check_rate_limit(ip: str) -> None:
-    now = time.time()
-    # Limpiar intentos fuera de la ventana
-    _failed_attempts[ip] = [t for t in _failed_attempts[ip] if now - t < _WINDOW_SECONDS]
-    if len(_failed_attempts[ip]) >= _MAX_ATTEMPTS:
-        retry_after = int(_WINDOW_SECONDS - (now - _failed_attempts[ip][0]))
-        raise HTTPException(
-            status_code=429,
-            detail=f"Demasiados intentos fallidos. Intentá en {retry_after // 60} minutos.",
-            headers={"Retry-After": str(retry_after)},
+def _check_rate_limit(ip: str, db: Session | None = None) -> None:
+    if db is None:
+        return  # fallback silencioso si no hay DB
+    try:
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=_WINDOW_MINUTES)
+        result = db.execute(
+            text("SELECT COUNT(*) FROM login_attempts WHERE ip = :ip AND created_at > :window"),
+            {"ip": ip, "window": window_start},
+        ).scalar()
+        if result >= _MAX_ATTEMPTS:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Demasiados intentos fallidos. Intentá en {_WINDOW_MINUTES} minutos.",
+                headers={"Retry-After": str(_WINDOW_MINUTES * 60)},
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Si la tabla no existe todavía, no bloquear el login
+
+
+def _register_failure(ip: str, db: Session | None = None) -> None:
+    if db is None:
+        return
+    try:
+        db.execute(
+            text("INSERT INTO login_attempts (ip, created_at) VALUES (:ip, :now)"),
+            {"ip": ip, "now": datetime.now(timezone.utc)},
         )
+        # Limpiar intentos viejos de este IP para no acumular
+        window_start = datetime.now(timezone.utc) - timedelta(minutes=_WINDOW_MINUTES * 2)
+        db.execute(
+            text("DELETE FROM login_attempts WHERE ip = :ip AND created_at < :old"),
+            {"ip": ip, "old": window_start},
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
 
 
-def _register_failure(ip: str) -> None:
-    _failed_attempts[ip].append(time.time())
-
-
-def _clear_failures(ip: str) -> None:
-    _failed_attempts.pop(ip, None)
+def _clear_failures(ip: str, db: Session | None = None) -> None:
+    if db is None:
+        return
+    try:
+        db.execute(text("DELETE FROM login_attempts WHERE ip = :ip"), {"ip": ip})
+        db.commit()
+    except Exception:
+        db.rollback()
 
 
 class TokenResponse(BaseModel):
@@ -118,14 +145,14 @@ class LoginRequest(BaseModel):
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, db: DbSession, request: Request):
     ip = request.client.host if request.client else "unknown"
-    _check_rate_limit(ip)
+    _check_rate_limit(ip, db)
 
     user = db.query(User).filter(User.email == body.email).first()
     if not user or not user.hashed_password or not verify_password(body.password, user.hashed_password):
-        _register_failure(ip)
+        _register_failure(ip, db)
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
 
-    _clear_failures(ip)
+    _clear_failures(ip, db)
 
     token = create_access_token(
         studio_id=user.tenant_id, user_id=user.id, role=user.role.value,

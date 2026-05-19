@@ -9,6 +9,7 @@ import { SkeletonText, SkeletonAvatar } from "@/components/ui/skeletons";
 import { SearchModal } from "@/components/ui/search-modal";
 import { ToastProvider } from "@/components/ui/toast";
 import { HelpWidget } from "@/components/ui/help-widget";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 type NavItem = {
   href: string;
@@ -602,7 +603,9 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Page content */}
-        <main className="flex-1 px-4 lg:px-6 py-6 overflow-x-hidden">{children}</main>
+        <main className="flex-1 px-4 lg:px-6 py-6 overflow-x-hidden">
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </main>
       </div>
 
       {/* Help widget — floating, siempre presente cuando hay sesión */}

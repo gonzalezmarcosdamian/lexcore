@@ -4,10 +4,15 @@ import { DateInput } from "@/components/ui/date-input";
 import { todayAR } from "@/lib/date";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { api, Gasto, GastoPlantilla, GastoCategoria, GastoEstado, Ingreso, IngresoCategoria, Moneda, Expediente, Cliente } from "@/lib/api";
-import { ContableHero } from "@/components/features/contable-hero";
+// Lazy-load recharts solo cuando se necesita — reduce First Load JS de /gastos
+const ContableHero = dynamic(
+  () => import("@/components/features/contable-hero").then(m => ({ default: m.ContableHero })),
+  { ssr: false, loading: () => <div className="h-64 bg-white rounded-2xl border border-ink-100 animate-pulse" /> }
+);
 import { formatMoney as formatMoneyLib } from "@/lib/formatters";
 import { PageHelp } from "@/components/ui/page-help";
 import { SortButton, SortModal, SortOption } from "@/components/ui/sort-modal";
