@@ -128,7 +128,7 @@
 
 ### P1 — Feedback usuarios (idea, sin iniciar)
 
-- **UX-COLOR-001** · Paleta de colores uniforme en toda la app — `ready`
+- **UX-COLOR-001** · Paleta de colores uniforme en toda la app — `done` (2026-05-20)
   - **Fuente:** Martín (beta) — 2026-04-28
   - **Problema:** Tareas y movimientos usan colores distintos según la pantalla. No hay consistencia entre calendar semanal, agenda lista, agenda kanban, dashboard y expediente.
   - **Regla a aplicar:**
@@ -138,7 +138,7 @@
   - **Afecta:** `calendar-mensual.tsx`, `agenda/page.tsx` (calendario semanal, kanban, lista), `dashboard/page.tsx` (AgendaWidget), `expedientes/[id]/page.tsx` (bitácora)
   - **Criterio:** el dot o pill de color de una tarea es siempre azul en cualquier pantalla donde aparezca
 
-- **UX-AGENDA-ROWS-001** · Filas de agenda con más contexto: expediente + cliente visibles — `ready`
+- **UX-AGENDA-ROWS-001** · Filas de agenda con expediente + cliente visibles — `done` (2026-05-20)
   - **Fuente:** Martín (beta) — 2026-04-28
   - **Problema:** En la vista lista de agenda, las filas muestran título y poco más. El usuario necesita ver el número de expediente y el nombre del cliente sin abrir el detalle.
   - **Formato deseado** (como se ve en las screenshots):
