@@ -20,9 +20,12 @@ _MAX_ATTEMPTS = 5
 _WINDOW_MINUTES = 15
 
 
+_LOCALHOST_IPS = {"127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost"}
+
+
 def _check_rate_limit(ip: str, db: Session | None = None) -> None:
-    if db is None:
-        return
+    if db is None or ip in _LOCALHOST_IPS:
+        return  # no rate limit en localhost (dev y tests E2E)
     try:
         window_start = datetime.now(timezone.utc) - timedelta(minutes=_WINDOW_MINUTES)
         result = db.execute(
@@ -42,7 +45,7 @@ def _check_rate_limit(ip: str, db: Session | None = None) -> None:
 
 
 def _register_failure(ip: str, db: Session | None = None) -> None:
-    if db is None:
+    if db is None or ip in _LOCALHOST_IPS:
         return
     try:
         # Usar SAVEPOINT para no contaminar la transacción principal

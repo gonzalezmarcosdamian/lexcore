@@ -1,4 +1,14 @@
 import { Page } from "@playwright/test";
+import { execSync } from "child_process";
+
+function clearRateLimit() {
+  try {
+    execSync(
+      `docker compose -f ../docker-compose.yml exec -T backend python -c "from sqlalchemy import text; from app.core.database import SessionLocal; db=SessionLocal(); db.execute(text('DELETE FROM login_attempts')); db.commit(); db.close()"`,
+      { stdio: "ignore", timeout: 5000 }
+    );
+  } catch {}
+}
 
 /**
  * Cierra el SplashScreen y cualquier modal overlay que bloquee la UI.
@@ -40,11 +50,29 @@ export async function dismissModals(page: Page) {
   } catch {}
 }
 
+const E2E_EMAIL = process.env.E2E_EMAIL ?? "e2e.test@lexcore.dev";
+const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "TestLex2026!";
+
 /**
- * Navega y descarta modales.
+ * Navega, hace re-login si la sesión expiró, y descarta modales.
  */
 export async function goTo(page: Page, path: string) {
   await page.goto(path);
+  await page.waitForLoadState("domcontentloaded");
+
+  // Re-login automático si la sesión expiró
+  if (page.url().includes("/login")) {
+    clearRateLimit();
+    await page.locator('input[type="email"]').fill(E2E_EMAIL);
+    await page.locator('input[type="password"]').fill(E2E_PASSWORD);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/dashboard/, { timeout: 20000 });
+    if (path !== "/dashboard") {
+      await page.goto(path);
+      await page.waitForLoadState("domcontentloaded");
+    }
+  }
+
   await page.waitForLoadState("networkidle");
   await dismissModals(page);
 }

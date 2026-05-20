@@ -9,30 +9,15 @@ const EMAIL = process.env.E2E_EMAIL ?? "e2e.test@lexcore.dev";
 const PASSWORD = process.env.E2E_PASSWORD ?? "TestLex2026!";
 
 setup("autenticar usuario de prueba", async ({ page }) => {
+  // Login directo vía formulario con credenciales locales
   await page.goto("/login");
-  await page.waitForLoadState("networkidle");
-
-  // Llenar formulario
+  await page.waitForLoadState("domcontentloaded");
   await page.locator('input[type="email"]').fill(EMAIL);
   await page.locator('input[type="password"]').fill(PASSWORD);
   await page.locator('button[type="submit"]').click();
-
-  // Esperar dashboard completo
   await page.waitForURL(/dashboard/, { timeout: 20000 });
   await page.waitForLoadState("networkidle");
-
-  // Esperar que el session token esté disponible
-  await page.waitForTimeout(2000);
-
-  // Verificar cookies de sesión
-  const cookies = await page.context().cookies();
-  const sessionCookies = cookies.filter(c =>
-    c.name.includes("session") || c.name.includes("next-auth")
-  );
-  console.log("Cookies de sesión:", sessionCookies.map(c => `${c.name}=${c.value.slice(0,20)}...`));
-
-  // Verificar que estamos autenticados
-  await expect(page.getByText(/bienvenido/i)).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText(/bienvenido/i)).toBeVisible({ timeout: 10000 });
 
   // Marcar splash/wizard como ya vistos para no bloquear los tests
   await page.evaluate(() => {
@@ -52,5 +37,5 @@ setup("autenticar usuario de prueba", async ({ page }) => {
   }
 
   await page.context().storageState({ path: authFile });
-  console.log("✅ Sesión guardada:", EMAIL, "| Cookies:", cookies.length);
+  console.log("✅ Sesión guardada:", EMAIL);
 });

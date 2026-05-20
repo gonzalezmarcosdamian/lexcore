@@ -1,5 +1,22 @@
 import { test, expect } from "@playwright/test";
 import { goTo } from "./helpers";
+import path from "path";
+
+const E2E_EMAIL = process.env.E2E_EMAIL ?? "e2e.test@lexcore.dev";
+const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "TestLex2026!";
+const authFile = path.join(__dirname, ".auth/user.json");
+
+test.beforeAll(async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto("http://localhost:3001/login");
+  await page.locator('input[type="email"]').fill(E2E_EMAIL);
+  await page.locator('input[type="password"]').fill(E2E_PASSWORD);
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/dashboard/, { timeout: 25000 });
+  await context.storageState({ path: authFile });
+  await context.close();
+});
 
 test.describe("Nueva tarea", () => {
   test.beforeEach(async ({ page }) => {

@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "next-auth.csrf-token",
-      "value": "86dd75aca0feb72829f4f77690cc65eed22f20991042845052aa50ef8790660a%7Cc00dd723189956dbc7456da3797514e1d6273f91178e7588452118b2b86e7668",
+      "value": "226698a14be13317d53c1b3f663995e52af947de2ecfe33ec2d0b0303f1cd570%7Cdd624e7b541f20154a5081f27a8580fb8beb0fe3dbdbcc02081f19aed48e2b7b",
       "domain": "localhost",
       "path": "/",
       "expires": -1,
@@ -22,10 +22,10 @@
     },
     {
       "name": "next-auth.session-token",
-      "value": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..fijNRSS7PLIN6JdG.Oz1P4Wcy3Rz6kZ2_-xneT1tdXnEwol77IvDSwazHsL0bO8jTA3YHfFshkjM_uxnSN7tuiY2GRu3ycVPLp4SMxv-moPQec8jEaDN3i_xibQnHyy72HiBVc0RRTKWjxsM6X5gGVdZip4y00UkeURjWTW0lvRK8tKsmhYbm6WTj47-bNcB7DFI0yDRwCIuLsTAkhXSFVu5JcDTxDrgYyAA47AYMzpMBGNA6kkpLsXM9zmp63ufAy_Dm1nCCBgLf66tLAQ-i4OsYPbj4syrWQdgFiLmH1NEYq3zYPok6QMVaB51CUFxXjkPMmJQxcCnMlb-NZvMlTaG2TTKn08AlXKBCyVCJSdpRv31Kd0VD8qBv1MofhUCQp-go8bNE0c34WFkORcE8V2yzJ3BdEzdtYlEwnt_QUx9c6eGw1TF639YG07PKuGuLM8AwVICuD1n6l5bG6Mppl2q98zhjQJJrbtDeUaXogm3C6RrRWW-C6x5rlBUbdXtAJxvSrYThKElvqaE1csOYcgxnS5aQnVN9UAQpWIgqLlUa2UFzI6bxqtaIqWlhgnjwGkAdYRvNooQywsUpjMKZIgsHjpUigiuY72tdD36XNqJs8LkgkxzmlrIevCxYvUdyzpA1mtJ3MpITCELBX8VyhmTWa0zEbL0b0biDsf5jMMe_yFmSY-lDpREfdO8oBz8EIeGvrbjTp8aP0pw78rjnIcpTmDRXLMhew7Omcd67nLONHNgR9kNr9WsvenIDKUramNy9PwYDzHcL8cw07-GauEjikfUww-xf5SyBks4NB3MwaijIDG08rhmZrOBxNNjuDAxQgPaEKCrlcwVnV-bmwjTvhXXDp3o47QmJVBZ1VYqUWVM2t8hMtyCJIAhfk94.GCTKSUBjoNLGGgpVZAjACg",
+      "value": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..bKv-nsfTgiiuYor4.JyPMGHMHDKyusPBG8SgkvWXO4qNKCK0m9CJ_vuLKPfpHLHwVY9esqA7xmYa-vGz09ScqT8u11LNIVAVoouO8LjE6taBbwIRZWVGKgRcdiKSfsDO3E7JchKDS_5qM1NFFr4kX-dKFaef6gxMJ6AvXeZRtJymxoBe4wpU5HkC8wPhoYnPGlq3esp0mp4anIsrukoHOFof0NSuXHi-F16njSoWk3ROIQNlD3S9fgf97LIXEATxXn6cYN9am5vlAM8QSYEe4V0B8xobwRoTOhfrPp8cs7-UZ38SuvM1x9Po7Oh5iFRt88b1uYp2B0_2FYlgMF92BgBaB6hjakG5K6yvbWxVCBQTXxg3XI2oLgn1uPni4LpI16C-U8O5eQNN6cdBUFcVRk_EDYLknedGEEKNPi5c-afoGemYJDUcgJYSEpF4KQZOl-ggxJtDEIFY6Dc6SAdCtdK5mWuKipPaJ6kSpdyq__M4bQ82voR1zGpep477fAM8WEf5jmDf5WnCgiiHgGhce7sNeWE4vzqc85diYHyXBSwG2ZqAJXXGmREA5Q1hcXyqFU1yScUgvOM_BctXfSLol8Qnu_dj4R_PwMrXzdrif7Zgo9RYVa6JklggVSDKy-1DVfG-EOtYT3joznWe3PvYvj8AP-QdnkT2Ek-QNwixG2Em4xZjz8IhHBPlWpd9tQZeMQEhUWl0-e7C_RPZwKsOJFMmoQlyw9-Unhc6nrpd-_NYW5YJ9inJR3QECoME3XPhhdd2USxdNJdnbUYPkkry41wv7rjbfJuIUfdz7NyTIAJoJkYcIadJDFtBDNpad_N6lZHSnYdr2wupVTHsr-dKTLH_-JPcBxdfZ4haC_L1szFcpAfzHcba5CLNxTshERqQbLFAiPJ_AEQwEtTMXvxaqyFFuHA.P637H-ApnaD1BUXdzESnMA",
       "domain": "localhost",
       "path": "/",
-      "expires": 1779659689.323829,
+      "expires": 1781885512.382575,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
@@ -37,7 +37,7 @@
       "localStorage": [
         {
           "name": "nextauth.message",
-          "value": "{\"event\":\"session\",\"data\":{\"trigger\":\"getSession\"},\"timestamp\":1777067687}"
+          "value": "{\"event\":\"session\",\"data\":{\"trigger\":\"getSession\"},\"timestamp\":1779293511}"
         },
         {
           "name": "lexcore_onboarded",

@@ -1,55 +1,68 @@
 import { test, expect } from "@playwright/test";
 import { goTo, dismissModals } from "./helpers";
+import path from "path";
+
+const E2E_EMAIL = process.env.E2E_EMAIL ?? "e2e.test@lexcore.dev";
+const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "TestLex2026!";
+const authFile = path.join(__dirname, ".auth/user.json");
+
+// Re-autenticar antes de este spec file para renovar la sesión
+test.beforeAll(async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto("http://localhost:3001/login");
+  await page.locator('input[type="email"]').fill(E2E_EMAIL);
+  await page.locator('input[type="password"]').fill(E2E_PASSWORD);
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/dashboard/, { timeout: 25000 });
+  await context.storageState({ path: authFile });
+  await context.close();
+});
 
 test.describe("Expedientes", () => {
   test("lista carga", async ({ page }) => {
-    await page.goto("/expedientes");
-    await expect(page.getByRole("heading", { name: /expedientes/i })).toBeVisible();
+    await goTo(page, "/expedientes");
+    await expect(page.locator("h1").filter({ hasText: "Expedientes" })).toBeVisible({ timeout: 10000 });
   });
 
   test("puede buscar expediente", async ({ page }) => {
-    await page.goto("/expedientes");
+    await goTo(page, "/expedientes");
+    // El input de búsqueda existe aunque esté vacío
     const search = page.getByPlaceholder(/buscar/i).first();
-    if (await search.isVisible()) {
-      await search.fill("EXP");
-      await page.waitForTimeout(400);
-    }
+    await expect(search).toBeVisible({ timeout: 10000 });
+    await search.fill("EXP");
+    await page.waitForTimeout(400);
   });
 
   test("detalle de expediente carga página de datos", async ({ page }) => {
     await goTo(page, "/expedientes");
-    await page.waitForTimeout(1000);
     const link = page.locator("a[href*='/expedientes/']").first();
-    if (await link.isVisible({ timeout: 8000 }).catch(() => false)) {
+    const linkExists = await link.isVisible({ timeout: 5000 }).catch(() => false);
+    if (linkExists) {
       await link.click();
       await page.waitForLoadState("networkidle");
-      await dismissModals(page);
-      // La página de detalle muestra datos del expediente
-      await expect(page.getByText(/EXP-|expediente|datos/i).first()).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(/EXP-|expediente/i).first()).toBeVisible({ timeout: 10000 });
     } else {
-      // Usuario sin expedientes — crear uno y navegar directo
-      await page.goto("/expedientes/nuevo");
-      await page.waitForLoadState("networkidle");
-      await expect(page.getByText(/nuevo expediente|caratula/i).first()).toBeVisible({ timeout: 8000 });
+      // Sin expedientes — verificar que el empty state existe
+      await expect(page.getByText(/todavía no hay|crear primer/i)).toBeVisible({ timeout: 5000 });
     }
   });
 
   test("botón + Movimiento desde expediente navega", async ({ page }) => {
     await goTo(page, "/expedientes");
     const link = page.locator("a[href*='/expedientes/']").first();
-    if (await link.isVisible({ timeout: 5000 }).catch(() => false)) {
+    const linkExists = await link.isVisible({ timeout: 5000 }).catch(() => false);
+    if (linkExists) {
       await link.click();
       await page.waitForLoadState("networkidle");
-      await dismissModals(page);
-      const btnMov = page.getByRole("link", { name: /movimiento procesal/i }).first();
+      const btnMov = page.locator("a, button").filter({ hasText: /movimiento procesal/i }).first();
       if (await btnMov.isVisible({ timeout: 5000 }).catch(() => false)) {
         await btnMov.click();
         await expect(page).toHaveURL(/movimientos\/nuevo/, { timeout: 10000 });
-      } else {
-        console.log("Botón movimiento no visible en este expediente");
       }
     } else {
-      console.log("Sin expedientes para testear navegación");
+      // Sin expedientes — test pasa vacío
+      console.log("Sin expedientes — skipping navegación test");
     }
   });
 });
