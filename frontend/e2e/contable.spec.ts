@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { renewSession } from "./fixtures";
+import { goTo } from "./helpers";
+
+test.beforeAll(renewSession);
 
 test.describe("Contable", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/gastos"); // la ruta real es /gastos
-    await page.waitForLoadState("networkidle");
+    await goTo(page, "/gastos");
   });
 
   test("carga con tabs Egresos e Ingresos", async ({ page }) => {

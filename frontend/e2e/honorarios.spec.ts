@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { renewSession } from './fixtures';
 import { goTo } from "./helpers";
 
 test.describe("Nuevo honorario", () => {

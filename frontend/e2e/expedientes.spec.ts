@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { renewSession } from './fixtures';
 import { goTo, dismissModals } from "./helpers";
 import path from "path";
 
