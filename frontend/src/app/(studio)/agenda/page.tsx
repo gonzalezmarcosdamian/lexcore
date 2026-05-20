@@ -459,7 +459,7 @@ function AgendaItemMobile({
   estado: string;
   fecha?: string;
   hora?: string | null;
-  expediente?: { id: string; numero: string; caratula?: string } | null;
+  expediente?: { id: string; numero: string; caratula?: string; cliente_nombre?: string | null } | null;
   urgente?: boolean;
   vencido?: boolean;
   paralizado?: boolean;
@@ -505,6 +505,7 @@ function AgendaItemMobile({
             <p className="text-xs text-ink-400 mt-0.5 truncate">
               {fecha && <span>{new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })}{hora ? ` · ${hora}` : ""}</span>}
               {expediente && <span className="text-brand-600"> · {expediente.numero}</span>}
+              {expediente?.cliente_nombre && <span className="text-ink-400"> · {expediente.cliente_nombre}</span>}
             </p>
           )}
         </div>
@@ -967,7 +968,7 @@ export default function AgendaPage() {
                     {vDia.map(v => (
                       <button key={v.id} onClick={() => { setDiaPickerFecha(null); router.push(`/movimientos/${v.id}`); }} className="w-full text-left px-5 py-3.5 hover:bg-ink-50 transition group">
                         <div className="flex items-center gap-3">
-                          <span className="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0" />
+                          <span className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-ink-900 truncate">{v.titulo}</p>
                             <p className="text-xs text-ink-400 mt-0.5">
@@ -1155,7 +1156,7 @@ export default function AgendaPage() {
                               estado={v.estado === "cumplido" ? "cumplido" : "pendiente"}
                               fecha={v.fecha}
                               hora={v.hora}
-                              expediente={exp ? { id: exp.id, numero: exp.numero } : null}
+                              expediente={exp ? { id: exp.id, numero: exp.numero, cliente_nombre: exp.cliente_nombre } : null}
                               urgente={esUrgente(v.fecha) && (v.estado !== "cumplido")}
                               vencido={esVencida(v.fecha) && (v.estado !== "cumplido")}
                               onCycleEstado={(e) => { e.stopPropagation(); toggleVencimiento(v); }}
@@ -1175,7 +1176,7 @@ export default function AgendaPage() {
                             estado={t.estado}
                             fecha={t.fecha_limite ?? undefined}
                             hora={t.hora}
-                            expediente={exp ? { id: exp.id, numero: exp.numero } : null}
+                            expediente={exp ? { id: exp.id, numero: exp.numero, cliente_nombre: exp.cliente_nombre } : null}
                             urgente={!!t.fecha_limite && esUrgente(t.fecha_limite) && t.estado !== "hecha"}
                             vencido={!!t.fecha_limite && esVencida(t.fecha_limite) && t.estado !== "hecha"}
                             paralizado={t.flag_paralizado && t.estado !== "hecha"}

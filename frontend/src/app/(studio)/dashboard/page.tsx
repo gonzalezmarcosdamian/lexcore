@@ -182,7 +182,7 @@ export default function DashboardPage() {
       expediente_id: t.expediente_id,
       fecha: t.fecha_limite!,
       fecha_limite: t.fecha_limite!,
-      color: (t.estado === "en_curso" ? "blue" : t.fecha_limite! < today ? "red" : "orange") as CalEvent["color"],
+      color: (t.fecha_limite! < today && t.estado !== "hecha" ? "red" : "blue") as CalEvent["color"],
     })),
   ], [proximos, tareas]);
 
