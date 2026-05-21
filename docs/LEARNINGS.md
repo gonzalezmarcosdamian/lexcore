@@ -250,6 +250,29 @@ for (const f of Object.keys(map)) {
 
 ---
 
+## 2026-05-20/21 — Incidente Railway PostgreSQL
+
+### Volumen de PostgreSQL corrupto tras incidente de infraestructura Railway
+**Qué pasó:** El volumen `vol_mlimqf5lr1g2lo2e` de PostgreSQL en Railway quedó en estado corrupto después de un incidente de plataforma (2026-05-20 04:34 UTC). El container de PostgreSQL no podía arrancar: `catatonit: failed to exec pid1: No such file or directory`. La DB era inaccesible, el backend en crash loop.
+
+**Síntomas:**
+- Backend: `psycopg2.OperationalError: connection to server failed: server closed the connection unexpectedly`
+- PostgreSQL: `ERROR (catatonit:2): failed to exec pid1: No such file or directory` en loop
+- Duración: ~43 horas (2026-05-20 04:34 → 2026-05-21)
+
+**Resolución:** Redeploy del servicio PostgreSQL desde el dashboard de Railway (no el restart de servicio, sino el redeploy completo del container). El volumen con los datos estaba intacto — solo el container de PostgreSQL necesitaba ser recreado.
+
+**Acción post-incidente:**
+1. Backup completo exportado: `backup-2026-05-21.json` (26 tablas, todos los datos)
+2. `railway up` debe correrse desde la **raíz del repo** (`lexcore/`), no desde `backend/`. El `railway.json` con el Dockerfile está en la raíz.
+
+### Deploy de Railway debe hacerse desde la raíz del repo
+**Decisión:** `railway up` desde `c:/Users/gonza/OneDrive/Documentos/lexcore/`, NO desde `backend/`.
+**Razón:** El `railway.json` con el Dockerfile está en la raíz. Si se corre desde `backend/`, Railway aplica la config del `railway.json` raíz que espera encontrar un subdirectorio `/backend` — causando `lstat .../backend: no such file or directory` en el builder.
+**Token permanente:** `RAILWAY_TOKEN=0a33fdae-bbdc-4e87-b6d2-13f0acb214d2` (guardado en `.claude/settings.json` como env var)
+
+---
+
 ---
 
 ## 2026-04-28 — Sesión 014

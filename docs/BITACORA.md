@@ -1,5 +1,48 @@
 # LexCore — Bitácora de Sesiones
 
+---
+
+## Sesión 015 — 2026-05-21
+
+**Sprint:** 18
+**Tipo:** Incidente + Mantenimiento + E2E
+
+### Incidente Railway PostgreSQL (2026-05-20 → 2026-05-21)
+
+**Qué pasó:** El volumen de PostgreSQL en Railway quedó corrupto tras un incidente de plataforma (mayormente ocurrido el 2026-05-20 04:34 UTC). El container de Postgres no podía ejecutar su proceso init (`catatonit: failed to exec pid1`). El backend entró en crash loop por falta de DB.
+
+**Duración:** ~43 horas de downtime backend.
+
+**Resolución:** Redeploy del servicio PostgreSQL desde el dashboard de Railway. Los datos estaban intactos en el volumen — solo el container necesitaba recrearse.
+
+**Acciones tomadas:**
+- Redeploy backend desde raíz del repo (no desde `backend/` — causa build failure)
+- Backup completo exportado: `backup-2026-05-21.json` (26 tablas)
+- Documentado en `LEARNINGS.md` y `PLAN_RECUPERO.md`
+
+### Trabajo completado
+
+**Tests E2E:**
+- Corregidos specs de contable, honorarios, mobile
+- Creado `crear-expediente.spec.ts` (flujo completo)
+- Creado `fixtures.ts` con helper `renewSession`
+- GitHub Action configurado (`.github/workflows/e2e.yml`)
+- **Total: 42/42 tests pasando** (37 sin los specs mobile/contable)
+
+**Contable tests mejorados:**
+- Reemplazados tests genéricos por tests que verifican la estructura real
+- Verifican cards de totales, botones CTAs, feed unificado, modales
+
+**Post-incidente:**
+- `PLAN_RECUPERO.md` creado con pasos para cada tipo de incidente
+- `LEARNINGS.md` actualizado con aprendizajes del incidente
+
+### Estado al cierre
+- Backend: ✅ Railway operativo
+- Frontend: ✅ Vercel operativo  
+- Tests: ✅ 37/37 (suite principal)
+- Backup: ✅ `backup-2026-05-21.json`
+
 > Una entrada por sesión de trabajo. Describe qué se hizo, qué decisiones se tomaron, qué quedó pendiente.
 
 ---
