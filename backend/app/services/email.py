@@ -45,7 +45,7 @@ def send_vencimiento_urgente_email(
   <div style="background: white; border-radius: 16px; border: 1px solid #e8eef4; overflow: hidden;">
     <div style="background: #dc2626; padding: 20px 32px; display: flex; align-items: center; gap: 12px;">
       <span style="color: white; font-size: 20px;">⚠️</span>
-      <span style="color: white; font-size: 18px; font-weight: 700; letter-spacing: -0.3px;">Vencimiento urgente — LexCore</span>
+      <span style="color: white; font-size: 18px; font-weight: 700; letter-spacing: -0.3px;">Vencimiento urgente — Luthor</span>
     </div>
     <div style="padding: 32px;">
       <p style="margin: 0 0 6px; color: #6b8aaa; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Expediente</p>
@@ -63,12 +63,12 @@ def send_vencimiento_urgente_email(
         </a>
       </div>
       <p style="margin: 0; color: #6b8aaa; font-size: 13px; text-align: center;">
-        Este vencimiento vence en menos de 48 horas. Marcalo como cumplido en LexCore una vez que hayas actuado.
+        Este vencimiento vence en menos de 48 horas. Marcalo como cumplido en Luthor una vez que hayas actuado.
       </p>
     </div>
     <div style="padding: 20px 32px; border-top: 1px solid #e8eef4; background: #f4f7fa;">
       <p style="margin: 0; color: #6b8aaa; font-size: 12px; text-align: center;">
-        LexCore · Gestión para estudios jurídicos · Argentina
+        Luthor · Gestión para estudios jurídicos · Argentina
       </p>
     </div>
   </div>
@@ -77,7 +77,7 @@ def send_vencimiento_urgente_email(
 """
 
         resend.Emails.send({
-            "from": "LexCore <noreply@lexcore.app>",
+            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): cambiar a noreply@luthor.app cuando se migre el dominio
             "to": to_emails,
             "subject": f"⚠️ Vencimiento urgente: {descripcion}",
             "html": html,
@@ -131,7 +131,7 @@ def send_invitation_email(
       <div style="width: 36px; height: 36px; background: #2b4dd4; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
         <span style="color: white; font-size: 18px; font-weight: bold;">⚖</span>
       </div>
-      <span style="color: white; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">LexCore</span>
+      <span style="color: white; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">Luthor</span>
     </div>
     <!-- Body -->
     <div style="padding: 32px;">
@@ -140,7 +140,7 @@ def send_invitation_email(
         <strong style="color: #0f1c2e;">{inviter_name}</strong> te invitó a unirte a <strong style="color: #0f1c2e;">{studio_name}</strong> como <strong style="color: #2b4dd4;">{rol_display}</strong>.
       </p>
       <p style="margin: 0 0 28px; color: #3a5272; font-size: 14px; line-height: 1.6;">
-        LexCore es la plataforma de gestión para el estudio. Vas a poder gestionar expedientes, clientes, vencimientos y mucho más.
+        Luthor es la plataforma de gestión para el estudio. Vas a poder gestionar expedientes, clientes, vencimientos y mucho más.
       </p>
       <!-- CTA -->
       <div style="text-align: center; margin: 32px 0;">
@@ -155,7 +155,7 @@ def send_invitation_email(
     <!-- Footer -->
     <div style="padding: 20px 32px; border-top: 1px solid #e8eef4; background: #f4f7fa;">
       <p style="margin: 0; color: #6b8aaa; font-size: 12px; text-align: center;">
-        LexCore · Gestión para estudios jurídicos · Argentina
+        Luthor · Gestión para estudios jurídicos · Argentina
       </p>
     </div>
   </div>
@@ -164,9 +164,9 @@ def send_invitation_email(
 """
 
         resend.Emails.send({
-            "from": "LexCore <noreply@lexcore.app>",
+            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): cambiar a noreply@luthor.app cuando se migre el dominio
             "to": [to_email],
-            "subject": f"Invitación a {studio_name} en LexCore",
+            "subject": f"Invitación a {studio_name} en Luthor",
             "html": html,
         })
         logger.info(f"Email de invitación enviado a {to_email}")
@@ -204,7 +204,7 @@ def send_reset_password_email(
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #0f1c2e; background: #f4f7fa;">
   <div style="background: white; border-radius: 16px; border: 1px solid #e8eef4; overflow: hidden;">
     <div style="background: #0f1c2e; padding: 28px 32px;">
-      <span style="color: white; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">LexCore</span>
+      <span style="color: white; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">Luthor</span>
     </div>
     <div style="padding: 32px;">
       <h2 style="margin: 0 0 8px; font-size: 22px; font-weight: 700; color: #0f1c2e;">Restablecer contraseña</h2>
@@ -221,16 +221,16 @@ def send_reset_password_email(
       </p>
     </div>
     <div style="padding: 20px 32px; border-top: 1px solid #e8eef4; background: #f4f7fa;">
-      <p style="margin: 0; color: #6b8aaa; font-size: 12px; text-align: center;">LexCore · Gestión para estudios jurídicos</p>
+      <p style="margin: 0; color: #6b8aaa; font-size: 12px; text-align: center;">Luthor · Gestión para estudios jurídicos</p>
     </div>
   </div>
 </body>
 </html>"""
 
         resend.Emails.send({
-            "from": "LexCore <noreply@lexcore.app>",
+            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): cambiar a noreply@luthor.app cuando se migre el dominio
             "to": [to_email],
-            "subject": "Restablecer contraseña — LexCore",
+            "subject": "Restablecer contraseña — Luthor",
             "html": html,
         })
         logger.info(f"Email de reset enviado a {to_email}")

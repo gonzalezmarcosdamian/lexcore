@@ -123,7 +123,7 @@ function DashboardMockup() {
         </div>
         <div className="flex h-64 text-xs">
           <div className="w-36 bg-ink-900 flex flex-col gap-1 p-3 flex-shrink-0">
-            <div className="text-white font-bold text-sm mb-3 px-1">LexCore</div>
+            <div className="text-white font-bold text-sm mb-3 px-1">Luthor</div>
             {["Inicio", "Expedientes", "Clientes", "Agenda", "Contable"].map((item, i) => (
               <div key={item} className={`px-2 py-1.5 rounded-lg text-[10px] font-medium ${i === 0 ? "bg-brand-600 text-white" : "text-ink-400 hover:text-white"}`}>
                 {item}
@@ -221,7 +221,7 @@ export default function LandingPage() {
             className="text-lg font-bold text-ink-900 tracking-tight"
             style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}
           >
-            LexCore
+            Luthor
           </span>
           {/* Desktop */}
           <div className="hidden sm:flex items-center gap-3">
@@ -271,7 +271,7 @@ export default function LandingPage() {
 
         {/* Subheadline */}
         <p className="text-lg sm:text-xl text-ink-600 max-w-xl mx-auto mb-8 leading-relaxed">
-          LexCore es el sistema de gestión que usan estudios jurídicos para no perder ningún vencimiento, tener el equipo alineado y cobrar lo que les corresponde.
+          Luthor es el sistema de gestión que usan estudios jurídicos para no perder ningún vencimiento, tener el equipo alineado y cobrar lo que les corresponde.
         </p>
 
         {/* CTA */}
@@ -379,7 +379,7 @@ export default function LandingPage() {
                 icon: <IconBell />,
                 color: "bg-red-50 text-red-600",
                 title: "Vencimientos que no se olvidan",
-                body: "Cargás el plazo una sola vez. LexCore te manda email automático y sincroniza con Google Calendar con dos alertas: a medianoche y 1 hora antes.",
+                body: "Cargás el plazo una sola vez. Luthor te manda email automático y sincroniza con Google Calendar con dos alertas: a medianoche y 1 hora antes.",
                 stat: "Email + Google Calendar con alertas",
               },
               {
@@ -440,7 +440,7 @@ export default function LandingPage() {
               className="text-3xl sm:text-4xl font-extrabold text-white"
               style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}
             >
-              Empezás a usar LexCore en menos de una hora
+              Empezás a usar Luthor en menos de una hora
             </h2>
           </div>
           <div className="grid sm:grid-cols-3 gap-8">
@@ -557,7 +557,7 @@ export default function LandingPage() {
           <div className="space-y-3">
             <FAQItem
               q="¿Necesito saber de tecnología para usarlo?"
-              a="No. Si usás WhatsApp y Gmail, podés usar LexCore. Está diseñado para abogados, no para ingenieros. En menos de una hora tenés el estudio configurado."
+              a="No. Si usás WhatsApp y Gmail, podés usar Luthor. Está diseñado para abogados, no para ingenieros. En menos de una hora tenés el estudio configurado."
             />
             <FAQItem
               q="¿Qué pasa con mis datos si dejo de usar LexCore?"
@@ -565,7 +565,7 @@ export default function LandingPage() {
             />
             <FAQItem
               q="¿Puedo usarlo desde el celular?"
-              a="Sí. LexCore está diseñado mobile-first. Funciona perfecto en cualquier dispositivo sin instalar ninguna app."
+              a="Sí. Luthor está diseñado mobile-first. Funciona perfecto en cualquier dispositivo sin instalar ninguna app."
             />
             <FAQItem
               q="¿Cuántos usuarios puedo tener?"
@@ -620,7 +620,7 @@ export default function LandingPage() {
                 className="text-lg font-bold text-ink-900 mb-2"
                 style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}
               >
-                LexCore
+                Luthor
               </div>
               <p className="text-sm text-ink-500 max-w-xs mb-4">Gestión para estudios de abogados. Hecho en Argentina.</p>
               {/* Trust badges */}

@@ -89,7 +89,7 @@ class LexPDF(FPDF):
         self.set_font("Helvetica", "", 6.5)
         self.set_text_color(*MID_GRAY)
         self.set_x(MARGIN)
-        self.cell(CW / 2, 5, "Generado con LexCore - lexcore.app", align="L")
+        self.cell(CW / 2, 5, "Generado con Luthor", align="L")  # TODO(rename): agregar dominio luthor.app cuando se migre
         total = self.total_ref[0] if self.total_ref[0] else "?"
         self.set_x(MARGIN + CW / 2)
         self.cell(CW / 2, 5, f"Pag. {self.page_no()} / {total}", align="R")

@@ -196,7 +196,7 @@ LEXCORE_TAG = "lexcore_sync"
 
 
 def _delete_existing_lexcore_events(service, calendar_id: str):
-    """Elimina todos los eventos previos creados por LexCore para evitar duplicados."""
+    """Elimina todos los eventos previos creados por Luthor para evitar duplicados."""
     try:
         page_token = None
         while True:

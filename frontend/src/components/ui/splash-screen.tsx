@@ -109,11 +109,12 @@ export function SplashScreen() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
               </svg>
             </div>
-            <span className="text-3xl font-bold text-white tracking-tight">LexCore</span>
+            <span className="text-3xl font-bold text-white tracking-tight">Luthor</span>
           </div>
           <p className="text-center text-ink-300 text-sm mb-8 leading-relaxed">
             La plataforma de gestión para estudios de abogados.<br />Simple, rápida y siempre disponible.
           </p>
+          {/* TODO(rename): actualizar copy si se desea personalizar con "Luthor" */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
             {VALUE_PROPS.map((vp, i) => (
               <div key={i} className="bg-ink-800/80 border border-ink-700 rounded-2xl p-4 flex gap-3">

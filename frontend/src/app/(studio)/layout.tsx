@@ -324,7 +324,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
               </svg>
             </div>
           )}
-          <span className="text-white font-bold text-lg tracking-tight">LexCore</span>
+          <span className="text-white font-bold text-lg tracking-tight">Luthor</span>
         </div>
 
         {/* Nav */}

@@ -21,7 +21,7 @@ const lato = Lato({
 });
 
 export const metadata: Metadata = {
-  title: "LexCore",
+  title: "Luthor",
   description: "Gestión para estudios de abogados",
 };
 

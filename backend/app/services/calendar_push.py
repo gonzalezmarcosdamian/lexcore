@@ -95,7 +95,7 @@ def push_vencimiento(db, vencimiento, user_id: str) -> bool:
     desc_parts = [f"Tipo: {str(vencimiento.tipo.value if hasattr(vencimiento.tipo, 'value') else vencimiento.tipo) or 'vencimiento'}"]
     if exp_label:
         desc_parts.append(f"Expediente: {exp_label}")
-    desc_parts.append("Generado por LexCore")
+    desc_parts.append("Generado por Luthor")
 
     event: dict = {
         "id": event_id,
@@ -154,7 +154,7 @@ def push_tarea(db, tarea, user_id: str) -> bool:
         desc_parts.append(tarea.descripcion)
     if exp_label:
         desc_parts.append(f"Expediente: {exp_label}")
-    desc_parts.append("Generado por LexCore")
+    desc_parts.append("Generado por Luthor")
 
     event: dict = {
         "id": event_id,

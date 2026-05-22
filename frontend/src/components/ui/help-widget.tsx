@@ -94,8 +94,8 @@ const FAQS = [
         link: { href: "/perfil", label: "Ir a Perfil" },
       },
       {
-        q: "¿Puedo usar LexCore desde el celular?",
-        a: "Sí. LexCore está diseñado mobile-first. Funciona completo en el navegador del celular en 375px. En móvil tenés la barra de navegación inferior con las secciones principales.",
+        q: "¿Puedo usar Luthor desde el celular?",
+        a: "Sí. Luthor está diseñado mobile-first. Funciona completo en el navegador del celular en 375px. En móvil tenés la barra de navegación inferior con las secciones principales.",
       },
       {
         q: "¿Cómo exporto información?",
@@ -530,7 +530,7 @@ export function HelpWidget({ token }: { token: string | undefined }) {
               <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-ink-200 rounded-full lg:hidden" />
               <div>
                 <p className="text-sm font-bold text-ink-900">Centro de ayuda</p>
-                <p className="text-xs text-ink-400">LexCore</p>
+                <p className="text-xs text-ink-400">Luthor</p>
               </div>
               <button onClick={handleClose} className="text-ink-400 hover:text-ink-700 transition p-1 rounded-lg hover:bg-ink-100">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-echo "=== Starting LexCore Backend ==="
+echo "=== Starting Luthor Backend ==="
 echo "PORT: ${PORT}"
 echo "DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo yes || echo NO)"
 echo "Running migrations..."

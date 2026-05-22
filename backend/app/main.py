@@ -108,7 +108,7 @@ _ALLOWED_ORIGINS = re.compile(
 )
 
 app = FastAPI(
-    title="LexCore API",
+    title="Luthor API",
     version="0.4.0",
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
     lifespan=lifespan,

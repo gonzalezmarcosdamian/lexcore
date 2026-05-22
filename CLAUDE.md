@@ -1,8 +1,9 @@
-# LexCore — Reglas de trabajo (Claude Code)
+# Luthor — Reglas de trabajo (Claude Code)
+# (repo: lexcore — nombre visual del producto: Luthor)
 
 ## CONTEXTO DEL PROYECTO
 
-**LexCore** es una plataforma multi-tenant de gestión para estudios de abogados.
+**Luthor** es una plataforma multi-tenant de gestión para estudios de abogados.
 Arranca como backoffice + landing page. Cada estudio es un tenant aislado.
 
 Stack:
@@ -241,3 +242,13 @@ Ver `docs/LEARNINGS.md` para el historial completo.
 | Estado inicial de expediente = activo | Un expediente nace activo siempre. `ExpedienteCreate` no acepta `estado`. |
 | Vencimientos y Tareas son ortogonales | No hay FK entre ellos. Vencimiento = plazo procesal. Tarea = trabajo interno. Si se relacionan en el futuro: `vencimiento_id` opcional en `Tarea`. |
 | Monetización: trial 30 días sin tarjeta | Acceso completo → día 25 aviso email → día 31 modo lectura. Campo `trial_ends_at` en modelo `Studio`. |
+
+## Setup notes (Windows)
+
+- Plugin claude-mem deshabilitado por bug en hook SessionStart
+  (renombrado en ~/.claude/plugins/marketplaces/thedotmack.disabled).
+  Ver BITACORA 2026-04-27.
+- Hooks PostToolUse usan chr(92) en vez de '\\\\' para evitar
+  problemas de escape en Git Bash sobre Windows.
+- Si el subprocess timeoutea 60s al arrancar, primer sospechoso
+  es plugin re-activado o nuevo hook con syntax error.

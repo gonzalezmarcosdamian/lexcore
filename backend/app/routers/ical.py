@@ -40,10 +40,10 @@ def _make_vcalendar(events: list[str]) -> str:
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//LexCore//ES",
+        "PRODID:-//Luthor//ES",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        "X-WR-CALNAME:LexCore — Vencimientos",
+        "X-WR-CALNAME:Luthor — Vencimientos",
         "X-WR-TIMEZONE:America/Argentina/Buenos_Aires",
         *events,
         "END:VCALENDAR",
@@ -53,13 +53,13 @@ def _make_vcalendar(events: list[str]) -> str:
 
 def _make_vevent(v: Vencimiento, caratula: str) -> list[str]:
     tipo_label = TIPO_DISPLAY.get(v.tipo, "Evento legal")
-    summary = f"[LEXCORE] {tipo_label}: {caratula[:60]}"
+    summary = f"[LUTHOR] {tipo_label}: {caratula[:60]}"
     description = f"Expediente: {caratula}\\nTipo: {tipo_label}\\nDescripción: {v.titulo}"
     fecha_ical = _ical_date(v.fecha)
 
     return [
         "BEGIN:VEVENT",
-        f"UID:{v.id}@lexcore",
+        f"UID:{v.id}@luthor",
         f"DTSTAMP:{_now_utc()}",
         f"DTSTART;VALUE=DATE:{fecha_ical}",
         f"DTEND;VALUE=DATE:{fecha_ical}",

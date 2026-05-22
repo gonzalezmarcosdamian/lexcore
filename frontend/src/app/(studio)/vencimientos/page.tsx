@@ -472,7 +472,7 @@ export default function VencimientosPage() {
             title="Vencimientos y Agenda"
             description="Los vencimientos son plazos procesales externos: audiencias, presentaciones, pericias, notificaciones. Distintos de las Tareas, que son trabajo interno del estudio."
             items={[
-              { icon: "🔴", title: "Urgente (< 48hs)", description: "Aparecen en rojo y se notifican en el header de toda la app. LexCore también envía un email automático a todos los miembros del estudio." },
+              { icon: "🔴", title: "Urgente (< 48hs)", description: "Aparecen en rojo y se notifican en el header de toda la app. Luthor también envía un email automático a todos los miembros del estudio." },
               { icon: "🟡", title: "Próximo (esta semana)", description: "Vence en los próximos 7 días. Amarillo como advertencia temprana para prepararse." },
               { icon: "⚠️", title: "Diferencia con tareas", description: "Vencimiento = plazo del proceso judicial (externo, con fecha fija). Tarea = trabajo del estudio (interno, asignable a personas)." },
               { icon: "📅", title: "Google Calendar", description: "Conectá tu Google Calendar desde Perfil y sincronizá manualmente. Los eventos se crean con el número de expediente en las notas y dos alertas: a medianoche y 1h antes." },

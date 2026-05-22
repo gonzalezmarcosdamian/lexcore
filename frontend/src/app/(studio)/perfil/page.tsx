@@ -496,7 +496,7 @@ function PerfilPageInner() {
             { icon: "💳", title: "Mi plan", description: "Muestra tu plan activo, días de trial restantes y el historial de pagos. Desde acá podés suscribirte o cancelar tu suscripción." },
             { icon: "🔒", title: "Cambio de contraseña", description: "Solo disponible si usás acceso con email y contraseña. Los usuarios de Google gestionan su contraseña desde Google." },
           ]}
-          tip="El email de contacto del estudio es lo que reciben tus clientes cuando les enviás notificaciones desde LexCore."
+          tip="El email de contacto del estudio es lo que reciben tus clientes cuando les enviás notificaciones desde Luthor."
         />
       </div>
       <div className="flex items-center gap-4">

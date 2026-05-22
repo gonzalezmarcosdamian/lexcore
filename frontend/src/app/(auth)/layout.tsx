@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
               </svg>
             </div>
-            <span className="text-white font-bold text-xl tracking-tight">LexCore</span>
+            <span className="text-white font-bold text-xl tracking-tight">Luthor</span>
           </div>
         </div>
 
@@ -50,7 +50,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Footer */}
         <div className="relative z-10">
-          <p className="text-xs text-ink-400">© 2026 LexCore · Plataforma para estudios jurídicos</p>
+          <p className="text-xs text-ink-400">© 2026 Luthor · Plataforma para estudios jurídicos</p>
         </div>
       </div>
 
@@ -64,7 +64,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
               </svg>
             </div>
-            <span className="font-bold text-ink-900 text-lg">LexCore</span>
+            <span className="font-bold text-ink-900 text-lg">Luthor</span>
           </div>
           {children}
         </div>
