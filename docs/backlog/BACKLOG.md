@@ -1,4 +1,5 @@
-# LexCore — Backlog
+# Luthor — Backlog
+# (repo: lexcore)
 
 > **Proceso obligatorio:** Ninguna historia pasa a un sprint sin estar en estado `refined`.
 > Ninguna historia pasa a `done` sin que QA valide los criterios de aceptación.
@@ -171,7 +172,23 @@
 
 ## COMPLETADAS ✓
 
-### Sprint 17 — 2026-04-27 (sesión actual)
+### Sprint 18 — 2026-05-21
+
+- **INFRA-RAILWAY-001** · Recuperación incidente PostgreSQL Railway (~43hs caído) — `done` (2026-05-21)
+  - Volumen corrupto post-incidente de plataforma. Fix: redeploy (no restart) desde Railway dashboard
+  - Backup tomado post-recuperación: `backup-2026-05-21.sql` (26 tablas, datos intactos)
+  - Playbook documentado en `docs/PLAN_RECUPERO.md`
+
+- **E2E-001** · Suite E2E Playwright 42/42 + GitHub Action CI — `done` (2026-05-21)
+  - Tests: dashboard, agenda, expedientes, movimientos, contable, crear-expediente
+  - `renewSession` fixture reutilizable para auth entre specs
+  - GitHub Action en `.github/workflows/e2e.yml` corre en cada push a master
+
+- **BRAND-001** · Rename visual LexCore → Luthor — `done` (2026-05-21)
+  - UI, emails, PDFs, iCal, landing page, docs internos
+  - Infra (dominio, DB, env vars) sin tocar — TODO(rename) comments marcados
+
+### Sprint 17 — 2026-04-27
 - **CONT-HERO-001** · Hero financiero con gráfico de barras y chips 3M/6M/12M en módulo contable — `done`
 - **CONT-FEED-001** · Feed unificado de movimientos (egresos + ingresos mezclados por fecha) con 5 items + ver todos — `done`
 - **CONT-HON-001** · Card honorarios pendientes en contable + desglose vencidos/por cobrar en dashboard — `done`

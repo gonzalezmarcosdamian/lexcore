@@ -1,12 +1,13 @@
-# LexCore — Estado del Producto
+# Luthor — Estado del Producto
+# (repo: lexcore)
 
 > **PROCESO RÍGIDO:** Este archivo se actualiza OBLIGATORIAMENTE al completar cada historia.
 > Es la fuente de verdad del estado real del producto. Nunca debe quedar desactualizado.
 > Si terminaste una feature y no actualizaste esto, la feature NO está done.
 
-**Última actualización:** 2026-04-28
+**Última actualización:** 2026-05-21
 **Sprint activo:** Sprint 18 — EN CURSO
-**Versión:** 0.21.0
+**Versión:** 0.22.0
 
 ### Modelo de monetización (decisión 2026-04-15)
 - **Trial 30 días sin tarjeta** → acceso completo
