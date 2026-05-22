@@ -153,11 +153,6 @@
   - **"Adjuntos":** link colapsable si el movimiento/tarea tiene documentos adjuntos
   - **Afecta:** `agenda/page.tsx` — vista lista (no kanban)
 
-- **UX-SHEET-001** · Bottom sheets mobile: swipe down mueve la pantalla de fondo en lugar de cerrar el sheet — `idea`
-  - **Causa:** falta `overscroll-behavior: contain` + bloqueo de scroll del body cuando el sheet está abierto
-  - **Fix:** agregar `document.body.style.overflow = 'hidden'` al abrir y restaurar al cerrar; `touch-action: pan-y` en el handle de arrastre
-  - **Afecta:** todos los modales bottom-sheet de la app (agenda, contable, detalle tarea/vencimiento, etc.)
-
 - **AUTH-SESSION-001** · Sesión Google OAuth 30 días con refresh automático — `done` (2026-04-28)
   - **Causa probable:** `maxAge` de la sesión NextAuth está en el default (30 días) pero el `access_token` de Google vence en 1h y el refresh no está configurado
   - **Fix:** en NextAuth config, agregar `session: { maxAge: 30 * 24 * 60 * 60 }` y manejar el refresh del Google access_token en el callback `jwt`
@@ -187,6 +182,18 @@
 - **BRAND-001** · Rename visual LexCore → Luthor — `done` (2026-05-21)
   - UI, emails, PDFs, iCal, landing page, docs internos
   - Infra (dominio, DB, env vars) sin tocar — TODO(rename) comments marcados
+
+- **AUTH-SESSION-001** · Sesión Google OAuth 30 días con refresh automático — `done` (2026-05-21)
+  - Ya estaba implementado: `maxAge: 30d`, Google access_token refresh, backend token refresh en `auth.ts`
+  - Validado en producción real
+
+- **UX-SHEET-001** · Bottom sheets mobile: swipe-down fix — `done` (2026-05-21)
+  - `useBodyScrollLock` mejorado con `overscroll-behavior: none` en body
+  - `overscroll-contain` agregado en todos los containers scrollables: agenda, gastos, tarea edit, evento modal
+
+- **SADM-010** · UI gestión de precios de planes — `done` (2026-05-21)
+  - Tab "Precios" en `/superadmin`: formulario plan+ciclo+monto, historial con estado activo/vencido
+  - Usa `GET/POST /superadmin/plan-prices` (backend ya existía)
 
 ### Sprint 17 — 2026-04-27
 - **CONT-HERO-001** · Hero financiero con gráfico de barras y chips 3M/6M/12M en módulo contable — `done`
