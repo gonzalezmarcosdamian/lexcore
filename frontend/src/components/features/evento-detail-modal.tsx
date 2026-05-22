@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { todayAR } from "@/lib/date";
 import { Vencimiento, Tarea, Expediente } from "@/lib/api";
 
@@ -42,6 +43,14 @@ function ModalShell({ onClose, onEdit, children, title, accentColor }: {
   title: string;
   accentColor: string;
 }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    const prevOs = document.body.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    return () => { document.body.style.overflow = prev; document.body.style.overscrollBehavior = prevOs; };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-0 sm:px-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>

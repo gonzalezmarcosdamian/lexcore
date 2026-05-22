@@ -125,7 +125,7 @@ function EditVencimientoModal({ v, token, onSaved, onClose }: { v: Vencimiento; 
   };
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto overscroll-contain">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-ink-900">Editar movimiento procesal</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
@@ -209,7 +209,7 @@ function EditTareaModal({ t, token, expedientes, onSaved, onClose }: { t: Tarea;
   };
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto overscroll-contain">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-base font-semibold text-ink-900">Editar tarea</h2>
           <button onClick={onClose} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
@@ -1009,7 +1009,7 @@ export default function AgendaPage() {
       {/* Modal Nuevo Vencimiento */}
       {showVencimientoModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowVencimientoModal(false); }}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-md p-5 sm:p-6 max-h-[92vh] overflow-y-auto overscroll-contain">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-ink-900">Nuevo movimiento procesal</h2>
               <button onClick={() => setShowVencimientoModal(false)} className="text-ink-400 hover:text-ink-600 text-xl leading-none w-8 h-8 flex items-center justify-center">×</button>
@@ -1446,7 +1446,7 @@ export default function AgendaPage() {
       {/* Modal: Nueva tarea */}
       {showTareaModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) setShowTareaModal(false); }}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md max-h-[92vh] overflow-y-auto overscroll-contain">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">Nueva tarea</h2>
               <button onClick={() => setShowTareaModal(false)} className="text-ink-400 hover:text-ink-700 transition p-1">

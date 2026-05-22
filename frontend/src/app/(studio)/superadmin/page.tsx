@@ -6,6 +6,22 @@ import { api } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+interface PlanPrice {
+  id: string;
+  plan: string;
+  billing_cycle: string;
+  amount: number;
+  currency: string;
+  valid_from: string;
+  valid_to: string | null;
+}
+
+interface PlanPriceForm {
+  plan: string;
+  billing_cycle: string;
+  amount: string;
+}
+
 interface StudioRow {
   id: string;
   name: string;
@@ -67,7 +83,13 @@ export default function SuperadminPage() {
   const [extending, setExtending] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ text: string; type: "ok" | "err" } | null>(null);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"todos" | "trials">("todos");
+  const [tab, setTab] = useState<"todos" | "trials" | "precios">("todos");
+
+  // Precios
+  const [prices, setPrices] = useState<PlanPrice[]>([]);
+  const [priceForm, setPriceForm] = useState<PlanPriceForm>({ plan: "starter", billing_cycle: "mensual", amount: "" });
+  const [savingPrice, setSavingPrice] = useState(false);
+  const [priceMsg, setPriceMsg] = useState<{ text: string; type: "ok" | "err" } | null>(null);
 
   const reload = async () => {
     if (!token) return;
@@ -75,10 +97,39 @@ export default function SuperadminPage() {
     setStudios(data);
   };
 
+  const loadPrices = async () => {
+    if (!token) return;
+    const data = await api.get<PlanPrice[]>("/superadmin/plan-prices", token);
+    setPrices(data);
+  };
+
+  const handleSavePrice = async () => {
+    if (!token || !priceForm.amount) return;
+    setSavingPrice(true);
+    setPriceMsg(null);
+    try {
+      await api.post("/superadmin/plan-prices", {
+        plan: priceForm.plan,
+        billing_cycle: priceForm.billing_cycle,
+        amount: parseFloat(priceForm.amount),
+      }, token);
+      setPriceMsg({ text: "Precio guardado ✓", type: "ok" });
+      setPriceForm(f => ({ ...f, amount: "" }));
+      await loadPrices();
+    } catch (e: unknown) {
+      setPriceMsg({ text: e instanceof Error ? e.message : "Error", type: "err" });
+    } finally {
+      setSavingPrice(false);
+    }
+  };
+
   useEffect(() => {
     if (!token) return;
-    api.get<StudioRow[]>("/superadmin/studios", token)
-      .then(setStudios)
+    Promise.all([
+      api.get<StudioRow[]>("/superadmin/studios", token),
+      api.get<PlanPrice[]>("/superadmin/plan-prices", token),
+    ])
+      .then(([s, p]) => { setStudios(s); setPrices(p); })
       .catch((e) => {
         if (e.message?.includes("403") || e.message?.includes("denegado")) router.replace("/dashboard");
       })
@@ -200,16 +251,16 @@ export default function SuperadminPage() {
 
       {/* ── Tabs ── */}
       <div className="flex gap-1 bg-ink-100 rounded-xl p-1 w-fit">
-        {(["todos", "trials"] as const).map(t => (
+        {(["todos", "trials", "precios"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition capitalize ${tab === t ? "bg-white text-ink-900 shadow-sm" : "text-ink-500 hover:text-ink-700"}`}>
-            {t === "todos" ? `Todos (${studios.length})` : `Trials (${studios.filter(s => s.plan === "trial").length})`}
+            {t === "todos" ? `Todos (${studios.length})` : t === "trials" ? `Trials (${studios.filter(s => s.plan === "trial").length})` : "Precios"}
           </button>
         ))}
       </div>
 
-      {/* ── Tabla ── */}
-      {loading ? (
+      {/* ── Tabla estudios ── */}
+      {tab !== "precios" && (loading ? (
         <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="h-14 bg-ink-100 rounded-xl animate-pulse" />)}</div>
       ) : (
         <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-x-auto">
@@ -297,6 +348,101 @@ export default function SuperadminPage() {
               )}
             </tbody>
           </table>
+        </div>
+      ))}
+
+      {/* ── Tab Precios ── */}
+      {tab === "precios" && (
+        <div className="space-y-5">
+          {/* Nuevo precio */}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm p-5">
+            <h2 className="text-sm font-semibold text-ink-900 mb-4">Nuevo precio</h2>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Plan</label>
+                <select value={priceForm.plan} onChange={e => setPriceForm(f => ({ ...f, plan: e.target.value }))}
+                  className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                  {["starter", "pro", "estudio"].map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Ciclo</label>
+                <select value={priceForm.billing_cycle} onChange={e => setPriceForm(f => ({ ...f, billing_cycle: e.target.value }))}
+                  className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400">
+                  {["mensual", "anual"].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-ink-600 mb-1">Monto ARS</label>
+                <input
+                  type="number" min="0" step="100"
+                  placeholder="17000"
+                  value={priceForm.amount}
+                  onChange={e => setPriceForm(f => ({ ...f, amount: e.target.value }))}
+                  className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                />
+              </div>
+            </div>
+            {priceMsg && (
+              <p className={`text-xs px-3 py-2 rounded-lg border mb-3 ${priceMsg.type === "ok" ? "text-green-700 bg-green-50 border-green-100" : "text-red-600 bg-red-50 border-red-100"}`}>
+                {priceMsg.text}
+              </p>
+            )}
+            <button onClick={handleSavePrice} disabled={savingPrice || !priceForm.amount}
+              className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50">
+              {savingPrice ? "Guardando…" : "Guardar precio"}
+            </button>
+          </div>
+
+          {/* Historial */}
+          <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-ink-100 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-ink-900">Historial de precios</h2>
+              <span className="text-xs text-ink-400">{prices.length} registros</span>
+            </div>
+            {prices.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-ink-400 text-center">Sin precios cargados</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-ink-50 border-b border-ink-100">
+                    <tr>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-ink-500 uppercase tracking-wide">Plan</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-ink-500 uppercase tracking-wide">Ciclo</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-ink-500 uppercase tracking-wide">Monto</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-ink-500 uppercase tracking-wide">Vigente desde</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-ink-500 uppercase tracking-wide">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {prices.map((p, i) => (
+                      <tr key={p.id} className={`border-b border-ink-50 ${i % 2 === 0 ? "" : "bg-ink-50/20"}`}>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${planBadge[p.plan] ?? "bg-ink-100 text-ink-600"}`}>
+                            {p.plan}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-ink-600 capitalize">{p.billing_cycle}</td>
+                        <td className="px-4 py-3 font-semibold text-ink-900">
+                          {p.currency} {p.amount.toLocaleString("es-AR")}
+                        </td>
+                        <td className="px-4 py-3 text-ink-500 text-xs">
+                          {new Date(p.valid_from).toLocaleDateString("es-AR")}
+                        </td>
+                        <td className="px-4 py-3">
+                          {p.valid_to ? (
+                            <span className="text-xs text-ink-400">Hasta {new Date(p.valid_to).toLocaleDateString("es-AR")}</span>
+                          ) : (
+                            <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Activo</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

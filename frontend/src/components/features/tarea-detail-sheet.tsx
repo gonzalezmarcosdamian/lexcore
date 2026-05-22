@@ -291,7 +291,7 @@ export function TareaDetailSheet({ tareaId, token, onClose, onDeleted, onUpdated
       {/* Edit modal */}
       {editing && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40">
-          <div className="bg-white rounded-t-2xl shadow-xl w-full max-h-[92vh] overflow-y-auto p-5 space-y-4">
+          <div className="bg-white rounded-t-2xl shadow-xl w-full max-h-[92vh] overflow-y-auto overscroll-contain p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">Editar tarea</h2>
               <button onClick={() => setEditing(false)} className="text-ink-400 text-xl w-8 h-8 flex items-center justify-center">×</button>

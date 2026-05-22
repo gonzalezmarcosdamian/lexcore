@@ -744,7 +744,7 @@ export default function ContablePage() {
       {/* ══ MODAL: Gasto puntual ══ */}
       {showGastoForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowGastoForm(false); setEditingGastoId(null); setError(""); } }}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto overscroll-contain">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">{editingGastoId ? "Editar gasto" : "Nuevo egreso"}</h2>
               <button onClick={() => { setShowGastoForm(false); setEditingGastoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
@@ -879,7 +879,7 @@ export default function ContablePage() {
       {/* ══ MODAL: Ingreso ══ */}
       {showIngresoForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); } }}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto overscroll-contain">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">{editingIngresoId ? "Editar ingreso" : "Registrar ingreso"}</h2>
               <button onClick={() => { setShowIngresoForm(false); setEditingIngresoId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
@@ -945,7 +945,7 @@ export default function ContablePage() {
       {/* ══ MODAL: Plantilla recurrente ══ */}
       {showPlantillaForm && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/40 sm:px-4" onClick={(e) => { if (e.target === e.currentTarget) { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); } }}>
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto overscroll-contain">
             <div className="px-6 py-5 border-b border-ink-100 flex items-center justify-between">
               <h2 className="text-base font-semibold text-ink-900">{editingPlantillaId ? "Editar plantilla" : "Nueva plantilla recurrente"}</h2>
               <button onClick={() => { setShowPlantillaForm(false); setEditingPlantillaId(null); setError(""); }} className="text-ink-400 hover:text-ink-700 transition p-1">
