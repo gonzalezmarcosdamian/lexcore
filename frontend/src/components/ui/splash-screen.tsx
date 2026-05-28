@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 const VALUE_PROPS = [
   { icon: "⚖️", title: "Tus expedientes, siempre a mano", desc: "Accedé a cualquier caso, movimiento y documento desde cualquier dispositivo, en segundos." },
-  { icon: "🔔", title: "Nunca más perdas un vencimiento", desc: "Alertas automáticas para plazos críticos. Los urgentes aparecen destacados antes de que sea tarde." },
+  { icon: "🔔", title: "Cero vencimientos olvidados", desc: "Alertas automáticas para plazos críticos. Los urgentes aparecen destacados antes de que sea tarde." },
   { icon: "👥", title: "Tu equipo sincronizado", desc: "Invitá colaboradores, asigná roles y llevá el control de quién hace qué en cada expediente." },
   { icon: "💰", title: "Control total de honorarios", desc: "Registrá lo acordado, los pagos recibidos y el saldo pendiente por cada caso." },
 ];
