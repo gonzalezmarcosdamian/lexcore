@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Términos y Condiciones — LexCore" };
+export const metadata = { title: "Términos y Condiciones — Luthor" };
 
 export default function TerminosPage() {
   return (
@@ -19,14 +19,14 @@ export default function TerminosPage() {
           </div>
 
           <p>
-            Al crear una cuenta en <strong>LexCore</strong> aceptás los siguientes términos y condiciones de uso.
+            Al crear una cuenta en <strong>Luthor</strong> aceptás los siguientes términos y condiciones de uso.
             Si no estás de acuerdo, no uses el servicio.
           </p>
 
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-ink-900">1. Descripción del servicio</h2>
             <p>
-              LexCore es una plataforma SaaS (Software as a Service) de gestión para estudios jurídicos que permite
+              Luthor es una plataforma SaaS (Software as a Service) de gestión para estudios jurídicos que permite
               administrar expedientes, clientes, vencimientos, tareas, documentos y honorarios. El servicio se brinda
               «tal cual» (as-is) con acceso vía navegador web.
             </p>
@@ -35,7 +35,7 @@ export default function TerminosPage() {
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-ink-900">2. Registro y cuenta</h2>
             <ul className="list-disc pl-5 space-y-1 text-ink-600">
-              <li>Para usar LexCore debés registrar un estudio con datos verídicos.</li>
+              <li>Para usar Luthor debés registrar un estudio con datos verídicos.</li>
               <li>Sos responsable de mantener la confidencialidad de tu contraseña.</li>
               <li>Cada cuenta personal es intransferible.</li>
               <li>Podés invitar miembros a tu estudio; sos responsable de su actividad.</li>
@@ -53,7 +53,7 @@ export default function TerminosPage() {
 
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-ink-900">4. Uso aceptable</h2>
-            <p>Queda prohibido usar LexCore para:</p>
+            <p>Queda prohibido usar Luthor para:</p>
             <ul className="list-disc pl-5 space-y-1 text-ink-600">
               <li>Actividades ilegales o fraudulentas.</li>
               <li>Almacenar información de personas sin base legal o legítimo interés.</li>
@@ -66,10 +66,10 @@ export default function TerminosPage() {
             <h2 className="text-base font-semibold text-ink-900">5. Propiedad de los datos</h2>
             <p>
               Todos los datos ingresados (expedientes, clientes, documentos) son propiedad del estudio que los cargó.
-              LexCore no adquiere derechos sobre ellos. Podés exportar o solicitar eliminación de tus datos en cualquier
+              Luthor no adquiere derechos sobre ellos. Podés exportar o solicitar eliminación de tus datos en cualquier
               momento escribiendo a{" "}
-              <a href="mailto:privacidad@lexcore.app" className="text-brand-600 hover:underline">
-                privacidad@lexcore.app
+              <a href="mailto:privacidad@luthor.app" className="text-brand-600 hover:underline">
+                privacidad@luthor.app
               </a>.
             </p>
           </section>
@@ -85,7 +85,7 @@ export default function TerminosPage() {
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-ink-900">7. Limitación de responsabilidad</h2>
             <p>
-              LexCore es una herramienta de gestión interna. No es responsable de decisiones jurídicas tomadas con base
+              Luthor es una herramienta de gestión interna. No es responsable de decisiones jurídicas tomadas con base
               en la información gestionada en la plataforma. El usuario es responsable de la exactitud de los datos que
               carga.
             </p>

@@ -452,7 +452,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                 </svg>
               </div>
-              <span className="font-bold text-ink-900 text-base">LexCore</span>
+              <span className="font-bold text-ink-900 text-base">Luthor</span>
             </Link>
 
             {/* Desktop: módulo actual */}
@@ -597,7 +597,7 @@ function StudioLayoutInner({ children }: { children: React.ReactNode }) {
         {trialDaysLeft !== null && trialDaysLeft <= 5 && (
           <div className={`px-4 py-2.5 text-center text-xs font-medium ${trialDaysLeft === 0 ? "bg-red-600 text-white" : "bg-amber-50 text-amber-800 border-b border-amber-200"}`}>
             {trialDaysLeft === 0
-              ? "Tu período de prueba venció. Contactanos para continuar usando LexCore."
+              ? "Tu período de prueba venció. Contactanos para continuar usando Luthor."
               : `Tu prueba gratuita vence en ${trialDaysLeft} día${trialDaysLeft !== 1 ? "s" : ""}. Contactanos para continuar.`}
           </div>
         )}

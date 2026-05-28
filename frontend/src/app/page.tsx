@@ -522,7 +522,7 @@ export default function LandingPage() {
               a="No. Si usás WhatsApp y Gmail, podés usar Luthor. Está diseñado para abogados, no para ingenieros. En menos de una hora tenés el estudio configurado."
             />
             <FAQItem
-              q="¿Qué pasa con mis datos si dejo de usar LexCore?"
+              q="¿Qué pasa con mis datos si dejo de usar Luthor?"
               a="Son tuyos. Podés exportar todos tus expedientes, movimientos y documentos en cualquier momento, en formatos estándar."
             />
             <FAQItem
@@ -613,7 +613,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-8 pt-6 border-t border-ink-200 text-xs text-ink-400 text-center">
-            © 2026 LexCore · Todos los derechos reservados
+            © 2026 Luthor · Todos los derechos reservados
           </div>
         </div>
       </footer>

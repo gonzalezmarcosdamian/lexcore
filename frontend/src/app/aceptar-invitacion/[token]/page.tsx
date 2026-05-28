@@ -115,7 +115,7 @@ export default function AceptarInvitacionPage() {
           <div className="w-8 h-8 bg-[#2b4dd4] rounded-lg flex items-center justify-center">
             <span className="text-white text-base font-bold">⚖</span>
           </div>
-          <span className="text-white text-lg font-bold tracking-tight">LexCore</span>
+          <span className="text-white text-lg font-bold tracking-tight">Luthor</span>
         </div>
 
         <div className="px-8 py-8">
@@ -151,7 +151,7 @@ export default function AceptarInvitacionPage() {
               {invitacion.user_exists ? (
                 <>
                   <p className="text-sm text-[#6b8aaa] mb-6">
-                    Ya tenés una cuenta en LexCore. No necesitás crear otra contraseña.
+                    Ya tenés una cuenta en Luthor. No necesitás crear otra contraseña.
                   </p>
                   {error && (
                     <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mb-4">{error}</p>

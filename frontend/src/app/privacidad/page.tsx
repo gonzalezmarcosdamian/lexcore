@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Política de Privacidad — LexCore" };
+export const metadata = { title: "Política de Privacidad — Luthor" };
 
 export default function PrivacidadPage() {
   return (
@@ -19,8 +19,8 @@ export default function PrivacidadPage() {
           </div>
 
           <p>
-            LexCore («nosotros», «la plataforma») opera el servicio de gestión de estudios jurídicos disponible en{" "}
-            <strong>lexcore.app</strong>. Esta política describe cómo recopilamos, usamos y protegemos la información
+            Luthor («nosotros», «la plataforma») opera el servicio de gestión de estudios jurídicos disponible en{" "}
+            <strong>luthor.app</strong>. Esta política describe cómo recopilamos, usamos y protegemos la información
             personal de nuestros usuarios, en cumplimiento de la{" "}
             <strong>Ley N.º 25.326 de Protección de Datos Personales</strong> de la República Argentina y demás
             normativa aplicable.
@@ -29,9 +29,9 @@ export default function PrivacidadPage() {
           <section className="space-y-2">
             <h2 className="text-base font-semibold text-ink-900">1. Responsable del tratamiento</h2>
             <p>
-              El responsable del archivo de datos personales es LexCore. Ante cualquier consulta podés escribirnos a{" "}
-              <a href="mailto:privacidad@lexcore.app" className="text-brand-600 hover:underline">
-                privacidad@lexcore.app
+              El responsable del archivo de datos personales es Luthor. Ante cualquier consulta podés escribirnos a{" "}
+              <a href="mailto:privacidad@luthor.app" className="text-brand-600 hover:underline">
+                privacidad@luthor.app
               </a>.
             </p>
           </section>
@@ -80,8 +80,8 @@ export default function PrivacidadPage() {
             <p>
               Conforme a la Ley 25.326, el titular de los datos tiene derecho a acceder, rectificar, suprimir y oponerse
               al tratamiento de sus datos personales. Para ejercerlos, escribí a{" "}
-              <a href="mailto:privacidad@lexcore.app" className="text-brand-600 hover:underline">
-                privacidad@lexcore.app
+              <a href="mailto:privacidad@luthor.app" className="text-brand-600 hover:underline">
+                privacidad@luthor.app
               </a>{" "}
               indicando tu nombre y el estudio al que pertenecés.
             </p>

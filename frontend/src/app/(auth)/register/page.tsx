@@ -125,7 +125,7 @@ export default function RegisterPage() {
             <Link href="/terminos" target="_blank" className="text-brand-600 hover:underline font-medium">Términos y Condiciones</Link>
             {" "}y la{" "}
             <Link href="/privacidad" target="_blank" className="text-brand-600 hover:underline font-medium">Política de Privacidad</Link>
-            {" "}de LexCore.
+            {" "}de Luthor.
           </span>
         </label>
 
