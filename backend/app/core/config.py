@@ -11,6 +11,9 @@ class Settings(BaseSettings):
 
     # Email (Resend) — vacío en dev, falla silenciosa
     RESEND_API_KEY: str = ""
+    # EMAIL_FROM: dominio verificado en Resend. Usar onboarding@resend.dev hasta verificar.
+    # TODO(rename): cambiar a noreply@luthor.app cuando se verifique el dominio
+    EMAIL_FROM: str = "Luthor <onboarding@resend.dev>"
     BASE_URL: str = "http://localhost:3001"
 
     # Storage — Cloudinary

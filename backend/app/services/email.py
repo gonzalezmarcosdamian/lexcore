@@ -1,8 +1,13 @@
 """
 Servicio de email via Resend.
 Si RESEND_API_KEY no está configurada, falla silenciosamente con log.
+EMAIL_FROM se configura via variable de entorno (default: onboarding@resend.dev para sandbox).
 """
 import logging
+from app.core.config import settings as _settings
+
+def _email_from() -> str:
+    return _settings.EMAIL_FROM
 from typing import Optional, List
 
 logger = logging.getLogger(__name__)
@@ -77,7 +82,7 @@ def send_vencimiento_urgente_email(
 """
 
         resend.Emails.send({
-            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): cambiar a noreply@luthor.app cuando se migre el dominio
+            "from": _email_from(),
             "to": to_emails,
             "subject": f"⚠️ Vencimiento urgente: {descripcion}",
             "html": html,
@@ -164,7 +169,7 @@ def send_invitation_email(
 """
 
         resend.Emails.send({
-            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): cambiar a noreply@luthor.app cuando se migre el dominio
+            "from": _email_from(),
             "to": [to_email],
             "subject": f"Invitación a {studio_name} en Luthor",
             "html": html,
@@ -228,7 +233,7 @@ def send_reset_password_email(
 </html>"""
 
         resend.Emails.send({
-            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): cambiar a noreply@luthor.app cuando se migre el dominio
+            "from": _email_from(),
             "to": [to_email],
             "subject": "Restablecer contraseña — Luthor",
             "html": html,
@@ -314,7 +319,7 @@ def send_subscription_confirmed_email(
 </html>"""
 
         resend.Emails.send({
-            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): noreply@luthor.app
+            "from": _email_from(),
             "to": [to_email],
             "subject": f"✅ Suscripción activada — {plan_label} {ciclo}",
             "html": html,
@@ -387,7 +392,7 @@ def send_trial_warning_email(
 </html>"""
 
         resend.Emails.send({
-            "from": "Luthor <noreply@lexcore.app>",  # TODO(rename): noreply@luthor.app
+            "from": _email_from(),
             "to": [to_email],
             "subject": f"⏰ Tu trial vence en {dias_restantes} {'día' if dias_restantes == 1 else 'días'} — Luthor",
             "html": html,
