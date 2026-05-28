@@ -195,6 +195,14 @@
   - Tab "Precios" en `/superadmin`: formulario plan+ciclo+monto, historial con estado activo/vencido
   - Usa `GET/POST /superadmin/plan-prices` (backend ya existía)
 
+- **PAYMENTS-001** · Webhook MP + emails pago + cron trial — `done` (2026-05-28)
+  - `notification_url` por preapproval, email confirmación post-pago, email trial día 25
+  - `POST /cron/trial-warnings` con `x-admin-key`, simulate-payment para tests
+
+- **BETA-001** · Beta launch UI — `done` (2026-05-28)
+  - Landing sin precios, Mi plan con banner WA, tab Feedback, FeedbackNudge en dashboard
+  - WhatsApp +54 9 292 044 5362 configurado como canal de contacto/venta
+
 ### Sprint 17 — 2026-04-27
 - **CONT-HERO-001** · Hero financiero con gráfico de barras y chips 3M/6M/12M en módulo contable — `done`
 - **CONT-FEED-001** · Feed unificado de movimientos (egresos + ingresos mezclados por fecha) con 5 items + ver todos — `done`
