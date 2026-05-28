@@ -1,5 +1,16 @@
 # Luthor — Reglas de trabajo (Claude Code)
-# (repo: lexcore — nombre visual del producto: Luthor)
+
+## NAMING — LEÉ ESTO PRIMERO
+
+| Contexto | Nombre | Ejemplos |
+|----------|--------|---------|
+| **Lo que ve el usuario** | **Luthor** | UI, emails, PDFs, landing, splash screen |
+| **Todo lo interno/técnico** | **lexcore** | repo GitHub, DB, env vars, Docker, URLs Railway/Vercel, package.json |
+
+**Regla:** si el usuario lo ve → Luthor. Si es infra/código → lexcore.
+No mezclar. No "actualizar" variables de entorno o nombres de DB a Luthor.
+
+---
 
 ## CONTEXTO DEL PROYECTO
 
