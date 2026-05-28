@@ -461,11 +461,106 @@ function TicketEnviado({ numero, onClose }: { numero: number; onClose: () => voi
   );
 }
 
+// ── Tab Feedback beta ─────────────────────────────────────────────────────────
+
+function TabFeedback({ token, onSuccess }: { token: string; onSuccess: (numero: number) => void }) {
+  const [rating, setRating] = useState(0);
+  const [hovered, setHovered] = useState(0);
+  const [texto, setTexto] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rating) { setError("Elegí una puntuación"); return; }
+    if (!texto.trim()) { setError("Contanos algo, aunque sea una línea"); return; }
+    setSaving(true);
+    setError("");
+    try {
+      const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+      const res = await fetch(`${API}/soporte/tickets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          modulo: "otro",
+          descripcion: `[Beta Feedback] ⭐ ${rating}/5\n\n${texto.trim()}`,
+          urgente: false,
+        }),
+      });
+      if (!res.ok) throw new Error("Error al enviar");
+      const data = await res.json();
+      onSuccess(data.numero);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al enviar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const ratingLabels = ["", "Muy mejorable", "Le falta trabajo", "Bien", "Muy buena", "Excelente 🔥"];
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5 space-y-5">
+        <div>
+          <p className="text-sm font-semibold text-ink-900 mb-1">¿Cómo te pareció la app hasta ahora?</p>
+          <p className="text-xs text-ink-400 mb-4">Estamos en beta y cada opinión cuenta.</p>
+
+          {/* Estrellas */}
+          <div className="flex items-center gap-2 mb-1">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onMouseEnter={() => setHovered(s)}
+                onMouseLeave={() => setHovered(0)}
+                onClick={() => setRating(s)}
+                className="text-3xl transition-transform hover:scale-110 active:scale-95"
+              >
+                <span className={(hovered || rating) >= s ? "text-amber-400" : "text-ink-200"}>★</span>
+              </button>
+            ))}
+          </div>
+          {(hovered || rating) > 0 && (
+            <p className="text-xs text-ink-500 h-4">{ratingLabels[hovered || rating]}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-ink-600 mb-1.5">
+            ¿Qué mejorarías o qué te faltó? <span className="text-red-400">*</span>
+          </label>
+          <textarea
+            value={texto}
+            onChange={e => setTexto(e.target.value)}
+            rows={4}
+            placeholder="Cualquier cosa que se te ocurra — funcionalidades, diseño, bugs, lo que sea."
+            className="w-full border border-ink-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand-400 transition placeholder-ink-300"
+          />
+          <p className="text-xs text-ink-400 mt-1">{texto.length}/500</p>
+        </div>
+
+        {error && <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
+      </div>
+
+      <div className="px-4 pb-4 flex-shrink-0 border-t border-ink-100 pt-3">
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-3 rounded-xl transition disabled:opacity-50"
+        >
+          {saving ? "Enviando…" : "Enviar feedback"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ── Widget principal ──────────────────────────────────────────────────────────
 
 export function HelpWidget({ token }: { token: string | undefined }) {
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<"ayuda" | "reportar">("ayuda");
+  const [tab, setTab] = useState<"ayuda" | "reportar" | "feedback">("ayuda");
   const [ticketNumero, setTicketNumero] = useState<number | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -479,6 +574,7 @@ export function HelpWidget({ token }: { token: string | undefined }) {
   const handleClose = useCallback(() => {
     setOpen(false);
     setTimeout(() => { setTab("ayuda"); setTicketNumero(null); }, 300);
+
   }, []);
 
   const handleSuccess = useCallback((numero: number) => {
@@ -543,12 +639,13 @@ export function HelpWidget({ token }: { token: string | undefined }) {
             {!ticketNumero && (
               <div className="flex border-b border-ink-100 flex-shrink-0">
                 {[
-                  { key: "ayuda", label: "Preguntas frecuentes" },
-                  { key: "reportar", label: "Reportar problema" },
+                  { key: "ayuda", label: "Preguntas" },
+                  { key: "reportar", label: "Problema" },
+                  { key: "feedback", label: "⭐ Feedback" },
                 ].map((t) => (
                   <button
                     key={t.key}
-                    onClick={() => setTab(t.key as "ayuda" | "reportar")}
+                    onClick={() => setTab(t.key as "ayuda" | "reportar" | "feedback")}
                     className={`flex-1 py-2.5 text-xs font-semibold transition border-b-2 ${
                       tab === t.key
                         ? "border-brand-600 text-brand-700"
@@ -567,8 +664,10 @@ export function HelpWidget({ token }: { token: string | undefined }) {
                 <TicketEnviado numero={ticketNumero} onClose={handleClose} />
               ) : tab === "ayuda" ? (
                 <TabAyuda onReportar={() => setTab("reportar")} />
-              ) : (
+              ) : tab === "reportar" ? (
                 <TabReportar token={token ?? ""} onSuccess={handleSuccess} />
+              ) : (
+                <TabFeedback token={token ?? ""} onSuccess={handleSuccess} />
               )}
             </div>
           </div>
