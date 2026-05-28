@@ -5,6 +5,43 @@
 
 ---
 
+## Cuentas de prueba disponibles
+
+### Comprador (para simular pagos en sandbox)
+
+| Campo | Valor |
+|-------|-------|
+| Nombre | Cordoba |
+| País | Argentina |
+| User ID | 3352115877 |
+| Usuario | TESTUSER2377... (ver screenshot) |
+| Contraseña | qxoUuy5aEu |
+| Código verificación | 115877 |
+
+> Usá esta cuenta para loguearte en el checkout de MP durante las pruebas.
+> Tarjeta de prueba: `4509953566233704` / venc. cualquier fecha futura / CVV `123`
+
+### Vendedor — cuenta de prueba "luthor"
+
+| Campo | Valor |
+|-------|-------|
+| Nombre | luthor |
+| User ID | 3433286684 |
+| Usuario | TESTUSER8442... |
+| Contraseña | MPZgKFTm55 |
+| Código verificación | 286684 |
+
+### Credenciales TEST de la app (PENDIENTE)
+
+Para obtenerlas: **MP Developers → Tu app → Credenciales de prueba**
+
+| Variable | Valor |
+|----------|-------|
+| `MERCADOPAGO_ACCESS_TOKEN` | `TEST-...` ← pendiente |
+| `MERCADOPAGO_PUBLIC_KEY` | `TEST-...` ← pendiente |
+
+---
+
 ## 1. Variables de entorno en Railway
 
 **Dónde:** railway.com → proyecto `friendly-healing` → servicio **backend** → Variables

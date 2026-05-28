@@ -776,8 +776,8 @@ function PerfilPageInner() {
 
             {subsMsg && <Toast msg={subsMsg.text} type={subsMsg.type} />}
 
-            {/* Planes — mostrar solo si no tiene suscripción activa */}
-            {suscripcion.subscription_status !== "active" && planes.length > 0 && (
+            {/* Planes — TODO(payments): habilitar cuando esté en producción MP. Cambiar false → true */}
+            {(false as boolean) && suscripcion?.subscription_status !== "active" && planes.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-1 bg-ink-100 rounded-xl p-1 w-fit">
                   <button
@@ -840,6 +840,19 @@ function PerfilPageInner() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Planes próximamente */}
+            {suscripcion?.subscription_status !== "active" && (
+              <div className="border border-ink-200 rounded-2xl px-4 py-4 flex items-center justify-between bg-ink-50/50">
+                <div>
+                  <p className="text-sm font-semibold text-ink-700">Planes pagos</p>
+                  <p className="text-xs text-ink-400 mt-0.5">Mensual y anual por estudio completo</p>
+                </div>
+                <span className="text-xs font-semibold text-brand-600 bg-brand-50 border border-brand-100 px-3 py-1.5 rounded-full flex-shrink-0">
+                  Próximamente
+                </span>
               </div>
             )}
 

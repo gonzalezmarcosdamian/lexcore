@@ -479,27 +479,26 @@ export default function LandingPage() {
       <section className="py-20">
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">Precios</p>
+            <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">Acceso</p>
             <h2
               className="text-3xl sm:text-4xl font-extrabold text-ink-900 mb-3"
               style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}
             >
-              Precio simple. Sin sorpresas.
+              Empezá gratis. Sin tarjeta.
             </h2>
-            <p className="text-ink-500">Un solo plan para todo el estudio. Sin cobrar por usuario.</p>
+            <p className="text-ink-500">30 días de acceso completo para que veas si te sirve antes de decidir.</p>
           </div>
-          <div className="max-w-sm mx-auto">
+          <div className="max-w-sm mx-auto space-y-4">
+            {/* Trial card */}
             <div className="border-2 border-amber-600 rounded-2xl overflow-hidden shadow-xl shadow-amber-600/10">
-              {/* Header */}
               <div className="bg-amber-700 px-6 py-5 text-center">
                 <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full mb-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  Más elegido
+                  Acceso beta
                 </div>
                 <div className="text-white font-bold text-lg mb-1">Prueba gratuita</div>
                 <div className="text-amber-100 text-sm">30 días con acceso completo</div>
               </div>
-              {/* Features */}
               <div className="bg-white px-6 py-6">
                 <ul className="space-y-3 mb-6">
                   {[
@@ -526,16 +525,24 @@ export default function LandingPage() {
                 >
                   Empezar gratis — sin tarjeta <IconChevron />
                 </Link>
-                <p className="text-center text-xs text-ink-400 mt-3">
-                  Después del trial, desde <strong>$17.000 ARS/mes</strong> por estudio completo
-                </p>
               </div>
             </div>
-            {/* Guarantee */}
-            <div className="mt-5 text-center">
+
+            {/* Próximamente badge */}
+            <div className="border border-ink-200 rounded-2xl px-5 py-4 flex items-center justify-between bg-ink-50/50">
+              <div>
+                <p className="text-sm font-semibold text-ink-700">Planes pagos</p>
+                <p className="text-xs text-ink-400 mt-0.5">Mensual y anual por estudio completo</p>
+              </div>
+              <span className="text-xs font-semibold text-brand-600 bg-brand-50 border border-brand-100 px-3 py-1.5 rounded-full">
+                Próximamente
+              </span>
+            </div>
+
+            <div className="text-center">
               <p className="text-sm text-ink-500 flex items-center justify-center gap-1.5">
                 <span className="text-emerald-600"><IconShield /></span>
-                30 días gratis, sin tarjeta. Si luego suscribís y no quedás conforme, te devolvemos el primer pago.
+                Sin tarjeta para el trial. Cancelá cuando quieras.
               </p>
             </div>
           </div>
