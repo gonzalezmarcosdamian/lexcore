@@ -776,8 +776,8 @@ function PerfilPageInner() {
 
             {subsMsg && <Toast msg={subsMsg.text} type={subsMsg.type} />}
 
-            {/* Planes — TODO(payments): habilitar cuando esté en producción MP. Cambiar false → true */}
-            {(false as boolean) && suscripcion?.subscription_status !== "active" && planes.length > 0 && (
+            {/* Planes — SANDBOX TEST: volver a false cuando termine la prueba */}
+            {(true as boolean) && suscripcion?.subscription_status !== "active" && planes.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-1 bg-ink-100 rounded-xl p-1 w-fit">
                   <button
