@@ -21,6 +21,89 @@ import { TareaDetailSheet } from "@/components/features/tarea-detail-sheet";
 import { MovimientoDetailSheet } from "@/components/features/movimiento-detail-sheet";
 
 const today = todayAR();
+const LS_NUDGE = "luthor_feedback_nudge_dismissed";
+
+// Muestra el banner si:
+// - trial_day >= 3 Y tiene al menos 1 expediente O 1 cliente
+// - O creó algo en los últimos 2 días (actividad reciente)
+// - Y no lo cerró antes
+function FeedbackNudge({ token, expedientesCount, clientesCount }: {
+  token: string;
+  expedientesCount: number;
+  clientesCount: number;
+}) {
+  const [visible, setVisible] = useState(false);
+  const [trialDay, setTrialDay] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem(LS_NUDGE)) return;
+
+    api.get<{ dias_restantes_trial: number | null; plan: string }>("/suscripcion/status", token)
+      .then((s) => {
+        if (s.plan !== "trial") return;
+        const diasRestantes = s.dias_restantes_trial ?? 30;
+        const diaActual = 30 - diasRestantes; // día del trial (0 = primer día)
+        setTrialDay(diaActual);
+        const tieneDatos = expedientesCount > 0 || clientesCount > 0;
+        if (diaActual >= 3 && tieneDatos) setVisible(true);
+      })
+      .catch(() => {});
+  }, [token, expedientesCount, clientesCount]);
+
+  const dismiss = () => {
+    localStorage.setItem(LS_NUDGE, "1");
+    setVisible(false);
+  };
+
+  const openFeedback = () => {
+    dismiss();
+    // Abre el help widget en el tab de feedback
+    const btn = document.querySelector<HTMLButtonElement>("[aria-label='Ayuda y soporte']");
+    if (btn) btn.click();
+    setTimeout(() => {
+      const feedbackTab = Array.from(document.querySelectorAll("button")).find(
+        (b) => b.textContent?.includes("Feedback")
+      );
+      if (feedbackTab) feedbackTab.click();
+    }, 200);
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div className="bg-brand-50 border border-brand-200 rounded-2xl px-4 py-3.5 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="text-xl flex-shrink-0">⭐</span>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-brand-900 leading-tight">
+            ¿Cómo te está yendo con Luthor?
+          </p>
+          <p className="text-xs text-brand-600 mt-0.5">
+            Llevás {trialDay} {trialDay === 1 ? "día" : "días"} — tu opinión nos ayuda a mejorar.
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={openFeedback}
+          className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition"
+        >
+          Dejar feedback
+        </button>
+        <button
+          onClick={dismiss}
+          className="text-brand-400 hover:text-brand-600 transition p-1"
+          aria-label="Cerrar"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function isUrgente(fecha: string) {
   const diff = new Date(fecha).getTime() - Date.now();
@@ -211,6 +294,14 @@ export default function DashboardPage() {
       {showNewTarea && token && <NewTareaModal token={token} expedientes={Object.values(expLookup)} clientes={clientes} onCreated={(t) => { setTareas((prev) => [t, ...prev]); setShowNewTarea(false); }} onClose={() => setShowNewTarea(false)} />}
       {showNewVenc && token && <NewVencimientoModal token={token} expedientes={Object.values(expLookup)} onCreated={(v) => { setProximos((prev) => [v, ...prev]); setShowNewVenc(false); }} onClose={() => setShowNewVenc(false)} />}
       <SplashScreen />
+
+      {token && (
+        <FeedbackNudge
+          token={token}
+          expedientesCount={Object.keys(expLookup).length}
+          clientesCount={clientes.length}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between">
