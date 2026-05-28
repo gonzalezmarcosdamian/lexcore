@@ -164,6 +164,11 @@ def crear_checkout(body: CheckoutRequest, current_user: CurrentUser, db: DbSessi
     base = settings.BASE_URL if settings.BASE_URL.startswith("https://") else "https://lexcore-kappa.vercel.app"
     back_url = f"{base}/perfil?subs=ok"
 
+    webhook_url = f"{settings.BASE_URL.rstrip('/')}/suscripcion/webhook"
+    # En dev/sandbox apuntar al backend de Railway directamente
+    if not settings.BASE_URL.startswith("https://lexcore") and not settings.BASE_URL.startswith("https://luthor"):
+        webhook_url = "https://lexcore-production-f597.up.railway.app/suscripcion/webhook"
+
     preapproval_data = {
         "reason": f"Luthor {plan_label} — {'Mensual' if body.billing_cycle == 'monthly' else 'Anual'}",
         "auto_recurring": {
@@ -174,6 +179,7 @@ def crear_checkout(body: CheckoutRequest, current_user: CurrentUser, db: DbSessi
         },
         "back_url": back_url,
         "payer_email": user.email,
+        "notification_url": webhook_url,
         "status": "pending",
     }
 
