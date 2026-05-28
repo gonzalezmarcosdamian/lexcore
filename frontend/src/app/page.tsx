@@ -475,77 +475,32 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── PRECIOS ── */}
+      {/* ── ACCESO BETA ── */}
       <section className="py-20">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <p className="text-sm font-semibold text-brand-600 uppercase tracking-widest mb-3">Acceso</p>
-            <h2
-              className="text-3xl sm:text-4xl font-extrabold text-ink-900 mb-3"
-              style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}
-            >
-              Empezá gratis. Sin tarjeta.
-            </h2>
-            <p className="text-ink-500">30 días de acceso completo para que veas si te sirve antes de decidir.</p>
+        <div className="max-w-lg mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Acceso beta — completamente gratis
           </div>
-          <div className="max-w-sm mx-auto space-y-4">
-            {/* Trial card */}
-            <div className="border-2 border-amber-600 rounded-2xl overflow-hidden shadow-xl shadow-amber-600/10">
-              <div className="bg-amber-700 px-6 py-5 text-center">
-                <div className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-2.5 py-1 rounded-full mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                  Acceso beta
-                </div>
-                <div className="text-white font-bold text-lg mb-1">Prueba gratuita</div>
-                <div className="text-amber-100 text-sm">30 días con acceso completo</div>
-              </div>
-              <div className="bg-white px-6 py-6">
-                <ul className="space-y-3 mb-6">
-                  {[
-                    "Expedientes y clientes ilimitados",
-                    "Hasta 2 usuarios en el trial",
-                    "Vencimientos + Google Calendar sync",
-                    "Agenda con feriados argentinos",
-                    "Honorarios con cuotas y alertas de cobro",
-                    "Módulo contable con gráfico histórico",
-                    "Documentos adjuntos",
-                    "Soporte por WhatsApp",
-                  ].map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm text-ink-700">
-                      <svg className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {feat}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/register"
-                  className="w-full flex items-center justify-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-semibold px-6 py-3.5 rounded-xl transition-colors text-sm cursor-pointer"
-                >
-                  Empezar gratis — sin tarjeta <IconChevron />
-                </Link>
-              </div>
-            </div>
-
-            {/* Próximamente badge */}
-            <div className="border border-ink-200 rounded-2xl px-5 py-4 flex items-center justify-between bg-ink-50/50">
-              <div>
-                <p className="text-sm font-semibold text-ink-700">Planes pagos</p>
-                <p className="text-xs text-ink-400 mt-0.5">Mensual y anual por estudio completo</p>
-              </div>
-              <span className="text-xs font-semibold text-brand-600 bg-brand-50 border border-brand-100 px-3 py-1.5 rounded-full">
-                Próximamente
-              </span>
-            </div>
-
-            <div className="text-center">
-              <p className="text-sm text-ink-500 flex items-center justify-center gap-1.5">
-                <span className="text-emerald-600"><IconShield /></span>
-                Sin tarjeta para el trial. Cancelá cuando quieras.
-              </p>
-            </div>
-          </div>
+          <h2
+            className="text-3xl sm:text-4xl font-extrabold text-ink-900 mb-4"
+            style={{ fontFamily: "var(--font-garamond), Georgia, serif" }}
+          >
+            Empezá gratis.<br />Sin tarjeta.
+          </h2>
+          <p className="text-ink-500 mb-8">
+            30 días con acceso completo. Los precios de los planes los anunciamos próximamente.
+          </p>
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white font-bold px-8 py-4 rounded-xl text-base transition-colors shadow-xl shadow-amber-700/20 cursor-pointer"
+          >
+            Crear mi estudio gratis <IconChevron />
+          </Link>
+          <p className="mt-4 text-sm text-ink-400 flex items-center justify-center gap-1.5">
+            <span className="text-emerald-600"><IconShield /></span>
+            Sin tarjeta. Sin compromiso. Cancelá cuando quieras.
+          </p>
         </div>
       </section>
 
