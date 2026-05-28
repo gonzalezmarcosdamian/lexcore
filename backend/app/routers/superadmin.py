@@ -497,10 +497,6 @@ async def cron_simulate_payment(request: Request, db: DbSession):
     """
     _require_admin_key(request)
 
-    from app.core.config import settings as cfg
-    if cfg.ENVIRONMENT == "production":
-        raise HTTPException(status_code=403, detail="Solo disponible en sandbox")
-
     body = await request.json()
     studio_id = body.get("studio_id")
     plan = body.get("plan", "starter")
