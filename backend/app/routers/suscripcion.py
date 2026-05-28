@@ -468,7 +468,6 @@ async def _procesar_preapproval(preapproval_id: str):
                 admin = db.query(User).filter(
                     User.tenant_id == studio.id,
                     User.role == "admin",
-                    User.is_active == True,
                 ).first()
                 if admin and admin.email:
                     from app.services.email import send_subscription_confirmed_email

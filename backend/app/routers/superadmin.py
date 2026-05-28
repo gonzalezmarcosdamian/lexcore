@@ -468,7 +468,6 @@ async def cron_trial_warnings(request: Request, db: DbSession):
         admin = db.query(User).filter(
             User.tenant_id == studio.id,
             User.role == "admin",
-            User.is_active == True,
         ).first()
 
         if not admin or not admin.email:
