@@ -166,6 +166,7 @@ app.include_router(admin.router)
 app.include_router(feriados.router)
 app.include_router(suscripcion.router)
 app.include_router(superadmin.router)
+app.include_router(superadmin.cron_router)
 
 
 @app.get("/health")

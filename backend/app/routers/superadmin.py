@@ -7,7 +7,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.core.deps import CurrentUser, DbSession, SuperAdminRequired
@@ -411,3 +411,79 @@ def get_metrics_history(db: DbSession, current_user: CurrentUser):
         {"snapshot_at": s.snapshot_at.isoformat(), "data": json.loads(s.data_json)}
         for s in snaps
     ]
+
+
+# ── Cron endpoints (protegidos por ADMIN_API_KEY, sin JWT) ────────────────────
+
+cron_router = APIRouter(prefix="/cron", tags=["cron"])
+
+
+def _require_admin_key(request: Request):
+    from app.core.config import settings
+    from fastapi import Request
+    key = request.headers.get("x-admin-key", "")
+    if not settings.ADMIN_API_KEY or key != settings.ADMIN_API_KEY:
+        raise HTTPException(status_code=401, detail="API key requerida")
+
+
+@cron_router.post("/trial-warnings")
+async def cron_trial_warnings(request: Request, db: DbSession):
+    """
+    Envía emails de aviso a estudios en día 25 del trial (5 días restantes).
+    Llamar diariamente desde Railway Cron: POST /cron/trial-warnings
+    Header requerido: x-admin-key: <ADMIN_API_KEY>
+    """
+    _require_admin_key(request)
+
+    from app.models.studio import Studio
+    from app.models.user import User
+    from app.services.email import send_trial_warning_email
+
+    now = datetime.now(timezone.utc)
+    enviados = 0
+    errores = 0
+
+    # Buscar estudios en trial con 1-7 días restantes
+    studios = db.query(Studio).filter(
+        Studio.plan == "trial",
+        Studio.trial_ends_at.isnot(None),
+        Studio.trial_ends_at > now,
+        Studio.trial_ends_at <= now + timedelta(days=7),
+    ).all()
+
+    frontend_url = "https://lexcore-kappa.vercel.app"
+    try:
+        from app.core.config import settings as cfg
+        if cfg.BASE_URL.startswith("https://"):
+            frontend_url = cfg.BASE_URL
+    except Exception:
+        pass
+
+    for studio in studios:
+        trial_dt = studio.trial_ends_at
+        if trial_dt.tzinfo is None:
+            trial_dt = trial_dt.replace(tzinfo=timezone.utc)
+        dias = max(1, (trial_dt - now).days)
+
+        admin = db.query(User).filter(
+            User.tenant_id == studio.id,
+            User.role == "admin",
+            User.is_active == True,
+        ).first()
+
+        if not admin or not admin.email:
+            continue
+
+        ok = send_trial_warning_email(
+            to_email=admin.email,
+            studio_name=studio.name,
+            dias_restantes=dias,
+            frontend_url=frontend_url,
+        )
+        if ok:
+            enviados += 1
+        else:
+            errores += 1
+
+    logger.info("Cron trial-warnings: %d enviados, %d errores, %d estudios evaluados", enviados, errores, len(studios))
+    return {"ok": True, "enviados": enviados, "errores": errores, "studios_evaluados": len(studios)}

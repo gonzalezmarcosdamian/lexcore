@@ -165,7 +165,7 @@ def crear_checkout(body: CheckoutRequest, current_user: CurrentUser, db: DbSessi
     back_url = f"{base}/perfil?subs=ok"
 
     preapproval_data = {
-        "reason": f"LexCore {plan_label} — {'Mensual' if body.billing_cycle == 'monthly' else 'Anual'}",
+        "reason": f"Luthor {plan_label} — {'Mensual' if body.billing_cycle == 'monthly' else 'Anual'}",
         "auto_recurring": {
             "frequency": 1,
             "frequency_type": "months",
@@ -406,6 +406,7 @@ async def _procesar_preapproval(preapproval_id: str):
     """Consulta el preapproval en MP y actualiza el studio correspondiente."""
     from app.core.database import SessionLocal
     from app.models.studio import Studio
+    from app.models.user import User
     from app.models.subscription_event import SubscriptionEvent
 
     sdk = _mp_sdk()
@@ -447,7 +448,7 @@ async def _procesar_preapproval(preapproval_id: str):
             studio.subscription_status = "active"
             next_date = r.get("next_payment_date", "")
             if next_date:
-                studio.next_billing_date = next_date[:10]  # solo YYYY-MM-DD
+                studio.next_billing_date = next_date[:10]
             studio.subscription_updated_at = now
             evt = SubscriptionEvent(
                 tenant_id=studio.id,
@@ -456,6 +457,26 @@ async def _procesar_preapproval(preapproval_id: str):
                 billing_cycle=studio.billing_cycle,
                 mp_preapproval_id=preapproval_id,
             )
+            # Email de confirmación al admin del estudio
+            try:
+                admin = db.query(User).filter(
+                    User.tenant_id == studio.id,
+                    User.role == "admin",
+                    User.is_active == True,
+                ).first()
+                if admin and admin.email:
+                    from app.services.email import send_subscription_confirmed_email
+                    plan_labels = {"starter": "Starter", "pro": "Pro", "estudio": "Estudio"}
+                    send_subscription_confirmed_email(
+                        to_email=admin.email,
+                        studio_name=studio.name,
+                        plan_label=plan_labels.get(studio.plan, studio.plan),
+                        billing_cycle=studio.billing_cycle or "monthly",
+                        amount=_get_precio(studio.plan, studio.billing_cycle or "monthly", db),
+                        next_billing_date=next_date or None,
+                    )
+            except Exception:
+                logger.exception("Error enviando email de confirmación de pago")
 
         elif mp_status == "paused":
             studio.subscription_status = "paused"
@@ -502,14 +523,14 @@ async def _procesar_pago(payment_id: str):
     from app.models.subscription_event import SubscriptionEvent
 
     sdk = _mp_sdk()
-    result = sdk.advanced_payment().get(payment_id)
+    result = sdk.payment().get(payment_id)  # advanced_payment() es para pagos split — suscripciones usan payment()
     if result["status"] != 200:
         logger.warning("Pago %s no encontrado en MP", payment_id)
         return
 
     r = result["response"]
-    # Buscar el studio por el preapproval_id asociado al pago
-    preapproval_id = r.get("preapproval_id") or r.get("subscription_id", "")
+    # MP Subscriptions: el campo es "preapproval_id" en pagos recurrentes
+    preapproval_id = r.get("preapproval_id", "")
 
     db = SessionLocal()
     try:

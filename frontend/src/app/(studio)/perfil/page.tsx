@@ -717,7 +717,7 @@ function PerfilPageInner() {
             <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            ¡Suscripción activada! Bienvenido a LexCore.
+            ¡Suscripción activada! Bienvenido a Luthor.
             <button onClick={() => setSubsSuccess(false)} className="ml-auto text-green-600 hover:text-green-800">✕</button>
           </div>
         )}
