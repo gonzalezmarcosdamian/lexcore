@@ -486,3 +486,53 @@ async def cron_trial_warnings(request: Request, db: DbSession):
 
     logger.info("Cron trial-warnings: %d enviados, %d errores, %d estudios evaluados", enviados, errores, len(studios))
     return {"ok": True, "enviados": enviados, "errores": errores, "studios_evaluados": len(studios)}
+
+
+@cron_router.post("/simulate-payment")
+async def cron_simulate_payment(request: Request, db: DbSession):
+    """
+    Simula un pago aprobado en sandbox: activa el plan del estudio sin pasar por MP.
+    Solo funciona en ENVIRONMENT != production.
+    Header: x-admin-key + body: {"studio_id": "...", "plan": "starter", "billing_cycle": "monthly"}
+    """
+    _require_admin_key(request)
+
+    from app.core.config import settings as cfg
+    if cfg.ENVIRONMENT == "production":
+        raise HTTPException(status_code=403, detail="Solo disponible en sandbox")
+
+    body = await request.json()
+    studio_id = body.get("studio_id")
+    plan = body.get("plan", "starter")
+    billing_cycle = body.get("billing_cycle", "monthly")
+
+    from app.models.studio import Studio
+    from app.models.subscription_event import SubscriptionEvent
+
+    studio = db.query(Studio).filter(Studio.id == studio_id).first()
+    if not studio:
+        raise HTTPException(status_code=404, detail="Studio no encontrado")
+
+    fake_id = f"TEST-SIMULATED-{studio_id[:8]}"
+    now = datetime.now(timezone.utc)
+
+    studio.subscription_id = fake_id
+    studio.plan = plan
+    studio.billing_cycle = billing_cycle
+    studio.subscription_status = "active"
+    studio.next_billing_date = (now.replace(day=1) + timedelta(days=32)).replace(day=1).strftime("%Y-%m-%d")
+    studio.subscription_updated_at = now
+
+    evt = SubscriptionEvent(
+        tenant_id=studio.id,
+        event_type="charge_success",
+        plan=plan,
+        billing_cycle=billing_cycle,
+        amount=17000.0,
+        mp_preapproval_id=fake_id,
+    )
+    db.add(evt)
+    db.commit()
+
+    logger.info("Pago simulado: studio=%s plan=%s", studio_id, plan)
+    return {"ok": True, "studio_id": studio_id, "plan": plan, "status": "active", "preapproval_id": fake_id}
