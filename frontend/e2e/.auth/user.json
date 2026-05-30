@@ -2,7 +2,7 @@
   "cookies": [
     {
       "name": "next-auth.csrf-token",
-      "value": "3d306e8f97235cd38b1dad072add573e66cd83827f373988202a0870f0cae3cd%7Cd160a0e62313b85f57fb779bd0a32dc5ee5b01e98b8d9624510e4c0fc25afc18",
+      "value": "c0447c6cc954db0f8e61a9cf4b81f7142e706cca88cd54bcabfb188f9d100e9a%7C2e96d47d5fe81a71a44688f99f0740fdc3dd59d772274911ebf7af88851d3e7a",
       "domain": "localhost",
       "path": "/",
       "expires": -1,
@@ -12,20 +12,10 @@
     },
     {
       "name": "next-auth.callback-url",
-      "value": "http%3A%2F%2Flocalhost%3A3001%2Flogin",
+      "value": "http%3A%2F%2Flocalhost%3A3001%2Fdashboard",
       "domain": "localhost",
       "path": "/",
       "expires": -1,
-      "httpOnly": true,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "next-auth.session-token",
-      "value": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..mZSr2mzKS0iBtyuj.SareQQgC0Aoyvvosz4HVkL6D5PDNOAC_u3tHrEdyAJmAczPz7OdKC9NnbejgPcY9H-F6Nn61A20ohRLTT1kYNezQNunUsF6F5anrYprmalel6JQJn_kjaZvLcOslxkFHja8uX6evfuFjJYz7n7XwvsXM2qnb5fjAS1hFVZXBbTawBJUYTtaA0fP2BhWdT4gUanSHMtUvukDeiHmNeIhXbAnT3RRDgxp309Z9oP2sjlmTsWNO_WRq0wuP02GJGm2HStQJdvkhrB3qR8fkcn1trS3-0zJ1gLaEh7C2ezW1tthDGm2xGYObsQVzT-i4us9CGfnxXOJ8Tt8S_0oNZF-HI-HewWtSmOIne5-E8GX2_aYObTn7fmp-B79XQBeBfvs-Bom-SVi11bRNEl05kEx5-9jb1RzT5GjH9NNoIfgXy9McpLyWaTbtumC1piRoFdrnJW5XwZh5aU-rRf-0wRXnX0K8go_N6ee1_otmNQsJR-j_FynzbH0Mdk8eCiPULCx-hSVUErJq2CMDoTaMTGJkslgWQX2tvE1tWb5osYAY9o7QbKPMBjwlpq7DCt8YlPJf_fWe_Ch0Yc8tS8hH6BEz7mDbdnJQbD8X6MUakNJPLHJqpHXxRSNIgxkpeFFx5q8n1cFuYUW4EgNkSlQry7QCm9DYlnx-m7IOVWREqvvAIXznxsnWCwHXDmpf06McKRb-oiTYUJf0ADPp50JSJgEE3aFUtOfqMtwWhsYTe8ERw459y-dT6uN4z7sIpSTgDXjCBFGAsNohjBnfj-2xxnFbZgo4I0DrUjhUwHAz6d2hgf2aySZpLuGYTkdHbfvc7JObqaDksVjhTxIw6_ii2vs5HXXRtsQAdCpnZ5V8kvm7oJew4nX1AU7KrT1r0VKBccdhP6tk0uQEiA.Mc2oN3mdOAuaIJhp09Vw_A",
-      "domain": "localhost",
-      "path": "/",
-      "expires": 1781893771.248818,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
@@ -37,7 +27,7 @@
       "localStorage": [
         {
           "name": "nextauth.message",
-          "value": "{\"event\":\"session\",\"data\":{\"trigger\":\"getSession\"},\"timestamp\":1779301770}"
+          "value": "{\"event\":\"session\",\"data\":{\"trigger\":\"getSession\"},\"timestamp\":1779986163}"
         },
         {
           "name": "lexcore_onboarded",
